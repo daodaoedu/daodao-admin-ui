@@ -9,6 +9,7 @@ import type {
   OffsetPagination,
   PlaygroundChatRequest,
   PlaygroundChatResponse,
+  QueryLogFilters,
   SystemPrompt,
   SystemPromptCreate,
   SystemPromptUpdate,
@@ -17,8 +18,7 @@ import type {
 } from './types'
 
 // ── Auth ──────────────────────────────────────────────────
-export const ping = () =>
-  apiClient.get<ApiResponse<AdminPingData>>('/api/v1/admin/ping')
+export const ping = () => apiClient.get<ApiResponse<AdminPingData>>('/api/v1/admin/ping')
 
 // ── Dashboard ─────────────────────────────────────────────
 export const getDashboardStats = (dateFrom?: string, dateTo?: string) =>
@@ -47,7 +47,7 @@ export const updateSystemPrompt = (id: number, data: SystemPromptUpdate) =>
 
 export const deleteSystemPrompt = (id: number) =>
   apiClient.delete<ApiResponse<{ deleted: boolean; id: number }>>(
-    `/api/v1/admin/system-prompts/${id}`
+    `/api/v1/admin/system-prompts/${id}`,
   )
 
 // ── LLM Models ────────────────────────────────────────────
@@ -61,37 +61,20 @@ export const updateLLMModel = (id: number, data: Partial<LLMModelCreate>) =>
   apiClient.put<ApiResponse<LLMModel>>(`/api/v1/admin/llm-models/${id}`, data)
 
 export const deleteLLMModel = (id: number) =>
-  apiClient.delete<ApiResponse<{ deleted: boolean; id: number }>>(
-    `/api/v1/admin/llm-models/${id}`
-  )
+  apiClient.delete<ApiResponse<{ deleted: boolean; id: number }>>(`/api/v1/admin/llm-models/${id}`)
 
 // ── AI Query Logs ─────────────────────────────────────────
-export interface QueryLogFilters {
-  backend?: string
-  context?: string
-  user_id?: number
-  status?: string
-  date_from?: string
-  date_to?: string
-  limit?: number
-  offset?: number
-}
-
 export const listQueryLogs = (params?: QueryLogFilters) =>
   apiClient.get<ApiResponse<AIQueryLog[]> & { pagination: OffsetPagination }>(
     '/api/v1/admin/query-logs',
-    { params }
+    { params },
   )
 
 export const getQueryLog = (id: number) =>
   apiClient.get<ApiResponse<AIQueryLog>>(`/api/v1/admin/query-logs/${id}`)
 
 // ── User Quotas ───────────────────────────────────────────
-export const listUsers = (params?: {
-  limit?: number
-  offset?: number
-  search?: string
-}) =>
+export const listUsers = (params?: { limit?: number; offset?: number; search?: string }) =>
   apiClient.get<ApiResponse<UserWithQuota[]>>('/api/v1/admin/users', { params })
 
 export const getUserQuota = (userId: number) =>
@@ -114,5 +97,5 @@ export const upsertUserQuota = (
     monthly_token_limit: number
     daily_token_limit?: number | null
     quota_month?: number
-  }
+  },
 ) => apiClient.put<ApiResponse<UserQuota>>(`/api/v1/admin/users/${userId}/quota`, data)

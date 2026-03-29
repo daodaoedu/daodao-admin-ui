@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Send, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { getUserQuota, listLLMModels, listSystemPrompts, playgroundChat } from '@/api/admin'
 import type { ChatMessage, PlaygroundChatResponse } from '@/api/types'
 import { useAuth } from '@/auth/AuthContext'
@@ -9,8 +9,7 @@ import { useAuth } from '@/auth/AuthContext'
 function _toFriendlyError(raw: string | null | undefined): string {
   if (!raw) return '發生未知錯誤，請重試'
   const s = raw.toLowerCase()
-  if (s.includes('token 配額已用盡') || s.includes('quota exceeded'))
-    return raw  // 已是友善訊息，直接顯示
+  if (s.includes('token 配額已用盡') || s.includes('quota exceeded')) return raw // 已是友善訊息，直接顯示
   if (s.includes('credit balance') || s.includes('billing') || s.includes('payment'))
     return '模型 API 餘額不足，請至供應商後台儲值後再試'
   if (s.includes('quota') || s.includes('rate limit') || s.includes('rate_limit'))
@@ -21,12 +20,11 @@ function _toFriendlyError(raw: string | null | undefined): string {
     return '指定模型不存在或已停用，請重新選擇'
   if (s.includes('context length') || s.includes('token limit') || s.includes('too long'))
     return '訊息超過模型 context 長度上限，請縮短內容'
-  if (s.includes('timeout') || s.includes('timed out'))
-    return '請求逾時，請稍後再試'
+  if (s.includes('timeout') || s.includes('timed out')) return '請求逾時，請稍後再試'
   if (s.includes('connection') || s.includes('network') || s.includes('unreachable'))
     return '無法連線至 AI 服務，請確認網路或後端狀態'
   // 其他：顯示簡短摘要（最多 80 字）
-  return raw.length > 80 ? raw.slice(0, 80) + '…' : raw
+  return raw.length > 80 ? `${raw.slice(0, 80)}…` : raw
 }
 
 /** token 用量百分比 → Tailwind 顏色 */
@@ -35,6 +33,11 @@ function _usageColor(used: number, limit: number): string {
   if (pct >= 1) return 'bg-destructive'
   if (pct >= 0.8) return 'bg-yellow-400'
   return 'bg-primary'
+}
+
+let _msgIdCounter = 0
+function nextMsgId() {
+  return `msg-${++_msgIdCounter}-${Date.now()}`
 }
 
 export function PlaygroundPage() {
@@ -61,9 +64,9 @@ export function PlaygroundPage() {
   // 使用者 quota（有 adminId 才查）
   const { data: quotaData, refetch: refetchQuota } = useQuery({
     queryKey: ['admin-quota', adminInfo?.adminId],
-    queryFn: () => getUserQuota(adminInfo!.adminId).then((r) => r.data.data),
+    queryFn: () => getUserQuota(adminInfo?.adminId as number).then((r) => r.data.data),
     enabled: !!adminInfo?.adminId,
-    staleTime: 30_000,  // 30 秒內不重新查
+    staleTime: 30_000, // 30 秒內不重新查
   })
 
   // 自動選第一個 model
@@ -74,15 +77,16 @@ export function PlaygroundPage() {
   }, [models, selectedModelId])
 
   // 捲到最新訊息
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally scroll on new message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages.length])
 
   const handleSend = async () => {
     if (!input.trim() || !selectedModelId || isSending) return
     setError(null)
 
-    const userMsg: ChatMessage = { role: 'user', content: input.trim() }
+    const userMsg: ChatMessage = { id: nextMsgId(), role: 'user', content: input.trim() }
     setMessages((prev) => [...prev, userMsg])
     setInput('')
     setIsSending(true)
@@ -107,6 +111,7 @@ export function PlaygroundPage() {
       const d = res.data.data
       setLastStats(d)
       const assistantMsg: ChatMessage = {
+        id: nextMsgId(),
         role: 'assistant',
         content: d.response,
         meta: {
@@ -155,13 +160,18 @@ export function PlaygroundPage() {
 
         {/* Model 選擇 */}
         <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">LLM 模型</label>
+          <label htmlFor="llm-model-select" className="text-xs font-medium text-muted-foreground">
+            LLM 模型
+          </label>
           <select
+            id="llm-model-select"
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={selectedModelId ?? ''}
             onChange={(e) => setSelectedModelId(Number(e.target.value))}
           >
-            <option value="" disabled>選擇模型…</option>
+            <option value="" disabled>
+              選擇模型…
+            </option>
             {models.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.display_name ?? `${m.provider}/${m.model_name}`}
@@ -172,8 +182,14 @@ export function PlaygroundPage() {
 
         {/* System Prompt 選擇 */}
         <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">System Prompt</label>
+          <label
+            htmlFor="system-prompt-select"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            System Prompt
+          </label>
           <select
+            id="system-prompt-select"
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={selectedPromptId ?? ''}
             onChange={(e) =>
@@ -191,7 +207,12 @@ export function PlaygroundPage() {
 
         {/* 清除對話 */}
         <button
-          onClick={() => { setMessages([]); setLastStats(null); setError(null) }}
+          type="button"
+          onClick={() => {
+            setMessages([])
+            setLastStats(null)
+            setError(null)
+          }}
           className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
         >
           <Trash2 className="h-4 w-4" />
@@ -221,7 +242,9 @@ export function PlaygroundPage() {
                     <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${_usageColor(monthlyUsed, monthlyLimit)}`}
-                        style={{ width: `${Math.min(100, (monthlyUsed / monthlyLimit) * 100)}%` }}
+                        style={{
+                          width: `${Math.min(100, monthlyLimit > 0 ? (monthlyUsed / monthlyLimit) * 100 : 0)}%`,
+                        }}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground text-right">
@@ -255,16 +278,17 @@ export function PlaygroundPage() {
               選擇模型後輸入訊息開始測試
             </div>
           )}
-          {messages.map((msg, idx) => (
+          {messages.map((msg) => (
             <div
-              key={idx}
+              key={msg.id}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[75%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap ${msg.role === 'user'
+                className={`max-w-[75%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap ${
+                  msg.role === 'user'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-foreground'
-                  }`}
+                }`}
               >
                 {msg.content}
                 {msg.role === 'assistant' && msg.meta && (
@@ -305,6 +329,7 @@ export function PlaygroundPage() {
               disabled={isSending || !selectedModelId}
             />
             <button
+              type="button"
               onClick={handleSend}
               disabled={isSending || !input.trim() || !selectedModelId}
               className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -327,11 +352,15 @@ export function PlaygroundPage() {
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Input tokens</dt>
-              <dd className="font-medium text-foreground">{lastStats.input_tokens.toLocaleString()}</dd>
+              <dd className="font-medium text-foreground">
+                {lastStats.input_tokens.toLocaleString()}
+              </dd>
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Output tokens</dt>
-              <dd className="font-medium text-foreground">{lastStats.output_tokens.toLocaleString()}</dd>
+              <dd className="font-medium text-foreground">
+                {lastStats.output_tokens.toLocaleString()}
+              </dd>
             </div>
             {lastStats.cost_usd > 0 && (
               <div>

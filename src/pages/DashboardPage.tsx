@@ -1,10 +1,19 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { format, subDays } from 'date-fns'
+import { useState } from 'react'
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts'
 import { getDashboardStats } from '@/api/admin'
-import { format, subDays } from 'date-fns'
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -32,11 +41,16 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="text-sm text-muted-foreground">{dateFrom} ~ {dateTo}</p>
+      <p className="text-sm text-muted-foreground">
+        {dateFrom} ~ {dateTo}
+      </p>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="總費用 (USD)" value={`$${Number(data.total_cost_usd).toFixed(4)}`} />
+        <StatCard
+          label="總費用 (USD)"
+          value={`$${(Number(data.total_cost_usd) || 0).toFixed(4)}`}
+        />
         <StatCard label="總查詢次數" value={data.total_queries.toLocaleString()} />
         <StatCard label="Input Tokens" value={data.total_input_tokens.toLocaleString()} />
         <StatCard label="Output Tokens" value={data.total_output_tokens.toLocaleString()} />
@@ -67,8 +81,22 @@ export function DashboardPage() {
             <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
             <Tooltip />
             <Legend />
-            <Line yAxisId="left" type="monotone" dataKey="query_count" stroke="hsl(var(--primary))" name="查詢次數" dot={false} />
-            <Line yAxisId="right" type="monotone" dataKey="total_tokens" stroke="#22c55e" name="Tokens" dot={false} />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="query_count"
+              stroke="hsl(var(--primary))"
+              name="查詢次數"
+              dot={false}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="total_tokens"
+              stroke="#22c55e"
+              name="Tokens"
+              dot={false}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>

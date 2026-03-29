@@ -16,16 +16,16 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
-// 403 自動登出
+// 401/403 自動登出
 apiClient.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 403) {
+    if (err.response?.status === 401 || err.response?.status === 403) {
       localStorage.removeItem(TOKEN_KEY)
       window.location.href = '/admin/login'
     }
     return Promise.reject(err)
-  }
+  },
 )
 
 export default apiClient

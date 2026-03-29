@@ -13,12 +13,17 @@ export function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const ok = await login(token.trim())
-    setLoading(false)
-    if (ok) {
-      navigate('/')
-    } else {
-      setError('驗證失敗：請確認 JWT token 有效且具有 admin 權限')
+    try {
+      const ok = await login(token.trim())
+      if (ok) {
+        navigate('/')
+      } else {
+        setError('驗證失敗：請確認 JWT token 有效且具有 admin 權限')
+      }
+    } catch {
+      setError('登入發生錯誤，請稍後再試')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -28,10 +33,11 @@ export function LoginPage() {
         <h1 className="mb-6 text-center text-2xl font-bold text-foreground">DaoDao Admin</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">
+            <label htmlFor="jwt-token" className="mb-1 block text-sm font-medium text-foreground">
               JWT Token
             </label>
             <textarea
+              id="jwt-token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               rows={5}
@@ -40,9 +46,7 @@ export function LoginPage() {
               required
             />
           </div>
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <button
             type="submit"
             disabled={loading}

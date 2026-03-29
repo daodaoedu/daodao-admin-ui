@@ -25,7 +25,7 @@ jobs:
           BASE: ${{ github.event.pull_request.base.ref }}
           HEAD: ${{ github.event.pull_request.head.ref }}
         run: |
-          DIFF=$(git diff "origin/$BASE..origin/$HEAD" -- '*.py' '*.yaml' '*.yml' '*.json' | head -c 12000)
+          DIFF=$(git diff "origin/$BASE..origin/$HEAD" -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.css' '*.json' '*.yml' '*.yaml' '*.html' | head -c 12000)
           STAT=$(git diff "origin/$BASE..origin/$HEAD" --stat | tail -5)
           echo "DIFF<<EOF" >> "$GITHUB_OUTPUT"
           echo "$DIFF" >> "$GITHUB_OUTPUT"
@@ -56,7 +56,7 @@ jobs:
                 messages: [
                   {
                     role: "system",
-                    content: "你是一個資深的 code reviewer。根據 git diff 進行 code review，使用繁體中文。\n\n只回報真正的問題，不要吹毛求疵。格式：\n\n## Code Review\n\n### 問題\n\n| 嚴重度 | 檔案 | 問題 | 建議 |\n|--------|------|------|------|\n\n嚴重度：🔴 High（bug/安全）、🟡 Medium（效能/維護）、🟢 Low（風格/優化）\n\n如果沒有發現問題，只回覆「✅ 沒有發現明顯問題」。\n\n### 總結\n\n一句話總結這次變更的品質。"
+                    content: "你是一個資深的前端 code reviewer，專精 React、TypeScript、Vite 技術棧。根據 git diff 進行 code review，使用繁體中文。\n\n重點檢查：TypeScript 類型安全、React hooks 使用、元件設計模式、CSS/樣式問題、效能（不必要的 re-render、bundle size）、安全性（XSS、敏感資料洩漏）。\n\n只回報真正的問題，不要吹毛求疵。格式：\n\n## Code Review\n\n### 問題\n\n| 嚴重度 | 檔案 | 問題 | 建議 |\n|--------|------|------|------|\n\n嚴重度：🔴 High（bug/安全）、🟡 Medium（效能/維護）、🟢 Low（風格/優化）\n\n如果沒有發現問題，只回覆「✅ 沒有發現明顯問題」。\n\n### 總結\n\n一句話總結這次變更的品質。"
                   },
                   {
                     role: "user",

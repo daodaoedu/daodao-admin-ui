@@ -137,6 +137,7 @@ export interface PlaygroundChatResponse {
 }
 
 export interface ChatMessage {
+  id: string
   role: 'user' | 'assistant'
   content: string
   meta?: {
@@ -146,6 +147,18 @@ export interface ChatMessage {
     latency_ms: number
     model_used: string
   }
+}
+
+// ── AI Query Log Filters ─────────────────────────────────
+export interface QueryLogFilters {
+  backend?: string
+  context?: string
+  user_id?: number
+  status?: string
+  date_from?: string
+  date_to?: string
+  limit?: number
+  offset?: number
 }
 
 // ── User Quotas ───────────────────────────────────────────

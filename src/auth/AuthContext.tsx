@@ -1,6 +1,14 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
-import { TOKEN_KEY } from '@/api/client'
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { ping } from '@/api/admin'
+import { TOKEN_KEY } from '@/api/client'
 
 interface AdminInfo {
   adminId: number
@@ -9,27 +17,24 @@ interface AdminInfo {
 
 interface AuthContextValue {
   isAuthenticated: boolean
+  isLoading: boolean
   adminInfo: AdminInfo | null
   login: (token: string) => Promise<boolean>
   logout: () => void
 }
 
-const AuthContext = createContext<AuthContextValue>({
-  isAuthenticated: false,
-  adminInfo: null,
-  login: async () => false,
-  logout: () => {},
-})
+const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    () => !!localStorage.getItem(TOKEN_KEY)
-  )
+  const hasToken = !!localStorage.getItem(TOKEN_KEY)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(hasToken)
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
 
   // 頁面重整後重新取得 admin 資訊（token 仍存在但 adminInfo 為 null）
   useEffect(() => {
     if (!localStorage.getItem(TOKEN_KEY)) return
+    setIsLoading(true)
     ping()
       .then((res) => {
         const d = res.data.data
@@ -39,6 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         localStorage.removeItem(TOKEN_KEY)
         setIsAuthenticated(false)
+      })
+      .finally(() => {
+        setIsLoading(false)
       })
   }, [])
 
@@ -63,11 +71,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAdminInfo(null)
   }, [])
 
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, adminInfo, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ isAuthenticated, isLoading, adminInfo, login, logout }),
+    [isAuthenticated, isLoading, adminInfo, login, logout],
   )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export const useAuth = () => useContext(AuthContext)
+export function useAuth() {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider')
+  return ctx
+}

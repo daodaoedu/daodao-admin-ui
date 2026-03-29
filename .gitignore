@@ -17,4 +17,24 @@ psd
 thumb
 sketch
 
+# Build output
+dist/
+
+# Environment files
+.env
+.env.*
+.env.local
+
+# Local overrides
+*.local
+
+# Vite
+.vite/
+
+# Test coverage
+coverage/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
 # End of https://www.toptal.com/developers/gitignore/api/react
