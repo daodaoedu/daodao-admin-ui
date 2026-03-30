@@ -19,6 +19,17 @@ export default defineConfig({
       },
     },
   },
+  // Docker 環境：vite preview 讀取 BACKEND_URL 將 /api/* 代理至後端容器
+  preview: {
+    port: 3000,
+    host: '0.0.0.0',
+    proxy: {
+      '/api': {
+        target: process.env.BACKEND_URL ?? 'http://localhost:8002',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     outDir: 'dist',
     sourcemap: 'hidden',

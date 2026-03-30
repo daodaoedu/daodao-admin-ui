@@ -31,7 +31,7 @@ function _toFriendlyError(raw: string | null | undefined): string {
 function _usageColor(used: number, limit: number): string {
   const pct = limit > 0 ? used / limit : 0
   if (pct >= 1) return 'bg-destructive'
-  if (pct >= 0.8) return 'bg-yellow-400'
+  if (pct >= 0.8) return 'bg-tips'
   return 'bg-primary'
 }
 

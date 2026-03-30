@@ -63,7 +63,7 @@ export function SystemPromptsPage() {
       {/* List */}
       <div className="w-72 shrink-0 space-y-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">System Prompts</h1>
+          <h1 className="text-2xl font-bold">System Prompts</h1>
           <button
             type="button"
             onClick={openNew}

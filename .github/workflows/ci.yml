@@ -11,10 +11,6 @@ on:
       - dev
   # 被其他 workflow 調用時執行
   workflow_call:
-    outputs:
-      generated-files-artifact:
-        description: "Name of the generated files artifact"
-        value: ${{ jobs.test.outputs.artifact-name }}
   workflow_dispatch:
 
 jobs:
@@ -26,29 +22,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ 設定 Python 3.12
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+      # 2️⃣ 設定 Node.js 20
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: 3.12
+          node-version: '20'
 
-      # 3️⃣ 建立虛擬環境並安裝依賴
-      - name: Setup virtualenv
-        run: |
-          python -m venv .venv
-          # 確保 activate 可用
-          . .venv/bin/activate
-          pip install --upgrade pip
-          pip install black==25.9 ruff==0.14.1 pylint==4.0.1 bandit==1.8.6
+      # 3️⃣ 啟用 pnpm
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@10.20.0 --activate
 
-      # 4️⃣ 格式化檢查
-      - name: Run format check
-        run: |
-          . .venv/bin/activate
-          make check
+      # 4️⃣ 安裝依賴（frozen lockfile 確保一致性）
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      # 5️⃣ 靜態分析
-      - name: Run static analysis
-        run: |
-          . .venv/bin/activate
-          make lint
+      # 5️⃣ Biome lint + format 檢查
+      - name: Run lint check
+        run: pnpm lint
+
+      # 6️⃣ TypeScript 型別檢查
+      - name: Run type check
+        run: pnpm exec tsc --noEmit

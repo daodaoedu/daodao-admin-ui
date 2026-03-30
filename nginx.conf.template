@@ -1,0 +1,52 @@
+server {
+    listen 80;
+    server_name _;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_types text/plain text/css application/json application/javascript
+               text/xml application/xml text/javascript image/svg+xml;
+    gzip_min_length 1024;
+
+    # ── API proxy → daodao-ai-backend ──────────────────────────────────────
+    # BACKEND_HOST / BACKEND_PORT 由 docker-entrypoint.sh 透過 envsubst 注入
+    location /api/ {
+        proxy_pass         http://${BACKEND_HOST}:${BACKEND_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $http_host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout    120s;
+        proxy_send_timeout    30s;
+    }
+
+    # ── Admin SPA (Vite build with base: '/admin/') ─────────────────────────
+    location /admin/ {
+        root  /usr/share/nginx/html;
+        index index.html;
+        # SPA fallback：所有子路由都指向 index.html
+        try_files $uri $uri/ /admin/index.html;
+
+        # 永久快取帶 hash 的靜態資源
+        location ~* \.(js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|ico|webp)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            access_log off;
+        }
+    }
+
+    # ── 根路徑重導向 ────────────────────────────────────────────────────────
+    location = / {
+        return 301 /admin/;
+    }
+
+    # ── Health check（供 Docker HEALTHCHECK 與 CD 使用）────────────────────
+    location = /health {
+        access_log off;
+        return 200 "ok\n";
+        add_header Content-Type text/plain;
+    }
+}

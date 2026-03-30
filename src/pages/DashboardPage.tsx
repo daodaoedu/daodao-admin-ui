@@ -61,11 +61,11 @@ export function DashboardPage() {
         <h2 className="mb-4 font-semibold">各 Backend 費用</h2>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={data.by_backend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="backend" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} />
             <Tooltip formatter={(v: number) => [`$${Number(v).toFixed(5)}`, '費用']} />
-            <Bar dataKey="cost_usd" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="cost_usd" fill="var(--primary)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -75,7 +75,7 @@ export function DashboardPage() {
         <h2 className="mb-4 font-semibold">每日查詢趨勢</h2>
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={data.daily_series}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="date" tick={{ fontSize: 11 }} />
             <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
             <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
@@ -85,7 +85,7 @@ export function DashboardPage() {
               yAxisId="left"
               type="monotone"
               dataKey="query_count"
-              stroke="hsl(var(--primary))"
+              stroke="var(--primary)"
               name="查詢次數"
               dot={false}
             />
@@ -93,7 +93,7 @@ export function DashboardPage() {
               yAxisId="right"
               type="monotone"
               dataKey="total_tokens"
-              stroke="#22c55e"
+              stroke="var(--success)"
               name="Tokens"
               dot={false}
             />

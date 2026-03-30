@@ -21,7 +21,7 @@ export function ModelManagementPage() {
     <div className="flex gap-6 h-full">
       {/* ── 左側列表 ── */}
       <div className="w-80 shrink-0 space-y-2">
-        <h1 className="text-xl font-bold">LLM Models</h1>
+        <h1 className="text-2xl font-bold">LLM Models</h1>
         <p className="text-xs text-muted-foreground">
           模型由後端設定自動匯入，無法在此新增或刪除。
         </p>

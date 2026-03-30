@@ -1,0 +1,23 @@
+networks:
+  dev-daodao-network:
+    external: true
+
+services:
+  admin-ui-dev:
+    build: .
+    image: daodao-admin-ui:dev
+    restart: unless-stopped
+    env_file:
+      - .env.dev
+    ports:
+      - "3002:5173"
+    networks:
+      dev-daodao-network:
+        aliases:
+          - admin-ui-dev
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:5173/admin/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
