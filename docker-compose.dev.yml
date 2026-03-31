@@ -10,13 +10,13 @@ services:
     env_file:
       - .env.dev
     ports:
-      - "3002:5173"
+      - "3002:3000"
     networks:
       dev-daodao-network:
         aliases:
           - admin-ui-dev
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:5173/admin/ || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/admin/ || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
