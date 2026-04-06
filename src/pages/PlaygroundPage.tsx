@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { getUserQuota, listLLMModels, listSystemPrompts, playgroundChat } from '@/api/admin'
 import type { ChatMessage, PlaygroundChatResponse } from '@/api/types'
 import { useAuth } from '@/auth/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/input'
 
 /** 將原始後端錯誤訊息轉為使用者友善文字 */
 function _toFriendlyError(raw: string | null | undefined): string {
@@ -206,18 +208,19 @@ export function PlaygroundPage() {
         </div>
 
         {/* 清除對話 */}
-        <button
+        <Button
           type="button"
+          variant="secondary"
           onClick={() => {
             setMessages([])
             setLastStats(null)
             setError(null)
           }}
-          className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          className="w-full rounded-md px-3 py-2"
         >
           <Trash2 className="h-4 w-4" />
           清除對話
-        </button>
+        </Button>
 
         {/* 使用者資訊 & Quota */}
         {adminInfo && (
@@ -319,24 +322,24 @@ export function PlaygroundPage() {
         {/* 輸入區 */}
         <div className="border-t border-border p-4">
           <div className="flex gap-2 items-end">
-            <textarea
+            <Textarea
               rows={3}
-              className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="flex-1 resize-none w-auto"
               placeholder="輸入訊息… (Enter 送出，Shift+Enter 換行)"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isSending || !selectedModelId}
             />
-            <button
+            <Button
               type="button"
               onClick={handleSend}
               disabled={isSending || !input.trim() || !selectedModelId}
-              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="rounded-md"
             >
               <Send className="h-4 w-4" />
               送出
-            </button>
+            </Button>
           </div>
         </div>
       </div>

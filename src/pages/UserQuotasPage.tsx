@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { listUsers, upsertUserQuota } from '@/api/admin'
 import type { UserWithQuota } from '@/api/types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const LIMIT = 50
 
@@ -54,9 +56,9 @@ export function UserQuotasPage() {
       <h1 className="text-2xl font-bold">User Token Quotas</h1>
 
       <div className="flex gap-2">
-        <input
+        <Input
           placeholder="搜尋 nickname / mongo_id"
-          className="rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring w-72"
+          className="w-72"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value)
@@ -133,13 +135,9 @@ export function UserQuotasPage() {
                     )}
                   </td>
                   <td className="px-4 py-2">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(u)}
-                      className="rounded border border-border px-2 py-1 text-xs hover:bg-accent transition-colors"
-                    >
+                    <Button type="button" variant="secondary" size="xs" onClick={() => openEdit(u)}>
                       設定 Quota
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))
@@ -152,22 +150,26 @@ export function UserQuotasPage() {
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>共 {pagination.total_count} 位用戶</span>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="xs"
               disabled={offset === 0}
               onClick={() => setOffset(Math.max(0, offset - LIMIT))}
-              className="rounded border border-border px-3 py-1 hover:bg-accent disabled:opacity-40 transition-colors"
+              className="px-3 disabled:opacity-40"
             >
               上一頁
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              size="xs"
               disabled={!pagination.has_next}
               onClick={() => setOffset(offset + LIMIT)}
-              className="rounded border border-border px-3 py-1 hover:bg-accent disabled:opacity-40 transition-colors"
+              className="px-3 disabled:opacity-40"
             >
               下一頁
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -185,11 +187,11 @@ export function UserQuotasPage() {
                 <label htmlFor="monthly-token-limit" className="mb-1 block text-sm font-medium">
                   Monthly Token Limit
                 </label>
-                <input
+                <Input
                   id="monthly-token-limit"
                   type="number"
                   min="0"
-                  className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="font-mono"
                   value={quotaForm.monthly_token_limit}
                   onChange={(e) =>
                     setQuotaForm((f) => ({ ...f, monthly_token_limit: e.target.value }))
@@ -201,12 +203,12 @@ export function UserQuotasPage() {
                 <label htmlFor="daily-token-limit" className="mb-1 block text-sm font-medium">
                   Daily Token Limit（留空 = 不限）
                 </label>
-                <input
+                <Input
                   id="daily-token-limit"
                   type="number"
                   min="0"
                   placeholder="不設每日上限"
-                  className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="font-mono"
                   value={quotaForm.daily_token_limit}
                   onChange={(e) =>
                     setQuotaForm((f) => ({ ...f, daily_token_limit: e.target.value }))
@@ -216,16 +218,12 @@ export function UserQuotasPage() {
             </div>
 
             <div className="mt-5 flex gap-2 justify-end">
-              <button
-                type="button"
-                className="rounded border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
-                onClick={() => setEditing(null)}
-              >
+              <Button type="button" variant="secondary" onClick={() => setEditing(null)}>
                 取消
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                disabled={upsertMut.isPending}
                 onClick={() => {
                   const monthly = parseInt(quotaForm.monthly_token_limit, 10)
                   const daily = quotaForm.daily_token_limit
@@ -237,10 +235,9 @@ export function UserQuotasPage() {
                   }
                   upsertMut.mutate({ userId: editing.id, form: quotaForm })
                 }}
-                disabled={upsertMut.isPending}
               >
                 {upsertMut.isPending ? '儲存中...' : '儲存'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

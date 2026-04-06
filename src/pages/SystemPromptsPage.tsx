@@ -7,6 +7,9 @@ import {
   updateSystemPrompt,
 } from '@/api/admin'
 import type { SystemPrompt } from '@/api/types'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input, Textarea } from '@/components/ui/input'
 
 export function SystemPromptsPage() {
   const qc = useQueryClient()
@@ -64,13 +67,9 @@ export function SystemPromptsPage() {
       <div className="w-72 shrink-0 space-y-2">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">System Prompts</h1>
-          <button
-            type="button"
-            onClick={openNew}
-            className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
+          <Button type="button" size="xs" onClick={openNew} className="px-3">
             + 新增
-          </button>
+          </Button>
         </div>
         {isLoading ? (
           <p className="text-sm text-muted-foreground">載入中...</p>
@@ -87,9 +86,9 @@ export function SystemPromptsPage() {
                 <div className="flex items-center justify-between">
                   <span className="font-medium truncate">{p.name}</span>
                   {p.is_active && (
-                    <span className="ml-1 shrink-0 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700">
+                    <Badge variant="success" className="ml-1 shrink-0 px-1.5">
                       active
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 <div className="mt-0.5 flex gap-2 text-xs text-muted-foreground">
@@ -111,9 +110,9 @@ export function SystemPromptsPage() {
                 <label htmlFor={`field-${field}`} className="mb-1 block text-sm font-medium">
                   {field}
                 </label>
-                <input
+                <Input
                   id={`field-${field}`}
-                  className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="rounded"
                   value={(form as unknown as Record<string, string>)[field]}
                   onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
                 />
@@ -136,18 +135,17 @@ export function SystemPromptsPage() {
             <label htmlFor="prompt-content" className="mb-1 block text-sm font-medium">
               content
             </label>
-            <textarea
+            <Textarea
               id="prompt-content"
               rows={16}
-              className="w-full rounded border border-input bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="rounded font-mono"
               value={form.content}
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
             />
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
-              className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
               onClick={() => {
                 if (form.name.trim() === '' || form.content.trim() === '') {
                   alert('名稱和內容不可為空')
@@ -166,28 +164,28 @@ export function SystemPromptsPage() {
               }}
             >
               {isNew ? '建立' : '儲存'}
-            </button>
+            </Button>
             {selected && (
-              <button
+              <Button
                 type="button"
-                className="rounded border border-destructive px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
+                variant="destructive"
                 onClick={() => {
                   if (confirm('確定刪除？')) deleteMut.mutate(selected.id)
                 }}
               >
                 刪除
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
-              className="rounded border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
+              variant="secondary"
               onClick={() => {
                 setSelected(null)
                 setIsNew(false)
               }}
             >
               取消
-            </button>
+            </Button>
           </div>
         </div>
       )}

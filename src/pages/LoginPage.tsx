@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/input'
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -36,24 +38,20 @@ export function LoginPage() {
             <label htmlFor="jwt-token" className="mb-1 block text-sm font-medium text-foreground">
               JWT Token
             </label>
-            <textarea
+            <Textarea
               id="jwt-token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               rows={5}
               placeholder="貼上您的 JWT token..."
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="font-mono text-foreground placeholder:text-muted-foreground"
               required
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-          >
+          <Button type="submit" disabled={loading} className="w-full rounded-md">
             {loading ? '驗證中...' : '登入'}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

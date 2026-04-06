@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { listLLMModels } from '@/api/admin'
 import type { LLMModel } from '@/api/types'
+import { Badge } from '@/components/ui/badge'
 
 export function ModelManagementPage() {
   const [selected, setSelected] = useState<LLMModel | null>(null)
@@ -44,18 +45,17 @@ export function ModelManagementPage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium truncate">{m.display_name ?? m.model_name}</span>
-                  <span
-                    className={`ml-1 shrink-0 rounded px-1.5 py-0.5 text-xs ${
-                      m.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
-                    }`}
+                  <Badge
+                    variant={m.is_active ? 'success' : 'default'}
+                    className="ml-1 shrink-0 px-1.5"
                   >
                     {m.is_active ? 'active' : 'inactive'}
-                  </span>
+                  </Badge>
                 </div>
                 <div className="mt-0.5 flex gap-2 text-xs text-muted-foreground">
-                  <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">
+                  <Badge variant="primary" className="px-1.5">
                     {m.provider}
-                  </span>
+                  </Badge>
                   <span className="truncate">{m.model_name}</span>
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
@@ -74,15 +74,9 @@ export function ModelManagementPage() {
             <h2 className="text-lg font-semibold">
               {selected.display_name ?? selected.model_name}
             </h2>
-            <span
-              className={`rounded px-2 py-0.5 text-xs font-medium ${
-                selected.is_active
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-muted text-muted-foreground'
-              }`}
-            >
+            <Badge variant={selected.is_active ? 'success' : 'default'}>
               {selected.is_active ? 'active' : 'inactive'}
-            </span>
+            </Badge>
           </div>
 
           {/* 基本資訊 */}
@@ -92,9 +86,9 @@ export function ModelManagementPage() {
               <div>
                 <dt className="text-xs text-muted-foreground mb-0.5">Provider</dt>
                 <dd>
-                  <span className="rounded bg-primary/10 px-2 py-0.5 text-sm text-primary font-medium">
+                  <Badge variant="primary" className="text-sm">
                     {selected.provider}
-                  </span>
+                  </Badge>
                 </dd>
               </div>
               <div>

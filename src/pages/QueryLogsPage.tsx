@@ -3,6 +3,9 @@ import { format } from 'date-fns'
 import { useState } from 'react'
 import { listQueryLogs } from '@/api/admin'
 import type { AIQueryLog, QueryLogFilters } from '@/api/types'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const LIMIT = 50
 
@@ -26,11 +29,11 @@ export function QueryLogsPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         {(['backend', 'context', 'status'] as const).map((field) => (
-          <input
+          <Input
             key={field}
             placeholder={field}
             aria-label={`Filter by ${field}`}
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-auto"
             value={(filters as Record<string, string>)[field] ?? ''}
             onChange={(e) => {
               setFilters((f) => ({ ...f, [field]: e.target.value || undefined }))
@@ -38,20 +41,20 @@ export function QueryLogsPage() {
             }}
           />
         ))}
-        <input
+        <Input
           type="date"
           aria-label="Filter by start date"
-          className="rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-auto"
           value={filters.date_from ?? ''}
           onChange={(e) => {
             setFilters((f) => ({ ...f, date_from: e.target.value || undefined }))
             setOffset(0)
           }}
         />
-        <input
+        <Input
           type="date"
           aria-label="Filter by end date"
-          className="rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-auto"
           value={filters.date_to ?? ''}
           onChange={(e) => {
             setFilters((f) => ({ ...f, date_to: e.target.value || undefined }))
@@ -104,9 +107,7 @@ export function QueryLogsPage() {
                 >
                   <td className="px-4 py-2 font-mono text-xs">{log.id}</td>
                   <td className="px-4 py-2">
-                    <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      {log.backend}
-                    </span>
+                    <Badge variant="primary">{log.backend}</Badge>
                   </td>
                   <td className="px-4 py-2 text-muted-foreground">{log.context ?? '-'}</td>
                   <td className="px-4 py-2 font-mono text-xs truncate max-w-[100px]">
@@ -118,11 +119,9 @@ export function QueryLogsPage() {
                   </td>
                   <td className="px-4 py-2">{log.latency_ms ? `${log.latency_ms}ms` : '-'}</td>
                   <td className="px-4 py-2">
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs font-medium ${log.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-                    >
+                    <Badge variant={log.status === 'success' ? 'success' : 'error'}>
                       {log.status}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
                     {format(new Date(log.created_at), 'MM-dd HH:mm:ss')}
@@ -149,22 +148,26 @@ export function QueryLogsPage() {
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>共 {pagination.total_count} 筆</span>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="xs"
               disabled={offset === 0}
               onClick={() => setOffset(Math.max(0, offset - LIMIT))}
-              className="rounded border border-border px-3 py-1 hover:bg-accent disabled:opacity-40 transition-colors"
+              className="px-3 disabled:opacity-40"
             >
               上一頁
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              size="xs"
               disabled={!pagination.has_next}
               onClick={() => setOffset(offset + LIMIT)}
-              className="rounded border border-border px-3 py-1 hover:bg-accent disabled:opacity-40 transition-colors"
+              className="px-3 disabled:opacity-40"
             >
               下一頁
-            </button>
+            </Button>
           </div>
         </div>
       )}

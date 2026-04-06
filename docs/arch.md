@@ -43,9 +43,16 @@ src/
 │   └── ProtectedRoute.tsx  # 未登入 → 導向 /login
 │
 ├── components/
-│   └── layout/
-│       ├── AppShell.tsx # 外框：Sidebar + main 捲動區（p-6）
-│       └── Sidebar.tsx  # 導覽列：品牌標題 + nav items + 登出
+│   ├── layout/
+│   │   ├── AppShell.tsx # 外框：Sidebar + main 捲動區（p-6）
+│   │   └── Sidebar.tsx  # 導覽列：品牌標題 + nav items + 登出
+│   └── ui/
+│       ├── button.tsx   # Button（variant: primary/secondary/destructive/ghost × size: default/sm/xs）
+│       ├── input.tsx    # Input、Textarea
+│       └── badge.tsx    # Badge（variant: default/primary/success/error/warning）
+│
+├── lib/
+│   └── utils.ts         # cn()（clsx + tailwind-merge）
 │
 └── pages/
     ├── LoginPage.tsx        # JWT token 輸入 → 呼叫 ping 驗證
@@ -128,23 +135,33 @@ font-family: "Noto Sans TC", system-ui, sans-serif;
 
 由 Google Fonts CDN 載入，涵蓋繁體中文字符集。
 
-### 元件樣式規範
+### 共用 UI 元件
 
-所有按鈕、輸入框使用語意 token 而非硬編碼顏色：
+`src/components/ui/` 提供三個基本元件，避免在各頁面重複樣式字串：
 
 ```tsx
-// 主要動作按鈕
-className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+import { Button } from '@/components/ui/button'
+import { Input, Textarea } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 
-// 危險動作
-className="rounded border border-destructive text-destructive hover:bg-destructive/5"
+// Button variants
+<Button>主要動作</Button>
+<Button variant="secondary">取消</Button>
+<Button variant="destructive">刪除</Button>
+<Button variant="ghost">ghost</Button>
 
-// 次要 / 取消
-className="rounded border border-border text-muted-foreground hover:bg-accent"
+// Button sizes
+<Button size="default">預設</Button>
+<Button size="sm">小</Button>
+<Button size="xs">超小（表格用）</Button>
 
-// 輸入框
-className="rounded-md border border-input bg-background focus:ring-2 focus:ring-ring"
+// Badge variants
+<Badge variant="primary">backend</Badge>
+<Badge variant="success">active</Badge>
+<Badge variant="error">failed</Badge>
 ```
+
+所有元件均透過 `cn()`（`src/lib/utils.ts`）合併 className，支援 `className` prop 覆寫個別樣式。
 
 ---
 
