@@ -22,7 +22,7 @@ apiClient.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401 || err.response?.status === 403) {
       localStorage.removeItem(TOKEN_KEY)
-      window.location.href = '/admin/login'
+      window.location.href = import.meta.env.BASE_URL + "login"
     }
     return Promise.reject(err)
   },
