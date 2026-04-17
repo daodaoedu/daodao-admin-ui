@@ -23,6 +23,7 @@ dist/
 # Environment files
 .env
 .env.*
+!.env.*.sample
 .env.local
 
 # Local overrides
