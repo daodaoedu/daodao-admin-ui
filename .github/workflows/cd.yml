@@ -1,0 +1,181 @@
+name: Continuous Delivery
+
+# ===== 並發控制 =====
+# 同一分支只允許一個部署同時執行，新的推送會取消舊的部署
+concurrency:
+  group: cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+jobs:
+  # ===== CI 階段 =====
+  continuous_integration:
+    if: ${{ github.event_name == 'push' && !inputs.force_deploy }}
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  # ===== 設定環境 =====
+  build:
+    runs-on: ubuntu-latest
+    needs: [continuous_integration]
+    if: ${{ always() && (needs.continuous_integration.result == 'success' || inputs.force_deploy || needs.continuous_integration.result == 'skipped') }}
+    outputs:
+      image-tag: ${{ steps.meta.outputs.image-tag }}
+    steps:
+      - name: Set Environment Variables
+        id: meta
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "image-tag=prod" >> $GITHUB_OUTPUT
+          else
+            echo "image-tag=dev" >> $GITHUB_OUTPUT
+          fi
+
+  # ===== 部署到 Linode =====
+  deploy:
+    env:
+      APP_DIR: /root/daodao-admin-ui
+
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: ${{ always() && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
+    environment: ${{ needs.build.outputs.image-tag == 'prod' && 'production' || 'development' }}
+    timeout-minutes: 20
+    steps:
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LINODE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.LINODE_INSTANCE_IP }} >> ~/.ssh/known_hosts
+
+      - name: Set COMPOSE_FILE
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "COMPOSE_FILE=docker-compose.prod.yml" >> $GITHUB_ENV
+          else
+            echo "COMPOSE_FILE=docker-compose.dev.yml" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy to Linode
+        env:
+          LINODE_INSTANCE_IP: ${{ secrets.LINODE_INSTANCE_IP }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
+          src_ENV: ${{ needs.build.outputs.image-tag }}
+          COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 root@$LINODE_INSTANCE_IP << 'ENDSSH'
+            set -e
+            APP_DIR=${{ env.APP_DIR }}
+            COMPOSE_FILE=${{ env.COMPOSE_FILE }}
+            src_ENV=${{ env.src_ENV }}
+            BRANCH_NAME=${{ env.BRANCH_NAME }}
+            SERVICE_NAME="admin-ui-${src_ENV}"
+
+            echo "=== Starting deployment: daodao-admin-ui (${src_ENV}) ==="
+
+            # ── 更新程式碼 ──────────────────────────────────────────────────
+            if [ -d $APP_DIR/.git ]; then
+              cd $APP_DIR
+              echo "Updating existing repository..."
+              git fetch --depth 1 origin $BRANCH_NAME
+              git reset --hard FETCH_HEAD
+              git clean -fd
+            else
+              echo "Cloning repository..."
+              git clone --depth 1 --branch $BRANCH_NAME \
+                https://${{ secrets.GIT_HUB_USERNAME }}:${{ secrets.GIT_HUB_ACCESS_TOKEN }}@github.com/${{ github.repository }}.git \
+                $APP_DIR
+              cd $APP_DIR
+            fi
+
+            # ── 準備環境檔 ─────────────────────────────────────────────────
+            # admin-ui 無機密，只有 BACKEND_HOST / BACKEND_PORT
+            if [ ! -f .env.${src_ENV} ] && [ -f .env.${src_ENV}.sample ]; then
+              cp ".env.${src_ENV}.sample" ".env.${src_ENV}"
+              echo "Created .env.${src_ENV} from sample"
+            fi
+
+            # ── 停止並移除舊容器 ───────────────────────────────────────────
+            echo "=== Stopping old containers ==="
+            docker compose -f $COMPOSE_FILE down --remove-orphans || true
+
+            # 移除舊 image 強制重新建置
+            if docker image inspect daodao-admin-ui:${src_ENV} > /dev/null 2>&1; then
+              docker rmi daodao-admin-ui:${src_ENV}
+              echo "✅ Removed old daodao-admin-ui:${src_ENV} image"
+            fi
+
+            sleep 2
+
+            # ── 建置並啟動新容器 ───────────────────────────────────────────
+            echo "=== Building and starting new container ==="
+            if docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE up -d --build; then
+              echo "✅ Container started, verifying health..."
+            else
+              echo "❌ Failed to start container"
+              docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE logs --tail=50 $SERVICE_NAME || true
+              exit 1
+            fi
+
+            # ── Health check ───────────────────────────────────────────────
+            MAX_ATTEMPTS=12
+            SLEEP_SECONDS=5
+
+            for i in $(seq 1 $MAX_ATTEMPTS); do
+              echo "Waiting ${SLEEP_SECONDS}s before attempt $i/$MAX_ATTEMPTS..."
+              sleep $SLEEP_SECONDS
+
+              CONTAINER_ID=$(docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE ps -q $SERVICE_NAME 2>/dev/null) || true
+
+              if [ -z "$CONTAINER_ID" ]; then
+                health_status="not_found"
+              else
+                health_status=$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_ID 2>/dev/null) || health_status="error"
+              fi
+
+              if [ "$health_status" = "healthy" ]; then
+                echo "✅ $SERVICE_NAME is healthy"
+                break
+              else
+                echo "⚠ Attempt $i/$MAX_ATTEMPTS: status=${health_status}"
+                if [ $i -eq $MAX_ATTEMPTS ]; then
+                  echo "❌ Health check failed after $MAX_ATTEMPTS attempts"
+                  docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE logs --tail=50 $SERVICE_NAME || true
+                  exit 1
+                fi
+              fi
+            done
+
+            # ── 最終狀態報告 ───────────────────────────────────────────────
+            echo "=== Docker Containers ==="
+            docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+
+            echo "=== System Resources ==="
+            echo "CPU Load:" && uptime
+            echo "Memory:" && free -h
+            echo "Disk:" && df -h /
+
+          ENDSSH
+
+      - name: Verify Deployment
+        env:
+          LINODE_INSTANCE_IP: ${{ secrets.LINODE_INSTANCE_IP }}
+        run: |
+          ssh root@$LINODE_INSTANCE_IP /bin/bash << 'EOF'
+            echo "=== Running Containers ==="
+            docker ps
+
+            echo "=== Docker Networks ==="
+            docker network ls
+
+            echo "=== System Resources ==="
+            uptime && free -h && df -h /
+          EOF

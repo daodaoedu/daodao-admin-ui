@@ -1,0 +1,45 @@
+name: Continuous Integration
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+  # 被其他 workflow 調用時執行
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: Continuous Integration
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ 取得原始碼
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ 設定 Node.js 20
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3️⃣ 啟用 pnpm
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@10.20.0 --activate
+
+      # 4️⃣ 安裝依賴（frozen lockfile 確保一致性）
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 5️⃣ Biome lint + format 檢查
+      - name: Run lint check
+        run: pnpm lint
+
+      # 6️⃣ TypeScript 型別檢查
+      - name: Run type check
+        run: pnpm exec tsc --noEmit

@@ -1,0 +1,21 @@
+networks:
+  prod-daodao-network:
+    external: true
+
+services:
+  admin-ui-prod:
+    build: .
+    image: daodao-admin-ui:prod
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    networks:
+      prod-daodao-network:
+        aliases:
+          - admin-ui-prod
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/admin/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

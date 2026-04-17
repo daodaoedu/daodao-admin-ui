@@ -1,0 +1,46 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  base: '/admin/',
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8002',
+        changeOrigin: true,
+      },
+    },
+  },
+  // Docker 環境：vite preview 讀取 BACKEND_URL 將 /api/* 代理至後端容器
+  preview: {
+    port: 3000,
+    host: '0.0.0.0',
+    proxy: {
+      '/api': {
+        target: process.env.BACKEND_URL ?? 'http://localhost:8002',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: 'hidden',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts'],
+          query: ['@tanstack/react-query'],
+        },
+      },
+    },
+  },
+})

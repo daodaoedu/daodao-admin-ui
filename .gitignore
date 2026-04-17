@@ -1,0 +1,40 @@
+# Created by https://www.toptal.com/developers/gitignore/api/react
+# Edit at https://www.toptal.com/developers/gitignore?templates=react
+
+### react ###
+.DS_*
+*.log
+logs
+**/*.backup.*
+**/*.back.*
+
+node_modules
+bower_components
+
+*.sublime*
+
+psd
+thumb
+sketch
+
+# Build output
+dist/
+
+# Environment files
+.env
+.env.*
+.env.local
+
+# Local overrides
+*.local
+
+# Vite
+.vite/
+
+# Test coverage
+coverage/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# End of https://www.toptal.com/developers/gitignore/api/react
