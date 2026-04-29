@@ -9,8 +9,6 @@ services:
     restart: unless-stopped
     env_file:
       - .env.dev
-    ports:
-      - "3002:3000"
     networks:
       dev-daodao-network:
         aliases:
