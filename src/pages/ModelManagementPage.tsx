@@ -71,9 +71,7 @@ export function ModelManagementPage() {
       {selected && (
         <div className="flex-1 space-y-6">
           <div className="flex items-center gap-3">
-            <h2 className="heading-sm">
-              {selected.display_name ?? selected.model_name}
-            </h2>
+            <h2 className="heading-sm">{selected.display_name ?? selected.model_name}</h2>
             <Badge variant={selected.is_active ? 'success' : 'default'}>
               {selected.is_active ? 'active' : 'inactive'}
             </Badge>
