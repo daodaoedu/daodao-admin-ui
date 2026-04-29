@@ -32,7 +32,7 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-sm">
-        <h1 className="mb-6 text-center text-2xl font-bold text-foreground">DaoDao Admin</h1>
+        <h1 className="mb-6 text-center heading-lg text-foreground">DaoDao Admin</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="jwt-token" className="mb-1 block text-sm font-medium text-foreground">

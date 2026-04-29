@@ -24,7 +24,7 @@ export function QueryLogsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">AI 查詢日誌</h1>
+      <h1 className="heading-lg">AI 查詢日誌</h1>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">

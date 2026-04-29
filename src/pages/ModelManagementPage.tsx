@@ -22,7 +22,7 @@ export function ModelManagementPage() {
     <div className="flex gap-6 h-full">
       {/* ── 左側列表 ── */}
       <div className="w-80 shrink-0 space-y-2">
-        <h1 className="text-2xl font-bold">LLM Models</h1>
+        <h1 className="heading-lg">LLM Models</h1>
         <p className="text-xs text-muted-foreground">
           模型由後端設定自動匯入，無法在此新增或刪除。
         </p>
@@ -71,7 +71,7 @@ export function ModelManagementPage() {
       {selected && (
         <div className="flex-1 space-y-6">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">
+            <h2 className="heading-sm">
               {selected.display_name ?? selected.model_name}
             </h2>
             <Badge variant={selected.is_active ? 'success' : 'default'}>

@@ -40,7 +40,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1 className="heading-lg">Dashboard</h1>
       <p className="text-sm text-muted-foreground">
         {dateFrom} ~ {dateTo}
       </p>
@@ -58,7 +58,7 @@ export function DashboardPage() {
 
       {/* By backend */}
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 font-semibold">各 Backend 費用</h2>
+        <h2 className="mb-4 heading-sm">各 Backend 費用</h2>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={data.by_backend}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -72,7 +72,7 @@ export function DashboardPage() {
 
       {/* Daily trend */}
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 font-semibold">每日查詢趨勢</h2>
+        <h2 className="mb-4 heading-sm">每日查詢趨勢</h2>
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={data.daily_series}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />

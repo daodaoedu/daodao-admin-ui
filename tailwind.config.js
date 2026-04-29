@@ -1,3 +1,5 @@
+import plugin from 'tailwindcss/plugin'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class'],
@@ -88,5 +90,24 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(function ({ addComponents, addUtilities }) {
+      addComponents({
+        '.heading-xl': { fontSize: '2.25rem', fontWeight: '700', lineHeight: '140%' },
+        '.heading-lg': { fontSize: '1.75rem', fontWeight: '700', lineHeight: '140%' },
+        '.heading-md': { fontSize: '1.375rem', fontWeight: '700', lineHeight: '140%' },
+        '.heading-sm': { fontSize: '1.125rem', fontWeight: '700', lineHeight: '140%' },
+        '.body-lg': { fontSize: '1.125rem', fontWeight: '400', lineHeight: '140%' },
+        '.body-md': { fontSize: '1rem', fontWeight: '400', lineHeight: '140%' },
+        '.body-sm': { fontSize: '0.875rem', fontWeight: '400', lineHeight: '140%' },
+      })
+      addUtilities({
+        '.scrollbar-hide': {
+          scrollbarWidth: 'none',
+          '-ms-overflow-style': 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        },
+      })
+    }),
+  ],
 }
