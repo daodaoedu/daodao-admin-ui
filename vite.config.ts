@@ -23,6 +23,7 @@ export default defineConfig({
   preview: {
     port: 3000,
     host: '0.0.0.0',
+    allowedHosts: ['admin.daodao.so', 'admin-dev.daodao.so'],
     proxy: {
       '/api': {
         target: process.env.BACKEND_URL ?? 'http://localhost:8002',
