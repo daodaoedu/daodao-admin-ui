@@ -125,11 +125,7 @@ export function QueryLogsPage() {
                         : `${log.latency_ms}ms`
                       : '-'}
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs">
-                    {(log as Record<string, unknown>).finish_reason
-                      ? String((log as Record<string, unknown>).finish_reason)
-                      : '-'}
-                  </td>
+                  <td className="px-4 py-2 font-mono text-xs">{log.finish_reason ?? '-'}</td>
                   <td className="px-4 py-2">
                     <Badge variant={log.status === 'success' ? 'success' : 'error'}>
                       {log.status}

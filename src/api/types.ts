@@ -116,6 +116,12 @@ export interface AIQueryLog {
   status: string
   error_message: string | null
   prompt_chars: number | null
+  output_chars: number | null
+  finish_reason: string | null
+  http_status_code: number | null
+  retry_count: number | null
+  is_stream: boolean | null
+  service_config_id: number | null
   created_at: string
   usage_detail?: Record<string, unknown>
 }
