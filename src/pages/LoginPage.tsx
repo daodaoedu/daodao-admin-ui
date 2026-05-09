@@ -1,8 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/input'
+
+function getCookieValue(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
+}
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -10,6 +15,21 @@ export function LoginPage() {
   const [token, setToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const cookieToken = getCookieValue('auth_token')
+    if (!cookieToken) return
+    setLoading(true)
+    login(cookieToken)
+      .then((ok) => {
+        if (ok) {
+          navigate('/')
+        } else {
+          setLoading(false)
+        }
+      })
+      .catch(() => setLoading(false))
+  }, [login, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
