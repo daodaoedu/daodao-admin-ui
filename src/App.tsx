@@ -8,7 +8,9 @@ import { LoginPage } from '@/pages/LoginPage'
 import { ModelManagementPage } from '@/pages/ModelManagementPage'
 import { PlaygroundPage } from '@/pages/PlaygroundPage'
 import { QueryLogsPage } from '@/pages/QueryLogsPage'
+import { RolesPermissionsPage } from '@/pages/RolesPermissionsPage'
 import { SystemPromptsPage } from '@/pages/SystemPromptsPage'
+import { UserManagementPage } from '@/pages/UserManagementPage'
 import { UserQuotasPage } from '@/pages/UserQuotasPage'
 
 export function App() {
@@ -82,6 +84,22 @@ export function App() {
           element={
             <AppShell>
               <PlaygroundPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/roles-permissions"
+          element={
+            <AppShell>
+              <RolesPermissionsPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/user-management"
+          element={
+            <AppShell>
+              <UserManagementPage />
             </AppShell>
           }
         />

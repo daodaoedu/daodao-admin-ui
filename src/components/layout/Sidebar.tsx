@@ -6,6 +6,8 @@ import {
   LogOut,
   MessageSquare,
   Settings,
+  Shield,
+  UserCog,
   Users,
 } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
@@ -19,6 +21,8 @@ const navItems = [
   { to: '/models', label: '模型管理', icon: Cpu },
   { to: '/user-quotas', label: 'Token 配額', icon: Users },
   { to: '/playground', label: 'Playground', icon: MessageSquare },
+  { to: '/roles-permissions', label: '角色權限', icon: Shield },
+  { to: '/user-management', label: '用戶管理', icon: UserCog },
 ]
 
 export function Sidebar() {

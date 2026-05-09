@@ -1,0 +1,5 @@
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"pre-commit-check"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"format-commit"}
+{"t":0,"agent":"a77af43","agent_type":"general-purpose","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a77af43","agent_type":"general-purpose","event":"agent_stop","success":true,"duration_ms":193581}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"pre-commit-check"}

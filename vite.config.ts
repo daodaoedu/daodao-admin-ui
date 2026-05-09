@@ -13,6 +13,11 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '/daodao-server': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/daodao-server/, ''),
+      },
       '/api': {
         target: 'http://localhost:8002',
         changeOrigin: true,
@@ -25,6 +30,11 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: ['admin.daodao.so', 'admin-dev.daodao.so'],
     proxy: {
+      '/daodao-server': {
+        target: process.env.SERVER_BACKEND_URL ?? 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/daodao-server/, ''),
+      },
       '/api': {
         target: process.env.BACKEND_URL ?? 'http://localhost:8002',
         changeOrigin: true,

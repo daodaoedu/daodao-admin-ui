@@ -16,18 +16,20 @@ function attachInterceptors(client: ReturnType<typeof axios.create>) {
     (err) => {
       if (err.response?.status === 401 || err.response?.status === 403) {
         localStorage.removeItem(TOKEN_KEY)
-        window.location.href = `${import.meta.env.BASE_URL}login`
+        if (!window.location.pathname.endsWith('/login')) {
+          window.location.href = `${import.meta.env.BASE_URL}login`
+        }
       }
       return Promise.reject(err)
     },
   )
 }
 
-const apiClient = axios.create({ baseURL: '/', timeout: 30000 })
+const apiClient = axios.create({ baseURL: '/', timeout: 30000, withCredentials: true })
 attachInterceptors(apiClient)
 
 // Playground / LLM calls can take up to 2 minutes
-export const slowApiClient = axios.create({ baseURL: '/', timeout: 120000 })
+export const slowApiClient = axios.create({ baseURL: '/', timeout: 120000, withCredentials: true })
 attachInterceptors(slowApiClient)
 
 export default apiClient

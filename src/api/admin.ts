@@ -1,6 +1,7 @@
 import apiClient, { slowApiClient } from './client'
 import type {
   AdminPingData,
+  AdminUserListItem,
   AIQueryLog,
   AIServiceConfig,
   AIServiceConfigCreate,
@@ -13,15 +14,19 @@ import type {
   LLMModelCreate,
   ModelSyncResult,
   OffsetPagination,
+  Permission,
   PlaygroundChatRequest,
   PlaygroundChatResponse,
   PlaygroundInsightRequest,
   PlaygroundInsightResponse,
   QueryLogFilters,
+  Role,
+  RoleWithPermissions,
   SystemPrompt,
   SystemPromptCreate,
   SystemPromptUpdate,
   UserQuota,
+  UserRoleInfo,
   UserWithQuota,
 } from './types'
 
@@ -149,3 +154,64 @@ export const deleteAIServiceConfig = (id: number) =>
 
 export const activateAIServiceConfig = (id: number) =>
   apiClient.post<ApiResponse<AIServiceConfig>>(`/api/v1/admin/ai-service-configs/${id}/activate`)
+
+// ── Roles (daodao-server) ─────────────────────────────────
+export const listRoles = () =>
+  apiClient.get<ApiResponse<Role[]>>('/daodao-server/api/v1/admin/roles')
+
+export const getRoleWithPermissions = (id: number) =>
+  apiClient.get<ApiResponse<RoleWithPermissions>>(`/daodao-server/api/v1/admin/roles/${id}`)
+
+export const createRole = (data: { name: string; description?: string }) =>
+  apiClient.post<ApiResponse<Role>>('/daodao-server/api/v1/admin/roles', data)
+
+export const updateRole = (id: number, data: { name?: string; description?: string }) =>
+  apiClient.put<ApiResponse<Role>>(`/daodao-server/api/v1/admin/roles/${id}`, data)
+
+export const deleteRole = (id: number) =>
+  apiClient.delete<ApiResponse<{ deleted: boolean }>>(`/daodao-server/api/v1/admin/roles/${id}`)
+
+export const addRolePermission = (roleId: number, permissionId: number) =>
+  apiClient.post<ApiResponse<{ success: boolean }>>(
+    `/daodao-server/api/v1/admin/roles/${roleId}/permissions`,
+    { permissionId },
+  )
+
+export const removeRolePermission = (roleId: number, permissionId: number) =>
+  apiClient.delete<ApiResponse<{ success: boolean }>>(
+    `/daodao-server/api/v1/admin/roles/${roleId}/permissions/${permissionId}`,
+  )
+
+// ── Permissions (daodao-server) ──────────────────────────
+export const listPermissions = () =>
+  apiClient.get<ApiResponse<Permission[]>>('/daodao-server/api/v1/admin/permissions')
+
+export const createPermission = (data: { name: string; description?: string }) =>
+  apiClient.post<ApiResponse<Permission>>('/daodao-server/api/v1/admin/permissions', data)
+
+export const updatePermission = (id: number, data: { name?: string; description?: string }) =>
+  apiClient.put<ApiResponse<Permission>>(`/daodao-server/api/v1/admin/permissions/${id}`, data)
+
+export const deletePermission = (id: number) =>
+  apiClient.delete<ApiResponse<{ deleted: boolean }>>(
+    `/daodao-server/api/v1/admin/permissions/${id}`,
+  )
+
+// ── User Management (daodao-server) ──────────────────────
+export const listAdminUsers = (params?: { search?: string; page?: number; limit?: number }) =>
+  apiClient.get<ApiResponse<AdminUserListItem[]>>('/daodao-server/api/v1/admin/users', { params })
+
+export const getUserRole = (userId: number) =>
+  apiClient.get<ApiResponse<UserRoleInfo>>(`/daodao-server/api/v1/admin/users/${userId}/role`)
+
+export const updateUserRole = (userId: number, roleId: number) =>
+  apiClient.put<ApiResponse<{ success: boolean }>>(
+    `/daodao-server/api/v1/admin/users/${userId}/role`,
+    { roleId },
+  )
+
+export const updateUserStatus = (userId: number, isActive: boolean) =>
+  apiClient.put<ApiResponse<{ success: boolean }>>(
+    `/daodao-server/api/v1/admin/users/${userId}/status`,
+    { isActive },
+  )

@@ -287,3 +287,44 @@ export interface AIServiceConfigUpdate {
   is_active?: boolean
   notes?: string | null
 }
+
+// ── Roles & Permissions (daodao-server) ───────────────────
+export interface Role {
+  id: number
+  name: string
+  description: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface Permission {
+  id: number
+  name: string
+  description: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface RoleWithPermissions extends Role {
+  permissions: Permission[]
+}
+
+export interface UserRoleInfo {
+  userId: number
+  role: Role | null
+}
+
+export interface AdminUserListItem {
+  id: string
+  internalId: number
+  name: string | null
+  email: string | null
+  photoURL: string | null
+  emailVerified: boolean
+  emailVerifiedAt: string | null
+  isActive: boolean
+  roles: Array<{ id: number; name: string }>
+  permissions: string[]
+  createdAt: string
+  lastLoginAt: string | null
+}
