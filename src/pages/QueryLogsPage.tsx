@@ -76,6 +76,7 @@ export function QueryLogsPage() {
                 'Tokens',
                 'Cost (USD)',
                 'Latency',
+                'Finish',
                 'Status',
                 '時間',
               ].map((h) => (
@@ -88,13 +89,13 @@ export function QueryLogsPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={10} className="px-4 py-6 text-center text-muted-foreground">
                   載入中...
                 </td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={10} className="px-4 py-6 text-center text-muted-foreground">
                   無資料
                 </td>
               </tr>
@@ -117,7 +118,18 @@ export function QueryLogsPage() {
                   <td className="px-4 py-2">
                     {log.cost_usd ? `$${Number(log.cost_usd).toFixed(5)}` : '-'}
                   </td>
-                  <td className="px-4 py-2">{log.latency_ms ? `${log.latency_ms}ms` : '-'}</td>
+                  <td className="px-4 py-2">
+                    {log.latency_ms
+                      ? log.latency_ms >= 1000
+                        ? `${(log.latency_ms / 1000).toFixed(1)}s`
+                        : `${log.latency_ms}ms`
+                      : '-'}
+                  </td>
+                  <td className="px-4 py-2 font-mono text-xs">
+                    {(log as Record<string, unknown>).finish_reason
+                      ? String((log as Record<string, unknown>).finish_reason)
+                      : '-'}
+                  </td>
                   <td className="px-4 py-2">
                     <Badge variant={log.status === 'success' ? 'success' : 'error'}>
                       {log.status}

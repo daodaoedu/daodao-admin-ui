@@ -1,14 +1,22 @@
-import apiClient from './client'
+import apiClient, { slowApiClient } from './client'
 import type {
   AdminPingData,
   AIQueryLog,
+  AIServiceConfig,
+  AIServiceConfigCreate,
+  AIServiceConfigUpdate,
   ApiResponse,
   DashboardStats,
+  InsightPractice,
+  InsightUser,
   LLMModel,
   LLMModelCreate,
+  ModelSyncResult,
   OffsetPagination,
   PlaygroundChatRequest,
   PlaygroundChatResponse,
+  PlaygroundInsightRequest,
+  PlaygroundInsightResponse,
   QueryLogFilters,
   SystemPrompt,
   SystemPromptCreate,
@@ -63,6 +71,9 @@ export const updateLLMModel = (id: number, data: Partial<LLMModelCreate>) =>
 export const deleteLLMModel = (id: number) =>
   apiClient.delete<ApiResponse<{ deleted: boolean; id: number }>>(`/api/v1/admin/llm-models/${id}`)
 
+export const syncProviderModels = (provider: string) =>
+  apiClient.post<ApiResponse<ModelSyncResult>>(`/api/v1/admin/llm-models/sync/${provider}`)
+
 // ── AI Query Logs ─────────────────────────────────────────
 export const listQueryLogs = (params?: QueryLogFilters) =>
   apiClient.get<ApiResponse<AIQueryLog[]> & { pagination: OffsetPagination }>(
@@ -88,7 +99,7 @@ export const getUserQuota = (userId: number) =>
 
 // ── Playground ────────────────────────────────────────────
 export const playgroundChat = (data: PlaygroundChatRequest) =>
-  apiClient.post<ApiResponse<PlaygroundChatResponse>>('/api/v1/admin/playground/chat', data)
+  slowApiClient.post<ApiResponse<PlaygroundChatResponse>>('/api/v1/admin/playground/chat', data)
 
 // ── User Quotas ───────────────────────────────────────────
 export const upsertUserQuota = (
@@ -99,3 +110,42 @@ export const upsertUserQuota = (
     quota_month?: number
   },
 ) => apiClient.put<ApiResponse<UserQuota>>(`/api/v1/admin/users/${userId}/quota`, data)
+
+// ── Insight Playground ────────────────────────────────────
+export const listInsightUsers = () =>
+  apiClient.get<ApiResponse<InsightUser[]>>('/api/v1/admin/playground/insight/users')
+
+export const listInsightPractices = (userId: number) =>
+  apiClient.get<ApiResponse<InsightPractice[]>>('/api/v1/admin/playground/insight/practices', {
+    params: { user_id: userId },
+  })
+
+export const playgroundInsight = (body: PlaygroundInsightRequest) =>
+  slowApiClient.post<ApiResponse<PlaygroundInsightResponse>>(
+    '/api/v1/admin/playground/insight',
+    body,
+  )
+
+export const saveInsightResult = (data: { practice_id: number; insight: string }) =>
+  apiClient.post<ApiResponse<{ saved: boolean; practice_id: number }>>(
+    '/api/v1/admin/playground/insight/save',
+    data,
+  )
+
+// ── AI Service Configs ────────────────────────────────
+export const listAIServiceConfigs = (params?: { service?: string }) =>
+  apiClient.get<ApiResponse<AIServiceConfig[]>>('/api/v1/admin/ai-service-configs', { params })
+
+export const createAIServiceConfig = (data: AIServiceConfigCreate) =>
+  apiClient.post<ApiResponse<AIServiceConfig>>('/api/v1/admin/ai-service-configs', data)
+
+export const updateAIServiceConfig = (id: number, data: AIServiceConfigUpdate) =>
+  apiClient.put<ApiResponse<AIServiceConfig>>(`/api/v1/admin/ai-service-configs/${id}`, data)
+
+export const deleteAIServiceConfig = (id: number) =>
+  apiClient.delete<ApiResponse<{ deleted: boolean; id: number }>>(
+    `/api/v1/admin/ai-service-configs/${id}`,
+  )
+
+export const activateAIServiceConfig = (id: number) =>
+  apiClient.post<ApiResponse<AIServiceConfig>>(`/api/v1/admin/ai-service-configs/${id}/activate`)

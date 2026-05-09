@@ -1,4 +1,13 @@
-import { BarChart3, Cpu, FileText, List, LogOut, MessageSquare, Users } from 'lucide-react'
+import {
+  BarChart3,
+  Cpu,
+  FileText,
+  List,
+  LogOut,
+  MessageSquare,
+  Settings,
+  Users,
+} from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 
@@ -6,6 +15,7 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/query-logs', label: 'AI 查詢日誌', icon: List },
   { to: '/system-prompts', label: 'System Prompts', icon: FileText },
+  { to: '/ai-configs', label: 'AI 服務設定', icon: Settings },
   { to: '/models', label: '模型管理', icon: Cpu },
   { to: '/user-quotas', label: 'Token 配額', icon: Users },
   { to: '/playground', label: 'Playground', icon: MessageSquare },

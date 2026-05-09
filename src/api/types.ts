@@ -125,6 +125,10 @@ export interface PlaygroundChatRequest {
   model_id: number
   system_prompt_id?: number | null
   message: string
+  max_tokens?: number | null
+  temperature?: number | null
+  top_p?: number | null
+  top_k?: number | null
 }
 
 export interface PlaygroundChatResponse {
@@ -180,4 +184,100 @@ export interface UserWithQuota {
   role_id: number | null
   current_month_tokens_used: number
   quota: UserQuota | null
+}
+
+// ── Insight Playground ────────────────────────────────────
+export interface InsightUser {
+  id: number
+  nickname: string | null
+}
+
+export interface InsightPractice {
+  id: number
+  title: string
+  has_insight: boolean
+}
+
+export interface PlaygroundInsightRequest {
+  practice_id: number
+  model_id: number
+  save?: boolean
+  system_prompt_override?: string | null
+  include_user_profile?: boolean
+  include_practice_info?: boolean
+  include_checkin_stats?: boolean
+  include_notable_notes?: boolean
+  max_tokens?: number | null
+  temperature?: number | null
+  top_p?: number | null
+  top_k?: number | null
+}
+
+export interface InsightCheckinStats {
+  total: number
+  max_streak: number
+  top_weekdays: string[]
+  mood_summary: string
+}
+
+export interface PlaygroundInsightResponse {
+  insight: string
+  thinking?: string | null
+  prompt_used: string
+  checkin_stats: InsightCheckinStats
+  user_profile_used: Record<string, unknown>
+  model_used: string
+  input_tokens: number
+  output_tokens: number
+  cost_usd: number
+  latency_ms: number
+  saved: boolean
+}
+
+export interface ModelSyncResult {
+  provider: string
+  added: number
+  existing: number
+}
+
+// ── AI Service Configs ────────────────────────────────
+export interface AIServiceConfig {
+  id: number
+  service: string
+  name: string
+  model_id: number
+  system_prompt_id: number | null
+  max_tokens: number | null
+  temperature: string | null // Decimal from backend comes as string
+  top_p: string | null
+  top_k: number | null
+  is_active: boolean
+  notes: string | null
+  created_at: string
+  updated_at: string | null
+}
+
+export interface AIServiceConfigCreate {
+  service: string
+  name: string
+  model_id: number
+  system_prompt_id?: number | null
+  max_tokens?: number | null
+  temperature?: number | null
+  top_p?: number | null
+  top_k?: number | null
+  is_active?: boolean
+  notes?: string | null
+}
+
+export interface AIServiceConfigUpdate {
+  name?: string
+  model_id?: number
+  system_prompt_id?: number | null
+  max_tokens?: number | null
+  temperature?: number | null
+  top_p?: number | null
+  top_k?: number | null
+  is_active?: boolean
+  notes?: string | null
 }
