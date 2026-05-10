@@ -265,6 +265,7 @@ function InsightTab() {
         practice_id: selectedPracticeId,
         model_id: selectedModelId,
         save: false,
+        system_prompt_id: selectedPromptId ?? undefined,
         system_prompt_override: systemPrompt !== defaultSystemPrompt ? systemPrompt : undefined,
         max_tokens: insightMaxTokens ?? undefined,
         temperature: insightTemperature ?? undefined,
