@@ -208,6 +208,7 @@ export interface PlaygroundInsightRequest {
   practice_id: number
   model_id: number
   save?: boolean
+  system_prompt_id?: number | null
   system_prompt_override?: string | null
   include_user_profile?: boolean
   include_practice_info?: boolean
