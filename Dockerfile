@@ -17,6 +17,9 @@ RUN pnpm build
 # ====== Stage 2: Serve with vite preview ======
 FROM node:20-alpine AS runtime
 
+# wget 供 Docker healthcheck 使用
+RUN apk add --no-cache wget
+
 WORKDIR /app
 
 # 複製建置產物

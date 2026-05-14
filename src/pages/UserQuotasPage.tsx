@@ -53,7 +53,7 @@ export function UserQuotasPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">User Token Quotas</h1>
+      <h1 className="heading-lg">User Token Quotas</h1>
 
       <div className="flex gap-2">
         <Input

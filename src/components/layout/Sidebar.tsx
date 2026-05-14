@@ -1,4 +1,15 @@
-import { BarChart3, Cpu, FileText, List, LogOut, MessageSquare, Users } from 'lucide-react'
+import {
+  BarChart3,
+  Cpu,
+  FileText,
+  List,
+  LogOut,
+  MessageSquare,
+  Settings,
+  Shield,
+  UserCog,
+  Users,
+} from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 
@@ -6,9 +17,12 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/query-logs', label: 'AI 查詢日誌', icon: List },
   { to: '/system-prompts', label: 'System Prompts', icon: FileText },
+  { to: '/ai-configs', label: 'AI 服務設定', icon: Settings },
   { to: '/models', label: '模型管理', icon: Cpu },
   { to: '/user-quotas', label: 'Token 配額', icon: Users },
   { to: '/playground', label: 'Playground', icon: MessageSquare },
+  { to: '/roles-permissions', label: '角色權限', icon: Shield },
+  { to: '/user-management', label: '用戶管理', icon: UserCog },
 ]
 
 export function Sidebar() {
@@ -18,7 +32,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-56 flex-col border-r border-border bg-card">
       <div className="flex h-14 items-center px-4 border-b border-border">
-        <span className="font-bold text-lg text-primary">DaoDao Admin</span>
+        <span className="heading-sm text-primary">DaoDao Admin</span>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">

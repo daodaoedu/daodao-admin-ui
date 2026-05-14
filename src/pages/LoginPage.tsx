@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/input'
 
 export function LoginPage() {
   const { login } = useAuth()
-  const navigate = useNavigate()
   const [token, setToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -17,9 +15,7 @@ export function LoginPage() {
     setError('')
     try {
       const ok = await login(token.trim())
-      if (ok) {
-        navigate('/')
-      } else {
+      if (!ok) {
         setError('驗證失敗：請確認 JWT token 有效且具有 admin 權限')
       }
     } catch {
@@ -32,7 +28,7 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-sm">
-        <h1 className="mb-6 text-center text-2xl font-bold text-foreground">DaoDao Admin</h1>
+        <h1 className="mb-6 text-center heading-lg text-foreground">DaoDao Admin</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="jwt-token" className="mb-1 block text-sm font-medium text-foreground">

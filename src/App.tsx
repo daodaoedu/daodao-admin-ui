@@ -2,12 +2,15 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { ProtectedRoute } from '@/auth/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
+import { AIServiceConfigsPage } from '@/pages/AIServiceConfigsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { ModelManagementPage } from '@/pages/ModelManagementPage'
 import { PlaygroundPage } from '@/pages/PlaygroundPage'
 import { QueryLogsPage } from '@/pages/QueryLogsPage'
+import { RolesPermissionsPage } from '@/pages/RolesPermissionsPage'
 import { SystemPromptsPage } from '@/pages/SystemPromptsPage'
+import { UserManagementPage } from '@/pages/UserManagementPage'
 import { UserQuotasPage } from '@/pages/UserQuotasPage'
 
 export function App() {
@@ -53,6 +56,14 @@ export function App() {
           }
         />
         <Route
+          path="/ai-configs"
+          element={
+            <AppShell>
+              <AIServiceConfigsPage />
+            </AppShell>
+          }
+        />
+        <Route
           path="/models"
           element={
             <AppShell>
@@ -73,6 +84,22 @@ export function App() {
           element={
             <AppShell>
               <PlaygroundPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/roles-permissions"
+          element={
+            <AppShell>
+              <RolesPermissionsPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/user-management"
+          element={
+            <AppShell>
+              <UserManagementPage />
             </AppShell>
           }
         />

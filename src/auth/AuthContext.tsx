@@ -26,15 +26,12 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const hasToken = !!localStorage.getItem(TOKEN_KEY)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
-  const [isLoading, setIsLoading] = useState<boolean>(hasToken)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
 
-  // 頁面重整後重新取得 admin 資訊（token 仍存在但 adminInfo 為 null）
+  // 頁面載入時嘗試透過 cookie 或 localStorage token 自動驗證
   useEffect(() => {
-    if (!localStorage.getItem(TOKEN_KEY)) return
-    setIsLoading(true)
     ping()
       .then((res) => {
         const d = res.data.data

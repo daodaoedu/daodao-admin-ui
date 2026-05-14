@@ -102,6 +102,10 @@ jobs:
               cp ".env.${src_ENV}.sample" ".env.${src_ENV}"
               echo "Created .env.${src_ENV} from sample"
             fi
+            # Docker Compose 預設會讀 .env 做 compose 變數替換，確保它存在
+            if [ ! -f .env ]; then
+              touch .env
+            fi
 
             # ── 停止並移除舊容器 ───────────────────────────────────────────
             echo "=== Stopping old containers ==="

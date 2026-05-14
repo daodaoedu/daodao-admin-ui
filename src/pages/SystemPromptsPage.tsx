@@ -9,6 +9,7 @@ import {
 import type { SystemPrompt } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input, Textarea } from '@/components/ui/input'
 
 export function SystemPromptsPage() {
@@ -66,7 +67,7 @@ export function SystemPromptsPage() {
       {/* List */}
       <div className="w-72 shrink-0 space-y-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">System Prompts</h1>
+          <h1 className="heading-lg">System Prompts</h1>
           <Button type="button" size="xs" onClick={openNew} className="px-3">
             + 新增
           </Button>
@@ -119,12 +120,10 @@ export function SystemPromptsPage() {
               </div>
             ))}
             <div className="flex items-center gap-2 pt-5">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="is_active"
                 checked={form.is_active}
-                onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-                className="h-4 w-4"
+                onCheckedChange={(checked) => setForm((f) => ({ ...f, is_active: !!checked }))}
               />
               <label htmlFor="is_active" className="text-sm font-medium">
                 is_active

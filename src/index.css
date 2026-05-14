@@ -51,7 +51,7 @@
     --basic-black: oklch(0.175 0.028 203.4);
 
     /* Semantic colors */
-    --tips: oklch(0.766 0.169 60);
+    --tips: var(--logo-orange);
     --success: oklch(0.763 0.172 132.6);
     --alert: oklch(0.577 0.245 27.325);
 
@@ -108,7 +108,7 @@
   }
 
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
 
   body {
