@@ -20,7 +20,7 @@ jobs:
     uses: ./.github/workflows/ci.yml
     secrets: inherit
 
-  # ===== 設定環境 =====
+  # ===== Build & Push image 到 Docker Hub =====
   build:
     runs-on: ubuntu-latest
     needs: [continuous_integration]
@@ -28,6 +28,11 @@ jobs:
     outputs:
       image-tag: ${{ steps.meta.outputs.image-tag }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Set Environment Variables
         id: meta
         run: |
@@ -36,6 +41,26 @@ jobs:
           else
             echo "image-tag=dev" >> $GITHUB_OUTPUT
           fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/daodao-admin-ui:${{ steps.meta.outputs.image-tag }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/daodao-admin-ui:${{ steps.meta.outputs.image-tag }}-${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/daodao-admin-ui:${{ steps.meta.outputs.image-tag }}
+          cache-to: type=inline
 
   # ===== 部署到 Linode =====
   deploy:
@@ -67,9 +92,10 @@ jobs:
         env:
           LINODE_INSTANCE_IP: ${{ secrets.LINODE_INSTANCE_IP }}
           BRANCH_NAME: ${{ github.ref_name }}
-          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
           src_ENV: ${{ needs.build.outputs.image-tag }}
           COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
+          DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 root@$LINODE_INSTANCE_IP << 'ENDSSH'
             set -e
@@ -77,11 +103,13 @@ jobs:
             COMPOSE_FILE=${{ env.COMPOSE_FILE }}
             src_ENV=${{ env.src_ENV }}
             BRANCH_NAME=${{ env.BRANCH_NAME }}
+            DOCKER_HUB_USERNAME=${{ env.DOCKER_HUB_USERNAME }}
+            COMMIT_SHA=${{ env.COMMIT_SHA }}
             SERVICE_NAME="admin-ui-${src_ENV}"
 
             echo "=== Starting deployment: daodao-admin-ui (${src_ENV}) ==="
 
-            # ── 更新程式碼 ──────────────────────────────────────────────────
+            # ── 更新 compose 設定檔 ────────────────────────────────────────
             if [ -d $APP_DIR/.git ]; then
               cd $APP_DIR
               echo "Updating existing repository..."
@@ -97,7 +125,6 @@ jobs:
             fi
 
             # ── 準備環境檔 ─────────────────────────────────────────────────
-            # admin-ui 無機密，只有 BACKEND_HOST / BACKEND_PORT
             if [ ! -f .env.${src_ENV} ] && [ -f .env.${src_ENV}.sample ]; then
               cp ".env.${src_ENV}.sample" ".env.${src_ENV}"
               echo "Created .env.${src_ENV} from sample"
@@ -107,56 +134,36 @@ jobs:
               touch .env
             fi
 
-            # ── 停止並移除舊容器 ───────────────────────────────────────────
+            # ── 停止舊容器 ─────────────────────────────────────────────────
             echo "=== Stopping old containers ==="
-            docker compose -f $COMPOSE_FILE down --remove-orphans || true
-
-            # 移除舊 image 強制重新建置
-            if docker image inspect daodao-admin-ui:${src_ENV} > /dev/null 2>&1; then
-              docker rmi daodao-admin-ui:${src_ENV}
-              echo "✅ Removed old daodao-admin-ui:${src_ENV} image"
-            fi
+            DOCKER_HUB_USERNAME=${DOCKER_HUB_USERNAME} COMMIT_SHA=${COMMIT_SHA} \
+              docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE down --remove-orphans || true
 
             sleep 2
 
-            # ── 建置並啟動新容器 ───────────────────────────────────────────
-            echo "=== Building and starting new container ==="
-            if docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE up -d --build; then
-              echo "✅ Container started, verifying health..."
+            # ── 拉取新 image ───────────────────────────────────────────────
+            echo "=== Pulling new image from Docker Hub ==="
+            if DOCKER_HUB_USERNAME=${DOCKER_HUB_USERNAME} COMMIT_SHA=${COMMIT_SHA} \
+               docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE pull $SERVICE_NAME; then
+              echo "✅ Image pulled successfully"
+            else
+              echo "❌ Failed to pull image"
+              exit 1
+            fi
+
+            # ── 啟動新容器（等待 healthcheck 通過）────────────────────────
+            echo "=== Starting new container ==="
+            if DOCKER_HUB_USERNAME=${DOCKER_HUB_USERNAME} COMMIT_SHA=${COMMIT_SHA} \
+               docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE up -d --wait --wait-timeout 120 $SERVICE_NAME; then
+              echo "✅ $SERVICE_NAME is healthy"
             else
               echo "❌ Failed to start container"
               docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE logs --tail=50 $SERVICE_NAME || true
               exit 1
             fi
 
-            # ── Health check ───────────────────────────────────────────────
-            MAX_ATTEMPTS=12
-            SLEEP_SECONDS=5
-
-            for i in $(seq 1 $MAX_ATTEMPTS); do
-              echo "Waiting ${SLEEP_SECONDS}s before attempt $i/$MAX_ATTEMPTS..."
-              sleep $SLEEP_SECONDS
-
-              CONTAINER_ID=$(docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE ps -q $SERVICE_NAME 2>/dev/null) || true
-
-              if [ -z "$CONTAINER_ID" ]; then
-                health_status="not_found"
-              else
-                health_status=$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_ID 2>/dev/null) || health_status="error"
-              fi
-
-              if [ "$health_status" = "healthy" ]; then
-                echo "✅ $SERVICE_NAME is healthy"
-                break
-              else
-                echo "⚠ Attempt $i/$MAX_ATTEMPTS: status=${health_status}"
-                if [ $i -eq $MAX_ATTEMPTS ]; then
-                  echo "❌ Health check failed after $MAX_ATTEMPTS attempts"
-                  docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE logs --tail=50 $SERVICE_NAME || true
-                  exit 1
-                fi
-              fi
-            done
+            # ── 清理 24h 前的舊 image ──────────────────────────────────────
+            docker image prune -f --filter "until=24h" || true
 
             # ── 最終狀態報告 ───────────────────────────────────────────────
             echo "=== Docker Containers ==="
