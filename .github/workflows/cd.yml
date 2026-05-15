@@ -64,15 +64,17 @@ jobs:
 
   # ===== 部署到 Linode =====
   deploy:
-    env:
-      APP_DIR: /root/daodao-admin-ui
-
     runs-on: ubuntu-latest
     needs: [build]
     if: ${{ always() && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
     environment: ${{ needs.build.outputs.image-tag == 'prod' && 'production' || 'development' }}
     timeout-minutes: 20
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
@@ -80,67 +82,71 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.LINODE_INSTANCE_IP }} >> ~/.ssh/known_hosts
 
-      - name: Set COMPOSE_FILE
+      - name: Set compose file name
+        id: compose
         run: |
-          if [ "${GITHUB_REF_NAME}" = "main" ]; then
-            echo "COMPOSE_FILE=docker-compose.prod.yml" >> $GITHUB_ENV
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "file=docker-compose.prod.yml" >> $GITHUB_OUTPUT
           else
-            echo "COMPOSE_FILE=docker-compose.dev.yml" >> $GITHUB_ENV
+            echo "file=docker-compose.dev.yml" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Copy compose file to server
+        env:
+          LINODE_INSTANCE_IP: ${{ secrets.LINODE_INSTANCE_IP }}
+          src_ENV: ${{ needs.build.outputs.image-tag }}
+        run: |
+          scp ${{ steps.compose.outputs.file }} \
+            root@$LINODE_INSTANCE_IP:/tmp/daodao-admin-ui-compose-${{ env.src_ENV }}.yml
+
+      - name: Prepare env file on server
+        env:
+          LINODE_INSTANCE_IP: ${{ secrets.LINODE_INSTANCE_IP }}
+          src_ENV: ${{ needs.build.outputs.image-tag }}
+        run: |
+          ssh root@$LINODE_INSTANCE_IP "mkdir -p /root/daodao-admin-ui"
+          # 若 .env 尚未存在，從 sample 建立
+          if [ -f ".env.${{ env.src_ENV }}.sample" ]; then
+            ssh root@$LINODE_INSTANCE_IP \
+              "[ -f /root/daodao-admin-ui/.env.${{ env.src_ENV }} ] || \
+               echo 'Creating .env from sample...'"
+            scp ".env.${{ env.src_ENV }}.sample" \
+              root@$LINODE_INSTANCE_IP:/tmp/daodao-admin-ui-env-${{ env.src_ENV }}.sample
+            ssh root@$LINODE_INSTANCE_IP \
+              "[ -f /root/daodao-admin-ui/.env.${{ env.src_ENV }} ] || \
+               cp /tmp/daodao-admin-ui-env-${{ env.src_ENV }}.sample \
+                  /root/daodao-admin-ui/.env.${{ env.src_ENV }}"
           fi
 
       - name: Deploy to Linode
         env:
           LINODE_INSTANCE_IP: ${{ secrets.LINODE_INSTANCE_IP }}
-          BRANCH_NAME: ${{ github.ref_name }}
           src_ENV: ${{ needs.build.outputs.image-tag }}
-          COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 root@$LINODE_INSTANCE_IP << 'ENDSSH'
             set -e
-            APP_DIR=${{ env.APP_DIR }}
-            COMPOSE_FILE=${{ env.COMPOSE_FILE }}
             src_ENV=${{ env.src_ENV }}
-            BRANCH_NAME=${{ env.BRANCH_NAME }}
+            COMPOSE_FILE=/tmp/daodao-admin-ui-compose-${src_ENV}.yml
+            ENV_FILE=/root/daodao-admin-ui/.env.${src_ENV}
             DOCKER_HUB_USERNAME=${{ env.DOCKER_HUB_USERNAME }}
             COMMIT_SHA=${{ env.COMMIT_SHA }}
             SERVICE_NAME="admin-ui-${src_ENV}"
 
             echo "=== Starting deployment: daodao-admin-ui (${src_ENV}) ==="
 
-            # ── 更新 compose 設定檔 ────────────────────────────────────────
-            if [ -d $APP_DIR/.git ]; then
-              cd $APP_DIR
-              echo "Updating existing repository..."
-              git fetch --depth 1 origin $BRANCH_NAME
-              git reset --hard FETCH_HEAD
-              git clean -fd
-            else
-              echo "Cloning repository..."
-              git clone --depth 1 --branch $BRANCH_NAME \
-                https://${{ secrets.GIT_HUB_USERNAME }}:${{ secrets.GIT_HUB_ACCESS_TOKEN }}@github.com/${{ github.repository }}.git \
-                $APP_DIR
-              cd $APP_DIR
-            fi
-
-            # ── 準備環境檔 ─────────────────────────────────────────────────
-            if [ ! -f .env.${src_ENV} ] && [ -f .env.${src_ENV}.sample ]; then
-              cp ".env.${src_ENV}.sample" ".env.${src_ENV}"
-              echo "Created .env.${src_ENV} from sample"
-            fi
-
             # ── 停止舊容器 ─────────────────────────────────────────────────
             echo "=== Stopping old containers ==="
             DOCKER_HUB_USERNAME=${DOCKER_HUB_USERNAME} COMMIT_SHA=${COMMIT_SHA} \
-              docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE down --remove-orphans || true
+              docker compose --env-file ${ENV_FILE} -f ${COMPOSE_FILE} down --remove-orphans || true
 
             sleep 2
 
             # ── 拉取新 image ───────────────────────────────────────────────
             echo "=== Pulling new image from Docker Hub ==="
             if DOCKER_HUB_USERNAME=${DOCKER_HUB_USERNAME} COMMIT_SHA=${COMMIT_SHA} \
-               docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE pull $SERVICE_NAME; then
+               docker compose --env-file ${ENV_FILE} -f ${COMPOSE_FILE} pull ${SERVICE_NAME}; then
               echo "✅ Image pulled successfully"
             else
               echo "❌ Failed to pull image"
@@ -150,18 +156,17 @@ jobs:
             # ── 啟動新容器（等待 healthcheck 通過）────────────────────────
             echo "=== Starting new container ==="
             if DOCKER_HUB_USERNAME=${DOCKER_HUB_USERNAME} COMMIT_SHA=${COMMIT_SHA} \
-               docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE up -d --wait --wait-timeout 120 $SERVICE_NAME; then
-              echo "✅ $SERVICE_NAME is healthy"
+               docker compose --env-file ${ENV_FILE} -f ${COMPOSE_FILE} up -d --wait --wait-timeout 120 ${SERVICE_NAME}; then
+              echo "✅ ${SERVICE_NAME} is healthy"
             else
               echo "❌ Failed to start container"
-              docker compose --env-file .env.${src_ENV} -f $COMPOSE_FILE logs --tail=50 $SERVICE_NAME || true
+              docker compose --env-file ${ENV_FILE} -f ${COMPOSE_FILE} logs --tail=50 ${SERVICE_NAME} || true
               exit 1
             fi
 
-            # ── 清理 24h 前的舊 image ──────────────────────────────────────
+            # ── 清理舊 image ───────────────────────────────────────────────
             docker image prune -f --filter "until=24h" || true
 
-            # ── 最終狀態報告 ───────────────────────────────────────────────
             echo "=== Docker Containers ==="
             docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
 
