@@ -132,14 +132,14 @@ jobs:
             # ── 停止舊容器 ─────────────────────────────────────────────────
             echo "=== Stopping old containers ==="
             DOCKER_HUB_USERNAME=${DOCKER_HUB_USERNAME} COMMIT_SHA=${COMMIT_SHA} \
-              docker compose -f ${COMPOSE_FILE} down --remove-orphans || true
+              docker compose -p daodao-admin-ui-${src_ENV} -f ${COMPOSE_FILE} down --remove-orphans || true
 
             sleep 2
 
             # ── 拉取新 image ───────────────────────────────────────────────
             echo "=== Pulling new image from Docker Hub ==="
             if DOCKER_HUB_USERNAME=${DOCKER_HUB_USERNAME} COMMIT_SHA=${COMMIT_SHA} \
-               docker compose -f ${COMPOSE_FILE} pull ${SERVICE_NAME}; then
+               docker compose -p daodao-admin-ui-${src_ENV} -f ${COMPOSE_FILE} pull ${SERVICE_NAME}; then
               echo "✅ Image pulled successfully"
             else
               echo "❌ Failed to pull image"
@@ -149,11 +149,11 @@ jobs:
             # ── 啟動新容器（等待 healthcheck 通過）────────────────────────
             echo "=== Starting new container ==="
             if DOCKER_HUB_USERNAME=${DOCKER_HUB_USERNAME} COMMIT_SHA=${COMMIT_SHA} \
-               docker compose -f ${COMPOSE_FILE} up -d --wait --wait-timeout 120 ${SERVICE_NAME}; then
+               docker compose -p daodao-admin-ui-${src_ENV} -f ${COMPOSE_FILE} up -d --wait --wait-timeout 120 ${SERVICE_NAME}; then
               echo "✅ ${SERVICE_NAME} is healthy"
             else
               echo "❌ Failed to start container"
-              docker compose -f ${COMPOSE_FILE} logs --tail=50 ${SERVICE_NAME} || true
+              docker compose -p daodao-admin-ui-${src_ENV} -f ${COMPOSE_FILE} logs --tail=50 ${SERVICE_NAME} || true
               exit 1
             fi
 
