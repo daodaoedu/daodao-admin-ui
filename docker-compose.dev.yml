@@ -4,8 +4,7 @@ networks:
 
 services:
   admin-ui-dev:
-    build: .
-    image: daodao-admin-ui:dev
+    image: ${DOCKER_HUB_USERNAME}/daodao-admin-ui:dev-${COMMIT_SHA}
     restart: unless-stopped
     env_file:
       - .env.dev
