@@ -8,10 +8,13 @@ import { LoginPage } from '@/pages/LoginPage'
 import { ModelManagementPage } from '@/pages/ModelManagementPage'
 import { PlaygroundPage } from '@/pages/PlaygroundPage'
 import { QueryLogsPage } from '@/pages/QueryLogsPage'
+import { RoadmapItemsPage } from '@/pages/RoadmapItemsPage'
+import { RoadmapReportsPage } from '@/pages/RoadmapReportsPage'
 import { RolesPermissionsPage } from '@/pages/RolesPermissionsPage'
 import { SystemPromptsPage } from '@/pages/SystemPromptsPage'
 import { UserManagementPage } from '@/pages/UserManagementPage'
 import { UserQuotasPage } from '@/pages/UserQuotasPage'
+import { WishInboxPage } from '@/pages/WishInboxPage'
 
 export function App() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -100,6 +103,30 @@ export function App() {
           element={
             <AppShell>
               <UserManagementPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/wishes"
+          element={
+            <AppShell>
+              <WishInboxPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/roadmap-items"
+          element={
+            <AppShell>
+              <RoadmapItemsPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/roadmap-reports"
+          element={
+            <AppShell>
+              <RoadmapReportsPage />
             </AppShell>
           }
         />

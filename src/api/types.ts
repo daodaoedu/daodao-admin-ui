@@ -329,3 +329,88 @@ export interface AdminUserListItem {
   createdAt: string
   lastLoginAt: string | null
 }
+
+// ── Wishpool / Roadmap ───────────────────────────────────
+export type WishCategory =
+  | 'operation'
+  | 'practice'
+  | 'social'
+  | 'explore'
+  | 'challenge'
+  | 'ai'
+  | 'profile'
+  | 'other'
+
+export type WishStatus = 'pending' | 'linked' | 'archived'
+
+export type RoadmapStatus =
+  | 'collected'
+  | 'discussing'
+  | 'planned'
+  | 'in_progress'
+  | 'done'
+  | 'parked'
+
+/** 游標分頁（許願池端點，與 OffsetPagination 不同） */
+export interface CursorPagination {
+  hasMore: boolean
+  nextCursor: string | null
+  count: number
+  limit: number
+}
+
+export interface CursorResponse<T> {
+  success: boolean
+  data: T[]
+  pagination: CursorPagination
+  timestamp: string
+}
+
+export interface AdminWishItem {
+  id: number
+  category: WishCategory
+  situation: string
+  desire: string
+  status: WishStatus
+  contact_email: string | null
+  internal_module_tag: string | null
+  source: 'web' | 'app'
+  linked_roadmap_item_id: number | null
+  created_at: string
+  submitter: {
+    external_id: string | null
+    nickname: string | null
+    email: string | null
+  }
+}
+
+export interface AdminRoadmapItem {
+  id: number
+  external_id: string
+  title: string
+  description: string
+  category: WishCategory
+  status: RoadmapStatus
+  support_count: number
+  is_public: boolean
+  pinned: boolean
+  sort_order: number
+  shipped_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RoadmapReport {
+  popularCategories: Array<{ category: WishCategory; count: number }>
+  popularItems: Array<{
+    external_id: string
+    title: string
+    status: RoadmapStatus
+    support_count: number
+  }>
+  wishTrend: Array<{ period: string; count: number }>
+  backlog: {
+    pendingCount: number
+    oldestPendingWaitingHours: number | null
+  }
+}

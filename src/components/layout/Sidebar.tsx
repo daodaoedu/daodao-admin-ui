@@ -2,7 +2,10 @@ import {
   BarChart3,
   Cpu,
   FileText,
+  Inbox,
+  LineChart,
   List,
+  ListTodo,
   LogOut,
   MessageSquare,
   Settings,
@@ -23,6 +26,9 @@ const navItems = [
   { to: '/playground', label: 'Playground', icon: MessageSquare },
   { to: '/roles-permissions', label: '角色權限', icon: Shield },
   { to: '/user-management', label: '用戶管理', icon: UserCog },
+  { to: '/wishes', label: '許願收件匣', icon: Inbox },
+  { to: '/roadmap-items', label: '路線圖項目', icon: ListTodo },
+  { to: '/roadmap-reports', label: '許願池報表', icon: LineChart },
 ]
 
 export function Sidebar() {
