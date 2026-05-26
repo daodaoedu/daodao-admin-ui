@@ -25,11 +25,11 @@ function attachInterceptors(client: ReturnType<typeof axios.create>) {
   )
 }
 
-const apiClient = axios.create({ baseURL: '/', timeout: 30000, withCredentials: true })
+const apiClient = axios.create({ baseURL: '/', timeout: 30000 })
 attachInterceptors(apiClient)
 
 // Playground / LLM calls can take up to 2 minutes
-export const slowApiClient = axios.create({ baseURL: '/', timeout: 120000, withCredentials: true })
+export const slowApiClient = axios.create({ baseURL: '/', timeout: 120000 })
 attachInterceptors(slowApiClient)
 
 export default apiClient
