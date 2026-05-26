@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin'
 import type { AdminUserListItem } from '@/api/types'
+import { ExportButton } from '@/components/ExportButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -54,7 +55,20 @@ export function UserManagementPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="heading-lg">用戶管理</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="heading-lg">用戶管理</h1>
+        <ExportButton
+          data={users as unknown as Record<string, unknown>[]}
+          fileName="user-management"
+          columns={[
+            { key: 'internalId', header: 'ID' },
+            { key: 'name', header: '名稱' },
+            { key: 'email', header: 'Email' },
+            { key: 'isActive', header: '狀態' },
+            { key: 'lastLoginAt', header: '最後登入' },
+          ]}
+        />
+      </div>
 
       <div className="flex gap-2">
         <Input

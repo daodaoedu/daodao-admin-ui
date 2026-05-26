@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { listUsers, upsertUserQuota } from '@/api/admin'
 import type { UserWithQuota } from '@/api/types'
+import { ExportButton } from '@/components/ExportButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -53,7 +54,20 @@ export function UserQuotasPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="heading-lg">User Token Quotas</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="heading-lg">User Token Quotas</h1>
+        <ExportButton
+          data={users as unknown as Record<string, unknown>[]}
+          fileName="user-quotas"
+          columns={[
+            { key: 'id', header: 'ID' },
+            { key: 'nickname', header: 'Nickname' },
+            { key: 'mongo_id', header: 'Mongo ID' },
+            { key: 'role_id', header: 'Role' },
+            { key: 'current_month_tokens_used', header: '本月使用 Tokens' },
+          ]}
+        />
+      </div>
 
       <div className="flex gap-2">
         <Input
