@@ -195,6 +195,7 @@ export function RoadmapItemsPage() {
                   分類
                 </label>
                 <Select
+                  id="item-category"
                   value={form.category}
                   onValueChange={(v) => setForm((f) => ({ ...f, category: v as WishCategory }))}
                   options={CATEGORY_OPTIONS}
@@ -205,6 +206,7 @@ export function RoadmapItemsPage() {
                   狀態
                 </label>
                 <Select
+                  id="item-status"
                   value={form.status}
                   onValueChange={(v) => setForm((f) => ({ ...f, status: v as RoadmapStatus }))}
                   options={ROADMAP_STATUS_OPTIONS}

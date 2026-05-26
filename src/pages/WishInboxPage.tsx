@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { archiveWish, linkWish, listRoadmapItems, listWishes, promoteWish } from '@/api/admin'
 import type { AdminWishItem, RoadmapStatus, WishCategory, WishStatus } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
@@ -42,10 +42,44 @@ export function WishInboxPage() {
     queryFn: () => listWishes({ ...filters, limit: LIMIT }).then((r) => r.data),
   })
 
-  const wishes = data?.data ?? []
+  // 游標載入更多（於第一頁之後追加）
+  const [extraPages, setExtraPages] = useState<AdminWishItem[][]>([])
+  const [moreCursor, setMoreCursor] = useState<string | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  // 篩選變更時重置追加頁
+  // biome-ignore lint/correctness/useExhaustiveDependencies: filters 作為重置觸發
+  useEffect(() => {
+    setExtraPages([])
+    setMoreCursor(null)
+  }, [filters])
+
+  const page1 = data?.data ?? []
+  const seenIds = new Set<number>()
+  const wishes = [...page1, ...extraPages.flat()].filter((w) => {
+    if (seenIds.has(w.id)) return false
+    seenIds.add(w.id)
+    return true
+  })
+  const effectiveCursor =
+    extraPages.length === 0 ? (data?.pagination?.nextCursor ?? null) : moreCursor
 
   const invalidate = () => {
+    setExtraPages([])
+    setMoreCursor(null)
     qc.invalidateQueries({ queryKey: ['admin-wishes'] })
+  }
+
+  const loadMore = async () => {
+    if (!effectiveCursor || loadingMore) return
+    setLoadingMore(true)
+    try {
+      const res = await listWishes({ ...filters, limit: LIMIT, cursor: effectiveCursor })
+      setExtraPages((p) => [...p, res.data.data])
+      setMoreCursor(res.data.pagination?.nextCursor ?? null)
+    } finally {
+      setLoadingMore(false)
+    }
   }
 
   // ── 動作 dialog ──────────────────────────────────────────
@@ -260,10 +294,18 @@ export function WishInboxPage() {
             </div>
           ))
         )}
-        {data?.pagination?.hasMore && (
-          <p className="text-center text-xs text-muted-foreground">
-            僅顯示前 {LIMIT} 筆，請以篩選縮小範圍
-          </p>
+        {effectiveCursor && (
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={loadingMore}
+              onClick={loadMore}
+            >
+              {loadingMore ? '載入中...' : '載入更多'}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -278,6 +320,7 @@ export function WishInboxPage() {
                   選擇項目
                 </label>
                 <Select
+                  id="link-item"
                   value={linkForm.roadmap_item_id}
                   onValueChange={(v) => setLinkForm((f) => ({ ...f, roadmap_item_id: v }))}
                   options={itemOptions}
@@ -343,6 +386,7 @@ export function WishInboxPage() {
                     分類
                   </label>
                   <Select
+                    id="promote-category"
                     value={promoteForm.category}
                     onValueChange={(v) =>
                       setPromoteForm((f) => ({ ...f, category: v as WishCategory }))
@@ -355,6 +399,7 @@ export function WishInboxPage() {
                     初始狀態
                   </label>
                   <Select
+                    id="promote-status"
                     value={promoteForm.status}
                     onValueChange={(v) =>
                       setPromoteForm((f) => ({ ...f, status: v as RoadmapStatus }))
