@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { listAuditLogs } from '@/api/admin-audit'
 import type { AuditLogFilters } from '@/api/admin-audit'
+import { listAuditLogs } from '@/api/admin-audit'
 
 export function useAuditLogs(params?: AuditLogFilters) {
   return useQuery({

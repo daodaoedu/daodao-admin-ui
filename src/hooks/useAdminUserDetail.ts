@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getAdminUserDetail, getAdminLoginHistory, getAdminActivityStats } from '@/api/admin-users'
+import { getAdminActivityStats, getAdminLoginHistory, getAdminUserDetail } from '@/api/admin-users'
 
 export function useAdminUserDetail(userId: string) {
   return useQuery({

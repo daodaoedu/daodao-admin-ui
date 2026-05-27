@@ -25,5 +25,9 @@ export interface FeedbackListResponse {
   }
 }
 
-export const listFeedback = (params?: { status?: string; category?: string; limit?: number; offset?: number }) =>
-  apiClient.get<ApiResponse<FeedbackListResponse>>('/api/v1/admin/feedback', { params })
+export const listFeedback = (params?: {
+  status?: string
+  category?: string
+  limit?: number
+  offset?: number
+}) => apiClient.get<ApiResponse<FeedbackListResponse>>('/api/v1/admin/feedback', { params })

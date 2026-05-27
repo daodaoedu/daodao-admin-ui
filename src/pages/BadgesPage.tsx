@@ -107,19 +107,14 @@ export function BadgesPage() {
         {MOCK_BADGES.map((badge) => {
           const Icon = badge.icon
           return (
-            <div
-              key={badge.id}
-              className="rounded-xl border border-border bg-card p-5 shadow-sm"
-            >
+            <div key={badge.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="rounded-lg bg-primary/10 p-2.5">
                   <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="font-medium text-foreground">{badge.name}</h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {badge.description}
-                  </p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{badge.description}</p>
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-between text-sm">

@@ -1,12 +1,6 @@
-import {
-  CheckCircle,
-  Clock,
-  ListChecks,
-  Plus,
-  UserPlus,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { CheckCircle, Clock, ListChecks, Plus, UserPlus } from 'lucide-react'
 import { StatCard } from '@/components/StatCard'
+import { cn } from '@/lib/utils'
 
 const FLOW_STEPS = [
   {
@@ -59,9 +53,27 @@ export function OnboardingFlowsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard title="完成率" value="68%" change={3.2} changeLabel="vs 上月" icon={CheckCircle} />
-        <StatCard title="平均完成時間" value="3.2 分鐘" change={-8.5} changeLabel="vs 上月" icon={Clock} />
-        <StatCard title="本月新用戶" value={234} change={12.1} changeLabel="vs 上月" icon={UserPlus} />
+        <StatCard
+          title="完成率"
+          value="68%"
+          change={3.2}
+          changeLabel="vs 上月"
+          icon={CheckCircle}
+        />
+        <StatCard
+          title="平均完成時間"
+          value="3.2 分鐘"
+          change={-8.5}
+          changeLabel="vs 上月"
+          icon={Clock}
+        />
+        <StatCard
+          title="本月新用戶"
+          value={234}
+          change={12.1}
+          changeLabel="vs 上月"
+          icon={UserPlus}
+        />
       </div>
 
       {/* Active Flow */}
@@ -81,19 +93,14 @@ export function OnboardingFlowsPage() {
 
         <div className="space-y-4">
           {FLOW_STEPS.map((step) => (
-            <div
-              key={step.id}
-              className="rounded-lg border border-border bg-background p-4"
-            >
+            <div key={step.id} className="rounded-lg border border-border bg-background p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
                     {step.id}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {step.question}
-                    </p>
+                    <p className="text-sm font-medium text-foreground">{step.question}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {step.type} &middot; 最常回答：{step.topAnswer}（{step.topPercent}%）
                     </p>
@@ -140,9 +147,7 @@ export function OnboardingFlowsPage() {
               {/* Label */}
               <span className="text-xs text-muted-foreground">{step.label}</span>
               {/* Arrow */}
-              {i < FUNNEL_STEPS.length - 1 && (
-                <span className="absolute text-muted-foreground" />
-              )}
+              {i < FUNNEL_STEPS.length - 1 && <span className="absolute text-muted-foreground" />}
             </div>
           ))}
         </div>

@@ -14,8 +14,8 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
 import { StatCard } from '@/components/StatCard'
+import { cn } from '@/lib/utils'
 
 // ── Types ────────────────────────────────────────────────
 interface ProfileField {
@@ -38,7 +38,14 @@ interface PendingProfile {
 const MOCK_FIELDS: ProfileField[] = [
   { id: 1, name: '職稱', type: 'text', required: false, visibility: '公開', fillRate: 68 },
   { id: 2, name: '公司', type: 'text', required: false, visibility: '公開', fillRate: 45 },
-  { id: 3, name: '學習目標', type: 'multi-select', required: true, visibility: '僅會員', fillRate: 92 },
+  {
+    id: 3,
+    name: '學習目標',
+    type: 'multi-select',
+    required: true,
+    visibility: '僅會員',
+    fillRate: 92,
+  },
   { id: 4, name: '技能等級', type: 'dropdown', required: false, visibility: '公開', fillRate: 73 },
   { id: 5, name: '個人網站', type: 'URL', required: false, visibility: '公開', fillRate: 23 },
 ]
@@ -57,9 +64,9 @@ const TYPE_STYLES: Record<ProfileField['type'], string> = {
 }
 
 const VISIBILITY_ICONS: Record<ProfileField['visibility'], typeof Eye> = {
-  '公開': Eye,
-  '僅會員': Users,
-  '僅管理員': EyeOff,
+  公開: Eye,
+  僅會員: Users,
+  僅管理員: EyeOff,
 }
 
 // ── Component ────────────────────────────────────────────

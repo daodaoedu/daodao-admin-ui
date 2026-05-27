@@ -1,9 +1,9 @@
 import { Edit2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import type { TagItem, TagRule } from '@/api/admin-users'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useUserTags, useTagRules } from '@/hooks/useUserTags'
-import type { TagItem, TagRule } from '@/api/admin-users'
+import { useTagRules, useUserTags } from '@/hooks/useUserTags'
 
 interface ManualTag {
   id: number
@@ -23,11 +23,46 @@ interface AutoTagRule {
 }
 
 const MANUAL_TAGS: ManualTag[] = [
-  { id: 1, name: 'VIP', color: 'bg-purple-500', colorClass: 'text-purple-700', userCount: 128, createdAt: '2025-01-15' },
-  { id: 2, name: '合作學校', color: 'bg-blue-500', colorClass: 'text-blue-700', userCount: 456, createdAt: '2025-02-20' },
-  { id: 3, name: '早期用戶', color: 'bg-green-500', colorClass: 'text-green-700', userCount: 1024, createdAt: '2024-11-01' },
-  { id: 4, name: '測試帳號', color: 'bg-orange-500', colorClass: 'text-orange-700', userCount: 23, createdAt: '2025-03-10' },
-  { id: 5, name: '志工', color: 'bg-teal-500', colorClass: 'text-teal-700', userCount: 67, createdAt: '2025-04-05' },
+  {
+    id: 1,
+    name: 'VIP',
+    color: 'bg-purple-500',
+    colorClass: 'text-purple-700',
+    userCount: 128,
+    createdAt: '2025-01-15',
+  },
+  {
+    id: 2,
+    name: '合作學校',
+    color: 'bg-blue-500',
+    colorClass: 'text-blue-700',
+    userCount: 456,
+    createdAt: '2025-02-20',
+  },
+  {
+    id: 3,
+    name: '早期用戶',
+    color: 'bg-green-500',
+    colorClass: 'text-green-700',
+    userCount: 1024,
+    createdAt: '2024-11-01',
+  },
+  {
+    id: 4,
+    name: '測試帳號',
+    color: 'bg-orange-500',
+    colorClass: 'text-orange-700',
+    userCount: 23,
+    createdAt: '2025-03-10',
+  },
+  {
+    id: 5,
+    name: '志工',
+    color: 'bg-teal-500',
+    colorClass: 'text-teal-700',
+    userCount: 67,
+    createdAt: '2025-04-05',
+  },
 ]
 
 const AUTO_TAG_RULES: AutoTagRule[] = [
@@ -42,14 +77,21 @@ export function UserTagsPage() {
   const { data: apiRules } = useTagRules()
 
   const tags: ManualTag[] = (apiTags as unknown as ManualTag[] | undefined) ?? MANUAL_TAGS
-  const initialRules: AutoTagRule[] = (apiRules as unknown as AutoTagRule[] | undefined) ?? AUTO_TAG_RULES
+  const rulesFromApi: AutoTagRule[] =
+    (apiRules as unknown as AutoTagRule[] | undefined) ?? AUTO_TAG_RULES
 
-  const [autoRules, setAutoRules] = useState<AutoTagRule[]>(initialRules)
+  const [localToggles, setLocalToggles] = useState<Record<number, boolean>>({})
+
+  const autoRules = rulesFromApi.map((r) => ({
+    ...r,
+    enabled: localToggles[r.id] ?? r.enabled,
+  }))
 
   const toggleRule = (id: number) => {
-    setAutoRules((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)),
-    )
+    setLocalToggles((prev) => ({
+      ...prev,
+      [id]: !(prev[id] ?? rulesFromApi.find((r) => r.id === id)?.enabled ?? false),
+    }))
   }
 
   return (

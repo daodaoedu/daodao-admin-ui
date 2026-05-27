@@ -1,20 +1,70 @@
 import { CheckCircle, ClipboardList, FileQuestion, Hash, Percent, Plus } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { StatCard } from '@/components/StatCard'
+import { cn } from '@/lib/utils'
 
 const MOCK_QUIZZES = [
-  { name: '前端基礎測驗', course: 'React 入門實戰', questions: 15, passingScore: 70, avgScore: 78, passRate: 82 },
-  { name: 'TypeScript 型別挑戰', course: 'TypeScript 完全指南', questions: 20, passingScore: 75, avgScore: 62, passRate: 58 },
-  { name: 'Node.js 核心概念', course: 'Node.js 後端開發', questions: 12, passingScore: 70, avgScore: 71, passRate: 72 },
-  { name: 'CSS 選擇器測驗', course: 'CSS 動畫大師班', questions: 10, passingScore: 80, avgScore: 85, passRate: 88 },
-  { name: 'Git 工作流程', course: 'Git 版本控制', questions: 8, passingScore: 60, avgScore: 74, passRate: 90 },
+  {
+    name: '前端基礎測驗',
+    course: 'React 入門實戰',
+    questions: 15,
+    passingScore: 70,
+    avgScore: 78,
+    passRate: 82,
+  },
+  {
+    name: 'TypeScript 型別挑戰',
+    course: 'TypeScript 完全指南',
+    questions: 20,
+    passingScore: 75,
+    avgScore: 62,
+    passRate: 58,
+  },
+  {
+    name: 'Node.js 核心概念',
+    course: 'Node.js 後端開發',
+    questions: 12,
+    passingScore: 70,
+    avgScore: 71,
+    passRate: 72,
+  },
+  {
+    name: 'CSS 選擇器測驗',
+    course: 'CSS 動畫大師班',
+    questions: 10,
+    passingScore: 80,
+    avgScore: 85,
+    passRate: 88,
+  },
+  {
+    name: 'Git 工作流程',
+    course: 'Git 版本控制',
+    questions: 8,
+    passingScore: 60,
+    avgScore: 74,
+    passRate: 90,
+  },
 ]
 
 const MOCK_QUESTION_STATS = [
-  { question: 'React 中 useEffect 的清理函式何時執行？', type: '選擇', correctRate: 45, commonWrong: '元件掛載時' },
-  { question: 'Virtual DOM 的主要目的是什麼？', type: '選擇', correctRate: 72, commonWrong: '取代真實 DOM' },
+  {
+    question: 'React 中 useEffect 的清理函式何時執行？',
+    type: '選擇',
+    correctRate: 45,
+    commonWrong: '元件掛載時',
+  },
+  {
+    question: 'Virtual DOM 的主要目的是什麼？',
+    type: '選擇',
+    correctRate: 72,
+    commonWrong: '取代真實 DOM',
+  },
   { question: 'JSX 是 JavaScript 的語法糖', type: '是非', correctRate: 88, commonWrong: '否' },
-  { question: '解釋 React 中 key 的作用', type: '簡答', correctRate: 38, commonWrong: '未提及 reconciliation' },
+  {
+    question: '解釋 React 中 key 的作用',
+    type: '簡答',
+    correctRate: 38,
+    commonWrong: '未提及 reconciliation',
+  },
 ]
 
 export function QuizzesPage() {
@@ -75,7 +125,11 @@ export function QuizzesPage() {
                         <div
                           className={cn(
                             'h-2 rounded-full',
-                            quiz.passRate >= 75 ? 'bg-success' : quiz.passRate >= 50 ? 'bg-warning' : 'bg-destructive',
+                            quiz.passRate >= 75
+                              ? 'bg-success'
+                              : quiz.passRate >= 50
+                                ? 'bg-warning'
+                                : 'bg-destructive',
                           )}
                           style={{ width: `${quiz.passRate}%` }}
                         />
@@ -138,7 +192,11 @@ export function QuizzesPage() {
                         <div
                           className={cn(
                             'h-2 rounded-full',
-                            q.correctRate >= 70 ? 'bg-success' : q.correctRate >= 50 ? 'bg-warning' : 'bg-destructive',
+                            q.correctRate >= 70
+                              ? 'bg-success'
+                              : q.correctRate >= 50
+                                ? 'bg-warning'
+                                : 'bg-destructive',
                           )}
                           style={{ width: `${q.correctRate}%` }}
                         />

@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import { FileText, Search, Trash2, Upload, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useState } from 'react'
 import { ExportButton } from '@/components/ExportButton'
+import { cn } from '@/lib/utils'
 
 const availableFields = [
   '用戶ID',
@@ -20,11 +20,61 @@ type Field = (typeof availableFields)[number]
 const defaultSelected: Field[] = ['用戶名稱', 'Email', 'AI查詢次數', 'Token用量']
 
 const mockData: Record<Field, string>[] = [
-  { 用戶ID: 'U001', 用戶名稱: '王小明', Email: 'ming@example.com', 註冊日期: '2024-01-15', 最後登入: '2024-06-02', 角色: 'Admin', AI查詢次數: '328', Token用量: '45,200', 打卡次數: '120' },
-  { 用戶ID: 'U002', 用戶名稱: '李美華', Email: 'meihua@example.com', 註冊日期: '2024-02-20', 最後登入: '2024-06-01', 角色: 'User', AI查詢次數: '156', Token用量: '21,800', 打卡次數: '95' },
-  { 用戶ID: 'U003', 用戶名稱: '張大偉', Email: 'david@example.com', 註冊日期: '2024-03-10', 最後登入: '2024-05-30', 角色: 'User', AI查詢次數: '89', Token用量: '12,400', 打卡次數: '78' },
-  { 用戶ID: 'U004', 用戶名稱: '陳怡君', Email: 'yijun@example.com', 註冊日期: '2024-01-08', 最後登入: '2024-06-02', 角色: 'Admin', AI查詢次數: '412', Token用量: '58,100', 打卡次數: '145' },
-  { 用戶ID: 'U005', 用戶名稱: '林志豪', Email: 'zhihao@example.com', 註冊日期: '2024-04-01', 最後登入: '2024-05-28', 角色: 'User', AI查詢次數: '67', Token用量: '9,300', 打卡次數: '42' },
+  {
+    用戶ID: 'U001',
+    用戶名稱: '王小明',
+    Email: 'ming@example.com',
+    註冊日期: '2024-01-15',
+    最後登入: '2024-06-02',
+    角色: 'Admin',
+    AI查詢次數: '328',
+    Token用量: '45,200',
+    打卡次數: '120',
+  },
+  {
+    用戶ID: 'U002',
+    用戶名稱: '李美華',
+    Email: 'meihua@example.com',
+    註冊日期: '2024-02-20',
+    最後登入: '2024-06-01',
+    角色: 'User',
+    AI查詢次數: '156',
+    Token用量: '21,800',
+    打卡次數: '95',
+  },
+  {
+    用戶ID: 'U003',
+    用戶名稱: '張大偉',
+    Email: 'david@example.com',
+    註冊日期: '2024-03-10',
+    最後登入: '2024-05-30',
+    角色: 'User',
+    AI查詢次數: '89',
+    Token用量: '12,400',
+    打卡次數: '78',
+  },
+  {
+    用戶ID: 'U004',
+    用戶名稱: '陳怡君',
+    Email: 'yijun@example.com',
+    註冊日期: '2024-01-08',
+    最後登入: '2024-06-02',
+    角色: 'Admin',
+    AI查詢次數: '412',
+    Token用量: '58,100',
+    打卡次數: '145',
+  },
+  {
+    用戶ID: 'U005',
+    用戶名稱: '林志豪',
+    Email: 'zhihao@example.com',
+    註冊日期: '2024-04-01',
+    最後登入: '2024-05-28',
+    角色: 'User',
+    AI查詢次數: '67',
+    Token用量: '9,300',
+    打卡次數: '42',
+  },
 ]
 
 const savedReports = [
@@ -182,9 +232,7 @@ export function CustomReportsPage() {
             >
               <div>
                 <p className="text-sm font-medium text-foreground">{report.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  欄位: {report.fields.join(', ')}
-                </p>
+                <p className="text-xs text-muted-foreground">欄位: {report.fields.join(', ')}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button

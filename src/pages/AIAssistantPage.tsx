@@ -12,8 +12,8 @@ import {
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
 import { StatCard } from '@/components/StatCard'
+import { cn } from '@/lib/utils'
 
 // ── Types ────────────────────────────────────────────────
 interface KBFile {
@@ -57,7 +57,13 @@ const MOCK_CONVERSATIONS: Conversation[] = [
     time: '5 分鐘前',
     messages: [
       { id: 1, sender: 'user', content: '請問如何重設密碼？', time: '14:20' },
-      { id: 2, sender: 'ai', content: '您好！請前往「設定 > 帳號安全」，點擊「重設密碼」按鈕，系統會發送驗證信到您的信箱。', time: '14:20' },
+      {
+        id: 2,
+        sender: 'ai',
+        content:
+          '您好！請前往「設定 > 帳號安全」，點擊「重設密碼」按鈕，系統會發送驗證信到您的信箱。',
+        time: '14:20',
+      },
       { id: 3, sender: 'user', content: '收到了，謝謝！', time: '14:21' },
       { id: 4, sender: 'ai', content: '不客氣！如有其他問題歡迎隨時詢問 😊', time: '14:21' },
     ],
@@ -70,9 +76,19 @@ const MOCK_CONVERSATIONS: Conversation[] = [
     time: '12 分鐘前',
     messages: [
       { id: 1, sender: 'user', content: '課程影片無法播放，一直顯示載入中', time: '14:08' },
-      { id: 2, sender: 'ai', content: '很抱歉造成不便。請問您使用的是哪個瀏覽器？可以嘗試清除快取後重新載入。', time: '14:08' },
+      {
+        id: 2,
+        sender: 'ai',
+        content: '很抱歉造成不便。請問您使用的是哪個瀏覽器？可以嘗試清除快取後重新載入。',
+        time: '14:08',
+      },
       { id: 3, sender: 'user', content: '我用 Chrome，清快取還是不行', time: '14:10' },
-      { id: 4, sender: 'ai', content: '了解，此問題已升級給人工客服，將會盡快為您處理。', time: '14:10' },
+      {
+        id: 4,
+        sender: 'ai',
+        content: '了解，此問題已升級給人工客服，將會盡快為您處理。',
+        time: '14:10',
+      },
     ],
   },
   {
@@ -83,7 +99,12 @@ const MOCK_CONVERSATIONS: Conversation[] = [
     time: '30 分鐘前',
     messages: [
       { id: 1, sender: 'user', content: '我想申請退費，買了課程但內容不符合預期', time: '13:50' },
-      { id: 2, sender: 'ai', content: '關於退費申請，需要由人工客服為您處理。請稍候，我將為您轉接。', time: '13:50' },
+      {
+        id: 2,
+        sender: 'ai',
+        content: '關於退費申請，需要由人工客服為您處理。請稍候，我將為您轉接。',
+        time: '13:50',
+      },
       { id: 3, sender: 'user', content: '好的，請問大概多久會有人回覆？', time: '13:52' },
     ],
   },
@@ -94,8 +115,19 @@ const MOCK_CONVERSATIONS: Conversation[] = [
     status: 'ai-resolved',
     time: '1 小時前',
     messages: [
-      { id: 1, sender: 'user', content: '我是初學者，想學 Python，有推薦的學習路徑嗎？', time: '13:10' },
-      { id: 2, sender: 'ai', content: '推薦您從「Python 入門基礎」開始，完成後可以接著「Python 資料分析實戰」。我們有完整的學習路徑可以參考！', time: '13:10' },
+      {
+        id: 1,
+        sender: 'user',
+        content: '我是初學者，想學 Python，有推薦的學習路徑嗎？',
+        time: '13:10',
+      },
+      {
+        id: 2,
+        sender: 'ai',
+        content:
+          '推薦您從「Python 入門基礎」開始，完成後可以接著「Python 資料分析實戰」。我們有完整的學習路徑可以參考！',
+        time: '13:10',
+      },
       { id: 3, sender: 'user', content: '太棒了，我馬上去看！', time: '13:12' },
     ],
   },
@@ -107,7 +139,12 @@ const MOCK_CONVERSATIONS: Conversation[] = [
     time: '2 小時前',
     messages: [
       { id: 1, sender: 'user', content: '下週的讀書會還可以報名嗎？', time: '12:00' },
-      { id: 2, sender: 'ai', content: '可以的！目前還有 12 個名額。您可以到「活動」頁面點擊「報名」按鈕。', time: '12:00' },
+      {
+        id: 2,
+        sender: 'ai',
+        content: '可以的！目前還有 12 個名額。您可以到「活動」頁面點擊「報名」按鈕。',
+        time: '12:00',
+      },
       { id: 3, sender: 'user', content: '報名成功了，感謝！', time: '12:03' },
     ],
   },
@@ -219,9 +256,7 @@ export function AIAssistantPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  人格
-                </label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">人格</label>
                 <textarea
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   rows={3}
@@ -229,9 +264,7 @@ export function AIAssistantPage() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  語氣
-                </label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">語氣</label>
                 <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                   <option>友善</option>
                   <option>專業</option>
@@ -274,15 +307,11 @@ export function AIAssistantPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setSelectedConversationId(
-                        selectedConversationId === conv.id ? null : conv.id,
-                      )
+                      setSelectedConversationId(selectedConversationId === conv.id ? null : conv.id)
                     }
                     className={cn(
                       'flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors',
-                      selectedConversationId === conv.id
-                        ? 'bg-primary/5'
-                        : 'hover:bg-muted/50',
+                      selectedConversationId === conv.id ? 'bg-primary/5' : 'hover:bg-muted/50',
                     )}
                   >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
@@ -322,9 +351,7 @@ export function AIAssistantPage() {
                             <div
                               className={cn(
                                 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
-                                msg.sender === 'ai'
-                                  ? 'bg-primary/15'
-                                  : 'bg-muted',
+                                msg.sender === 'ai' ? 'bg-primary/15' : 'bg-muted',
                               )}
                             >
                               {msg.sender === 'ai' ? (

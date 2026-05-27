@@ -1,10 +1,10 @@
 import { Lock, Search } from 'lucide-react'
 import { useState } from 'react'
+import { ExportButton } from '@/components/ExportButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ExportButton } from '@/components/ExportButton'
-import { cn } from '@/lib/utils'
 import { useAuditLogs } from '@/hooks/useAuditLogs'
+import { cn } from '@/lib/utils'
 
 type ActionType = '登入' | '角色變更' | '用戶停用' | '設定修改' | '資料匯出' | '通知發送'
 
@@ -168,17 +168,21 @@ export function AuditLogPage() {
     if (adminFilter !== '全部' && log.admin !== adminFilter) return false
     if (actionFilter !== '全部' && log.actionType !== actionFilter) return false
     if (dateFrom && log.time < dateFrom) return false
-    if (dateTo && log.time < dateTo === false && log.time.slice(0, 10) > dateTo) return false
+    if (dateTo && log.time.slice(0, 10) > dateTo) return false
     if (searchText) {
       const q = searchText.toLowerCase()
-      const haystack = `${log.admin} ${log.actionType} ${log.target} ${log.detail} ${log.ip}`.toLowerCase()
+      const haystack =
+        `${log.admin} ${log.actionType} ${log.target} ${log.detail} ${log.ip}`.toLowerCase()
       if (!haystack.includes(q)) return false
     }
     return true
   })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const serverTotal = apiData?.total ?? filtered.length
+  const totalPages = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE))
+  const paginated = apiData?.items
+    ? filtered
+    : filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <div className="space-y-6">
@@ -298,9 +302,7 @@ export function AuditLogPage() {
                   key={log.id}
                   className="border-b border-border last:border-0 hover:bg-accent transition-colors"
                 >
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">
-                    {log.time}
-                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">{log.time}</td>
                   <td className="px-4 py-3 font-medium">{log.admin}</td>
                   <td className="px-4 py-3">
                     <span
@@ -313,9 +315,7 @@ export function AuditLogPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{log.target}</td>
-                  <td className="max-w-xs px-4 py-3 text-muted-foreground">
-                    {log.detail}
-                  </td>
+                  <td className="max-w-xs px-4 py-3 text-muted-foreground">{log.detail}</td>
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">
                     {log.ip}
                   </td>
@@ -390,11 +390,7 @@ export function AuditLogPage() {
           <Button
             type="button"
             onClick={() =>
-              alert(
-                lockFrom && lockTo
-                  ? `已啟用鎖定：${lockFrom} ~ ${lockTo}`
-                  : '請先選擇日期範圍',
-              )
+              alert(lockFrom && lockTo ? `已啟用鎖定：${lockFrom} ~ ${lockTo}` : '請先選擇日期範圍')
             }
           >
             <Lock className="h-4 w-4" />

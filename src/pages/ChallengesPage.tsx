@@ -95,9 +95,7 @@ const STREAK_DATA = [
 export function ChallengesPage() {
   const [activeTab, setActiveTab] = useState<Tab>('進行中')
 
-  const filteredChallenges = MOCK_CHALLENGES.filter(
-    (c) => c.status === activeTab,
-  )
+  const filteredChallenges = MOCK_CHALLENGES.filter((c) => c.status === activeTab)
 
   return (
     <div className="space-y-6">
@@ -156,12 +154,8 @@ export function ChallengesPage() {
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-medium text-foreground">
-                    {challenge.name}
-                  </h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {challenge.description}
-                  </p>
+                  <h3 className="font-medium text-foreground">{challenge.name}</h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{challenge.description}</p>
                 </div>
                 <Trophy className="h-5 w-5 shrink-0 text-muted-foreground" />
               </div>
@@ -197,9 +191,7 @@ export function ChallengesPage() {
           )
         })}
         {filteredChallenges.length === 0 && (
-          <p className="col-span-full py-8 text-center text-muted-foreground">
-            此分類沒有挑戰活動
-          </p>
+          <p className="col-span-full py-8 text-center text-muted-foreground">此分類沒有挑戰活動</p>
         )}
       </div>
 
@@ -211,9 +203,7 @@ export function ChallengesPage() {
             const pct = Math.round((row.value / row.max) * 100)
             return (
               <div key={row.label} className="flex items-center gap-3">
-                <span className="w-20 shrink-0 text-sm text-muted-foreground">
-                  {row.label}
-                </span>
+                <span className="w-20 shrink-0 text-sm text-muted-foreground">{row.label}</span>
                 <div className="relative h-6 flex-1 overflow-hidden rounded bg-muted">
                   <div
                     className="absolute inset-y-0 left-0 rounded bg-primary/80 transition-all"

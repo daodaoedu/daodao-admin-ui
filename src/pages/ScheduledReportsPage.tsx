@@ -29,10 +29,20 @@ const schedules = [
 ]
 
 const executionHistory = [
-  { name: '每週 KPI 摘要', sentAt: '2024-06-01 09:00', recipients: 'admin@daodao.tw', success: true },
+  {
+    name: '每週 KPI 摘要',
+    sentAt: '2024-06-01 09:00',
+    recipients: 'admin@daodao.tw',
+    success: true,
+  },
   { name: '每月營運報告', sentAt: '2024-06-01 08:00', recipients: 'team@daodao.tw', success: true },
   { name: '每日異常摘要', sentAt: '2024-06-02 07:00', recipients: 'ops@daodao.tw', success: false },
-  { name: '每週 KPI 摘要', sentAt: '2024-05-25 09:00', recipients: 'admin@daodao.tw', success: true },
+  {
+    name: '每週 KPI 摘要',
+    sentAt: '2024-05-25 09:00',
+    recipients: 'admin@daodao.tw',
+    success: true,
+  },
   { name: '每月營運報告', sentAt: '2024-05-01 08:00', recipients: 'team@daodao.tw', success: true },
 ]
 

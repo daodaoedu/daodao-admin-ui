@@ -17,11 +17,41 @@ const MOCK_TEMPLATES = [
 ]
 
 const MOCK_ISSUED = [
-  { cert: '基礎課程結業證書', user: '王小明', date: '2024-03-15', link: 'https://cert.daodao.co/v/abc123', status: 'active' as const },
-  { cert: '基礎課程結業證書', user: '李美華', date: '2024-03-12', link: 'https://cert.daodao.co/v/def456', status: 'active' as const },
-  { cert: '進階學習認證', user: '張志遠', date: '2024-03-10', link: 'https://cert.daodao.co/v/ghi789', status: 'active' as const },
-  { cert: '基礎課程結業證書', user: '陳佳琳', date: '2024-02-28', link: 'https://cert.daodao.co/v/jkl012', status: 'revoked' as const },
-  { cert: '進階學習認證', user: '林大偉', date: '2024-02-20', link: 'https://cert.daodao.co/v/mno345', status: 'active' as const },
+  {
+    cert: '基礎課程結業證書',
+    user: '王小明',
+    date: '2024-03-15',
+    link: 'https://cert.daodao.co/v/abc123',
+    status: 'active' as const,
+  },
+  {
+    cert: '基礎課程結業證書',
+    user: '李美華',
+    date: '2024-03-12',
+    link: 'https://cert.daodao.co/v/def456',
+    status: 'active' as const,
+  },
+  {
+    cert: '進階學習認證',
+    user: '張志遠',
+    date: '2024-03-10',
+    link: 'https://cert.daodao.co/v/ghi789',
+    status: 'active' as const,
+  },
+  {
+    cert: '基礎課程結業證書',
+    user: '陳佳琳',
+    date: '2024-02-28',
+    link: 'https://cert.daodao.co/v/jkl012',
+    status: 'revoked' as const,
+  },
+  {
+    cert: '進階學習認證',
+    user: '林大偉',
+    date: '2024-02-20',
+    link: 'https://cert.daodao.co/v/mno345',
+    status: 'active' as const,
+  },
 ]
 
 export function CertificatesPage() {
@@ -46,10 +76,7 @@ export function CertificatesPage() {
           {MOCK_TEMPLATES.map((tpl) => (
             <div
               key={tpl.name}
-              className={cn(
-                'rounded-lg border border-border bg-gradient-to-br p-5',
-                tpl.color,
-              )}
+              className={cn('rounded-lg border border-border bg-gradient-to-br p-5', tpl.color)}
             >
               <div className="mb-3 flex items-start gap-3">
                 <div className="rounded-lg bg-background/80 p-2">

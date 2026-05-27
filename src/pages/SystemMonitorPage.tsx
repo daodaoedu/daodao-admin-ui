@@ -1,7 +1,7 @@
 import { Activity, Cpu, Database, HardDrive, MemoryStick, RefreshCw } from 'lucide-react'
+import type { DbInfo, RedisInfo, SystemMonitorData } from '@/api/admin-system'
+import { useDbInfo, useRedisInfo, useSystemMonitor } from '@/hooks/useSystemMonitor'
 import { cn } from '@/lib/utils'
-import { useSystemMonitor, useDbInfo, useRedisInfo } from '@/hooks/useSystemMonitor'
-import type { SystemMonitorData, DbInfo, RedisInfo } from '@/api/admin-system'
 
 const mockMonitor: SystemMonitorData = {
   cpu: { percent: 45 },
@@ -80,8 +80,7 @@ export function SystemMonitorPage() {
       <div className="flex items-center justify-between">
         <h1 className="heading-lg">系統監控</h1>
         <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground">
-          <RefreshCw className="h-3 w-3 animate-spin" />
-          每 30 秒自動刷新
+          <RefreshCw className="h-3 w-3 animate-spin" />每 30 秒自動刷新
         </span>
       </div>
 
@@ -111,7 +110,9 @@ export function SystemMonitorPage() {
             <span className="text-lg text-muted-foreground">%</span>
           </div>
           <ProgressBar percent={monitor.memory.percent} />
-          <p className="mt-2 text-center text-xs text-muted-foreground">{monitor.memory.usedGb} / {monitor.memory.totalGb} GB</p>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            {monitor.memory.usedGb} / {monitor.memory.totalGb} GB
+          </p>
         </div>
 
         {/* Disk */}
@@ -125,7 +126,9 @@ export function SystemMonitorPage() {
             <span className="text-lg text-muted-foreground">%</span>
           </div>
           <ProgressBar percent={monitor.disk.percent} />
-          <p className="mt-2 text-center text-xs text-muted-foreground">{monitor.disk.usedGb} / {monitor.disk.totalGb} GB</p>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            {monitor.disk.usedGb} / {monitor.disk.totalGb} GB
+          </p>
         </div>
       </div>
 
@@ -136,18 +139,28 @@ export function SystemMonitorPage() {
           <div className="flex items-center gap-2 mb-4">
             <Database className="h-4 w-4 text-muted-foreground" />
             <h2 className="heading-sm">PostgreSQL</h2>
-            <span className={cn(
-              'ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-              dbStatusConnected
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-            )}>
-              <span className={cn('h-1.5 w-1.5 rounded-full', dbStatusConnected ? 'bg-green-500' : 'bg-red-500')} />
+            <span
+              className={cn(
+                'ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                dbStatusConnected
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+              )}
+            >
+              <span
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  dbStatusConnected ? 'bg-green-500' : 'bg-red-500',
+                )}
+              />
               {dbStatusLabel}
             </span>
           </div>
           <div className="space-y-0">
-            <MetricRow label="連線池 — 活躍" value={`${db.activeConnections} / ${db.maxConnections}`} />
+            <MetricRow
+              label="連線池 — 活躍"
+              value={`${db.activeConnections} / ${db.maxConnections}`}
+            />
             <MetricRow label="連線池 — 閒置" value={String(db.idleConnections)} />
             <MetricRow label="總查詢" value={db.totalQueries.toLocaleString()} />
             <MetricRow label="平均延遲" value={`${db.avgLatencyMs} ms`} />
@@ -159,18 +172,28 @@ export function SystemMonitorPage() {
           <div className="flex items-center gap-2 mb-4">
             <Activity className="h-4 w-4 text-muted-foreground" />
             <h2 className="heading-sm">Redis</h2>
-            <span className={cn(
-              'ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-              redisStatusConnected
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-            )}>
-              <span className={cn('h-1.5 w-1.5 rounded-full', redisStatusConnected ? 'bg-green-500' : 'bg-red-500')} />
+            <span
+              className={cn(
+                'ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                redisStatusConnected
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+              )}
+            >
+              <span
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  redisStatusConnected ? 'bg-green-500' : 'bg-red-500',
+                )}
+              />
               {redisStatusLabel}
             </span>
           </div>
           <div className="space-y-0">
-            <MetricRow label="記憶體" value={`${redis.memoryUsedMb} MB / ${redis.memoryMaxMb >= 1024 ? `${(redis.memoryMaxMb / 1024).toFixed(0)} GB` : `${redis.memoryMaxMb} MB`}`} />
+            <MetricRow
+              label="記憶體"
+              value={`${redis.memoryUsedMb} MB / ${redis.memoryMaxMb >= 1024 ? `${(redis.memoryMaxMb / 1024).toFixed(0)} GB` : `${redis.memoryMaxMb} MB`}`}
+            />
             <MetricRow label="連線數" value={String(redis.connections)} />
             <MetricRow label="Hit Rate" value={`${redis.hitRate}%`} />
           </div>

@@ -61,7 +61,8 @@ const mockFAQs: Record<FAQCategory, FAQItem[]> = {
     {
       id: 7,
       question: '如何刪除帳號？',
-      answer: '請至設定頁面的「帳號管理」區塊，點擊「刪除帳號」按鈕。請注意，刪除後資料將無法復原。',
+      answer:
+        '請至設定頁面的「帳號管理」區塊，點擊「刪除帳號」按鈕。請注意，刪除後資料將無法復原。',
       isPublished: true,
     },
     {
@@ -101,13 +102,15 @@ const mockFAQs: Record<FAQCategory, FAQItem[]> = {
     {
       id: 13,
       question: 'AI 學習助手是什麼？',
-      answer: 'AI 學習助手是基於大型語言模型的智慧助理，能根據您的學習目標提供個人化的建議與資源推薦。',
+      answer:
+        'AI 學習助手是基於大型語言模型的智慧助理，能根據您的學習目標提供個人化的建議與資源推薦。',
       isPublished: true,
     },
     {
       id: 14,
       question: 'AI 推薦如何運作？',
-      answer: '系統會根據您的學習歷程、興趣標籤與同類型使用者的行為，利用 AI 演算法推薦最適合的學習資源。',
+      answer:
+        '系統會根據您的學習歷程、興趣標籤與同類型使用者的行為，利用 AI 演算法推薦最適合的學習資源。',
       isPublished: true,
     },
     {
@@ -119,7 +122,8 @@ const mockFAQs: Record<FAQCategory, FAQItem[]> = {
     {
       id: 16,
       question: 'AI 回答的內容可靠嗎？',
-      answer: 'AI 助手的回答僅供參考，建議搭配其他學習資源交叉驗證。我們持續優化模型以提升回答品質。',
+      answer:
+        'AI 助手的回答僅供參考，建議搭配其他學習資源交叉驗證。我們持續優化模型以提升回答品質。',
       isPublished: false,
     },
   ],
@@ -180,10 +184,7 @@ export function FAQManagementPage() {
           const isPublished = publishState[item.id] ?? item.isPublished
 
           return (
-            <div
-              key={item.id}
-              className="rounded-xl border border-border bg-card shadow-sm"
-            >
+            <div key={item.id} className="rounded-xl border border-border bg-card shadow-sm">
               {/* Question row */}
               <div className="flex items-center gap-3 p-4">
                 {/* Drag handle */}

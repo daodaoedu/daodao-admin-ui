@@ -28,8 +28,7 @@ export interface RedisInfo {
 export const getSystemMonitor = () =>
   apiClient.get<ApiResponse<SystemMonitorData>>('/api/v1/admin/system/monitor')
 
-export const getDbInfo = () =>
-  apiClient.get<ApiResponse<DbInfo>>('/api/v1/admin/system/db')
+export const getDbInfo = () => apiClient.get<ApiResponse<DbInfo>>('/api/v1/admin/system/db')
 
 export const getRedisInfo = () =>
   apiClient.get<ApiResponse<RedisInfo>>('/api/v1/admin/system/redis')

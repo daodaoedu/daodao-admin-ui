@@ -1,8 +1,8 @@
 import { Mail, MailCheck, MailWarning, Send, Timer } from 'lucide-react'
+import type { EmailHealth, EmailStats } from '@/api/admin-system'
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
-import { useEmailStats, useEmailHealth } from '@/hooks/useEmailManagement'
-import type { EmailStats, EmailHealth } from '@/api/admin-system'
+import { useEmailHealth, useEmailStats } from '@/hooks/useEmailManagement'
 
 const mockStats: EmailStats = {
   totalSent: 12_345,
@@ -52,9 +52,27 @@ export function EmailManagementPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="總發送" value={stats.totalSent.toLocaleString()} icon={Mail} change={stats.sentChange} changeLabel="較上月" />
-        <StatCard title="成功率" value={`${stats.successRate}%`} icon={MailCheck} change={stats.successRateChange} changeLabel="較上月" />
-        <StatCard title="退信率" value={`${stats.bounceRate}%`} icon={MailWarning} change={stats.bounceRateChange} changeLabel="較上月" />
+        <StatCard
+          title="總發送"
+          value={stats.totalSent.toLocaleString()}
+          icon={Mail}
+          change={stats.sentChange}
+          changeLabel="較上月"
+        />
+        <StatCard
+          title="成功率"
+          value={`${stats.successRate}%`}
+          icon={MailCheck}
+          change={stats.successRateChange}
+          changeLabel="較上月"
+        />
+        <StatCard
+          title="退信率"
+          value={`${stats.bounceRate}%`}
+          icon={MailWarning}
+          change={stats.bounceRateChange}
+          changeLabel="較上月"
+        />
         <StatCard title="佇列待發" value={stats.queuePending} icon={Timer} />
       </div>
 
@@ -66,8 +84,12 @@ export function EmailManagementPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2 border-b border-border">
               <span className="text-sm text-muted-foreground">狀態</span>
-              <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span
+                className={`inline-flex items-center gap-1.5 text-sm font-medium ${isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                />
                 {isConnected ? '已連線' : '已斷線'}
               </span>
             </div>

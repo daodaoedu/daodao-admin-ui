@@ -1,9 +1,9 @@
 import apiClient from './client'
 import type {
+  ActiveUsersTrendResponse,
   AdminActivityStats,
   AdminLoginHistoryItem,
   AdminUserDetail,
-  ActiveUsersTrendResponse,
   ApiResponse,
   PracticeStats,
 } from './types'
@@ -12,8 +12,14 @@ import type {
 export const getAdminUserDetail = (userId: string) =>
   apiClient.get<ApiResponse<AdminUserDetail>>(`/api/v1/admin/users/${userId}`)
 
-export const getAdminLoginHistory = (userId: string, params?: { startDate?: string; endDate?: string }) =>
-  apiClient.get<ApiResponse<AdminLoginHistoryItem[]>>(`/api/v1/admin/users/${userId}/login-history`, { params })
+export const getAdminLoginHistory = (
+  userId: string,
+  params?: { startDate?: string; endDate?: string },
+) =>
+  apiClient.get<ApiResponse<AdminLoginHistoryItem[]>>(
+    `/api/v1/admin/users/${userId}/login-history`,
+    { params },
+  )
 
 export const getAdminActivityStats = (userId: string) =>
   apiClient.get<ApiResponse<AdminActivityStats>>(`/api/v1/admin/users/${userId}/activity-stats`)
@@ -39,15 +45,16 @@ export interface TagRule {
   enabled: boolean
 }
 
-export const listTags = () =>
-  apiClient.get<ApiResponse<TagItem[]>>('/api/v1/admin/tags')
+export const listTags = () => apiClient.get<ApiResponse<TagItem[]>>('/api/v1/admin/tags')
 
-export const listTagRules = () =>
-  apiClient.get<ApiResponse<TagRule[]>>('/api/v1/admin/tags/rules')
+export const listTagRules = () => apiClient.get<ApiResponse<TagRule[]>>('/api/v1/admin/tags/rules')
 
 // ── Statistics ───────────────────────────────────────────
 export const getActiveUsersTrend = (days?: number) =>
-  apiClient.get<ApiResponse<ActiveUsersTrendResponse>>('/api/v1/admin/user-stats/active-users/trend', { params: { days } })
+  apiClient.get<ApiResponse<ActiveUsersTrendResponse>>(
+    '/api/v1/admin/user-stats/active-users/trend',
+    { params: { days } },
+  )
 
 export const getPracticeStats = (params?: { startDate?: string; endDate?: string }) =>
   apiClient.get<ApiResponse<PracticeStats>>('/api/v1/admin/practices/stats', { params })

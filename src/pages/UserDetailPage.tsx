@@ -22,9 +22,9 @@ import { StatCard } from '@/components/StatCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  useAdminUserDetail,
-  useAdminLoginHistory,
   useAdminActivityStats,
+  useAdminLoginHistory,
+  useAdminUserDetail,
 } from '@/hooks/useAdminUserDetail'
 import { cn } from '@/lib/utils'
 

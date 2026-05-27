@@ -3,12 +3,54 @@ import { useState } from 'react'
 import { StatCard } from '@/components/StatCard'
 
 const MOCK_SCHEDULE = [
-  { course: '基礎課程', module: 'Module 2', condition: '註冊後 7 天', conditionType: 'days' as const, unlocked: 234, waiting: 56 },
-  { course: '基礎課程', module: 'Module 3', condition: '註冊後 14 天', conditionType: 'days' as const, unlocked: 189, waiting: 101 },
-  { course: '進階課程', module: 'Module 1', condition: '2024-03-01', conditionType: 'date' as const, unlocked: 145, waiting: 78 },
-  { course: '進階課程', module: 'Module 2', condition: '完成 Module 1 後 7 天', conditionType: 'days' as const, unlocked: 98, waiting: 125 },
-  { course: '實戰專案', module: 'Module 1', condition: '2024-04-15', conditionType: 'date' as const, unlocked: 67, waiting: 156 },
-  { course: '實戰專案', module: 'Module 2', condition: '註冊後 30 天', conditionType: 'days' as const, unlocked: 34, waiting: 189 },
+  {
+    course: '基礎課程',
+    module: 'Module 2',
+    condition: '註冊後 7 天',
+    conditionType: 'days' as const,
+    unlocked: 234,
+    waiting: 56,
+  },
+  {
+    course: '基礎課程',
+    module: 'Module 3',
+    condition: '註冊後 14 天',
+    conditionType: 'days' as const,
+    unlocked: 189,
+    waiting: 101,
+  },
+  {
+    course: '進階課程',
+    module: 'Module 1',
+    condition: '2024-03-01',
+    conditionType: 'date' as const,
+    unlocked: 145,
+    waiting: 78,
+  },
+  {
+    course: '進階課程',
+    module: 'Module 2',
+    condition: '完成 Module 1 後 7 天',
+    conditionType: 'days' as const,
+    unlocked: 98,
+    waiting: 125,
+  },
+  {
+    course: '實戰專案',
+    module: 'Module 1',
+    condition: '2024-04-15',
+    conditionType: 'date' as const,
+    unlocked: 67,
+    waiting: 156,
+  },
+  {
+    course: '實戰專案',
+    module: 'Module 2',
+    condition: '註冊後 30 天',
+    conditionType: 'days' as const,
+    unlocked: 34,
+    waiting: 189,
+  },
 ]
 
 export function DripContentPage() {

@@ -1,13 +1,43 @@
 import { AlertTriangle, BookOpen, Eye, Percent, Users } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { StatCard } from '@/components/StatCard'
+import { cn } from '@/lib/utils'
 
 const MOCK_COURSES = [
-  { name: 'React 入門實戰', enrolled: 342, completionRate: 68, avgProgress: 72, stuckLesson: 'State 管理' },
-  { name: 'TypeScript 完全指南', enrolled: 256, completionRate: 45, avgProgress: 51, stuckLesson: '泛型進階' },
-  { name: 'Node.js 後端開發', enrolled: 198, completionRate: 32, avgProgress: 38, stuckLesson: 'Stream 處理' },
-  { name: 'CSS 動畫大師班', enrolled: 167, completionRate: 55, avgProgress: 60, stuckLesson: 'Keyframes 組合' },
-  { name: 'Git 版本控制', enrolled: 423, completionRate: 78, avgProgress: 82, stuckLesson: 'Rebase 互動模式' },
+  {
+    name: 'React 入門實戰',
+    enrolled: 342,
+    completionRate: 68,
+    avgProgress: 72,
+    stuckLesson: 'State 管理',
+  },
+  {
+    name: 'TypeScript 完全指南',
+    enrolled: 256,
+    completionRate: 45,
+    avgProgress: 51,
+    stuckLesson: '泛型進階',
+  },
+  {
+    name: 'Node.js 後端開發',
+    enrolled: 198,
+    completionRate: 32,
+    avgProgress: 38,
+    stuckLesson: 'Stream 處理',
+  },
+  {
+    name: 'CSS 動畫大師班',
+    enrolled: 167,
+    completionRate: 55,
+    avgProgress: 60,
+    stuckLesson: 'Keyframes 組合',
+  },
+  {
+    name: 'Git 版本控制',
+    enrolled: 423,
+    completionRate: 78,
+    avgProgress: 82,
+    stuckLesson: 'Rebase 互動模式',
+  },
 ]
 
 const MOCK_STALLED_USERS = [
@@ -28,7 +58,13 @@ export function LearningProgressPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard title="總課程" value={12} icon={BookOpen} change={2.0} changeLabel="較上月" />
         <StatCard title="平均完成率" value="45%" icon={Percent} change={3.5} changeLabel="較上月" />
-        <StatCard title="停滯用戶" value={23} icon={AlertTriangle} change={-8.2} changeLabel="較上月" />
+        <StatCard
+          title="停滯用戶"
+          value={23}
+          icon={AlertTriangle}
+          change={-8.2}
+          changeLabel="較上月"
+        />
       </div>
 
       {/* ── Course table ───────────────────────────────── */}
@@ -57,7 +93,11 @@ export function LearningProgressPage() {
                         <div
                           className={cn(
                             'h-2 rounded-full',
-                            course.completionRate >= 60 ? 'bg-success' : course.completionRate >= 40 ? 'bg-warning' : 'bg-destructive',
+                            course.completionRate >= 60
+                              ? 'bg-success'
+                              : course.completionRate >= 40
+                                ? 'bg-warning'
+                                : 'bg-destructive',
                           )}
                           style={{ width: `${course.completionRate}%` }}
                         />
@@ -98,7 +138,10 @@ export function LearningProgressPage() {
             </thead>
             <tbody>
               {MOCK_STALLED_USERS.map((row) => (
-                <tr key={`${row.user}-${row.course}`} className="border-b border-border last:border-0">
+                <tr
+                  key={`${row.user}-${row.course}`}
+                  className="border-b border-border last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground">{row.user}</td>
                   <td className="py-3 pr-4 text-foreground">{row.course}</td>
                   <td className="py-3 pr-4">
@@ -116,7 +159,11 @@ export function LearningProgressPage() {
                     <span
                       className={cn(
                         'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                        row.stalledDays >= 21 ? 'bg-destructive/15 text-destructive' : row.stalledDays >= 14 ? 'bg-warning/15 text-warning' : 'bg-muted text-muted-foreground',
+                        row.stalledDays >= 21
+                          ? 'bg-destructive/15 text-destructive'
+                          : row.stalledDays >= 14
+                            ? 'bg-warning/15 text-warning'
+                            : 'bg-muted text-muted-foreground',
                       )}
                     >
                       {row.stalledDays} 天

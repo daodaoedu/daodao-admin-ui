@@ -5,14 +5,78 @@ import { StatCard } from '@/components/StatCard'
 import { cn } from '@/lib/utils'
 
 const mockContent = [
-  { id: 1, title: '如何開始自主學習', views: 2345, depth: 78, avgTime: '4.2 分', interactionRate: '12.3%', featured: true },
-  { id: 2, title: 'React 入門教學', views: 1890, depth: 65, avgTime: '3.8 分', interactionRate: '9.8%', featured: true },
-  { id: 3, title: 'Python 資料分析實戰', views: 1456, depth: 72, avgTime: '5.1 分', interactionRate: '11.2%', featured: false },
-  { id: 4, title: '設計思考工作坊心得', views: 987, depth: 58, avgTime: '2.9 分', interactionRate: '7.5%', featured: false },
-  { id: 5, title: 'AI 時代的學習策略', views: 876, depth: 81, avgTime: '4.5 分', interactionRate: '14.1%', featured: false },
-  { id: 6, title: '遠端工作生產力指南', views: 654, depth: 45, avgTime: '2.1 分', interactionRate: '3.2%', featured: false },
-  { id: 7, title: '開源社群參與指南', views: 432, depth: 52, avgTime: '2.8 分', interactionRate: '5.6%', featured: false },
-  { id: 8, title: '學習筆記整理術', views: 23, depth: 12, avgTime: '0.3 分', interactionRate: '0%', featured: false },
+  {
+    id: 1,
+    title: '如何開始自主學習',
+    views: 2345,
+    depth: 78,
+    avgTime: '4.2 分',
+    interactionRate: '12.3%',
+    featured: true,
+  },
+  {
+    id: 2,
+    title: 'React 入門教學',
+    views: 1890,
+    depth: 65,
+    avgTime: '3.8 分',
+    interactionRate: '9.8%',
+    featured: true,
+  },
+  {
+    id: 3,
+    title: 'Python 資料分析實戰',
+    views: 1456,
+    depth: 72,
+    avgTime: '5.1 分',
+    interactionRate: '11.2%',
+    featured: false,
+  },
+  {
+    id: 4,
+    title: '設計思考工作坊心得',
+    views: 987,
+    depth: 58,
+    avgTime: '2.9 分',
+    interactionRate: '7.5%',
+    featured: false,
+  },
+  {
+    id: 5,
+    title: 'AI 時代的學習策略',
+    views: 876,
+    depth: 81,
+    avgTime: '4.5 分',
+    interactionRate: '14.1%',
+    featured: false,
+  },
+  {
+    id: 6,
+    title: '遠端工作生產力指南',
+    views: 654,
+    depth: 45,
+    avgTime: '2.1 分',
+    interactionRate: '3.2%',
+    featured: false,
+  },
+  {
+    id: 7,
+    title: '開源社群參與指南',
+    views: 432,
+    depth: 52,
+    avgTime: '2.8 分',
+    interactionRate: '5.6%',
+    featured: false,
+  },
+  {
+    id: 8,
+    title: '學習筆記整理術',
+    views: 23,
+    depth: 12,
+    avgTime: '0.3 分',
+    interactionRate: '0%',
+    featured: false,
+  },
 ]
 
 const mockCollections = [
@@ -28,7 +92,8 @@ export function ContentPerformancePage() {
 
   const sorted = [...content].sort((a, b) => {
     if (sortBy === 'avgTime') return Number.parseFloat(b.avgTime) - Number.parseFloat(a.avgTime)
-    if (sortBy === 'interactionRate') return Number.parseFloat(b.interactionRate) - Number.parseFloat(a.interactionRate)
+    if (sortBy === 'interactionRate')
+      return Number.parseFloat(b.interactionRate) - Number.parseFloat(a.interactionRate)
     return (b[sortBy] as number) - (a[sortBy] as number)
   })
 
@@ -71,7 +136,10 @@ export function ContentPerformancePage() {
                     <button
                       type="button"
                       onClick={() => setSortBy(col.key)}
-                      className={cn('hover:text-foreground', sortBy === col.key && 'text-foreground underline')}
+                      className={cn(
+                        'hover:text-foreground',
+                        sortBy === col.key && 'text-foreground underline',
+                      )}
                     >
                       {col.label}
                     </button>
@@ -83,7 +151,13 @@ export function ContentPerformancePage() {
             </thead>
             <tbody>
               {sorted.map((item) => (
-                <tr key={item.id} className={cn('border-b border-border', Number.parseFloat(item.interactionRate) === 0 && 'bg-destructive/5')}>
+                <tr
+                  key={item.id}
+                  className={cn(
+                    'border-b border-border',
+                    Number.parseFloat(item.interactionRate) === 0 && 'bg-destructive/5',
+                  )}
+                >
                   <td className="px-4 py-3 font-medium">{item.title}</td>
                   <td className="px-4 py-3">{item.views.toLocaleString()}</td>
                   <td className="px-4 py-3">{item.depth}%</td>
@@ -100,7 +174,9 @@ export function ContentPerformancePage() {
                     <button
                       type="button"
                       onClick={() => {
-                        setContent((prev) => prev.map((c) => (c.id === item.id ? { ...c, featured: !c.featured } : c)))
+                        setContent((prev) =>
+                          prev.map((c) => (c.id === item.id ? { ...c, featured: !c.featured } : c)),
+                        )
                       }}
                       className="text-xs text-primary hover:underline"
                     >
@@ -118,12 +194,19 @@ export function ContentPerformancePage() {
         <h2 className="mb-4 heading-sm">策展集合</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {mockCollections.map((col) => (
-            <div key={col.name} className="flex items-center justify-between rounded-lg border border-border p-4">
+            <div
+              key={col.name}
+              className="flex items-center justify-between rounded-lg border border-border p-4"
+            >
               <div>
                 <p className="font-medium">{col.name}</p>
                 <p className="text-sm text-muted-foreground">{col.count} 篇內容</p>
               </div>
-              <button type="button" onClick={() => alert('功能開發中')} className="text-sm text-primary hover:underline">
+              <button
+                type="button"
+                onClick={() => alert('功能開發中')}
+                className="text-sm text-primary hover:underline"
+              >
                 編輯
               </button>
             </div>

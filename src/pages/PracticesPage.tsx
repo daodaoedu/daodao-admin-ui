@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import { BookOpen, ChevronLeft, ChevronRight, Search, Users } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useState } from 'react'
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
 import { usePracticeStats } from '@/hooks/usePracticeStats'
+import { cn } from '@/lib/utils'
 
 type PracticeStatus = 'active' | 'inactive' | 'draft'
 
@@ -18,20 +18,93 @@ interface Practice {
 }
 
 const mockPractices: Practice[] = [
-  { id: 1, title: '每日冥想 10 分鐘', status: 'active', creator: '陳小明', createdAt: '2025-12-01', participants: 320, likes: 89 },
-  { id: 2, title: '閱讀一本好書', status: 'active', creator: '林美玲', createdAt: '2025-11-15', participants: 256, likes: 72 },
-  { id: 3, title: '每週運動三次', status: 'active', creator: '王大華', createdAt: '2025-10-20', participants: 198, likes: 65 },
-  { id: 4, title: '感恩日記', status: 'inactive', creator: '張小芳', createdAt: '2025-09-10', participants: 145, likes: 43 },
-  { id: 5, title: '數位排毒挑戰', status: 'active', creator: '李志明', createdAt: '2025-08-05', participants: 112, likes: 38 },
-  { id: 6, title: '早起習慣養成', status: 'draft', creator: '黃雅琪', createdAt: '2025-07-22', participants: 0, likes: 12 },
-  { id: 7, title: '每日學習 30 分鐘', status: 'active', creator: '劉建國', createdAt: '2025-06-18', participants: 95, likes: 29 },
-  { id: 8, title: '斷捨離生活實踐', status: 'inactive', creator: '吳佳蓉', createdAt: '2025-05-30', participants: 108, likes: 34 },
+  {
+    id: 1,
+    title: '每日冥想 10 分鐘',
+    status: 'active',
+    creator: '陳小明',
+    createdAt: '2025-12-01',
+    participants: 320,
+    likes: 89,
+  },
+  {
+    id: 2,
+    title: '閱讀一本好書',
+    status: 'active',
+    creator: '林美玲',
+    createdAt: '2025-11-15',
+    participants: 256,
+    likes: 72,
+  },
+  {
+    id: 3,
+    title: '每週運動三次',
+    status: 'active',
+    creator: '王大華',
+    createdAt: '2025-10-20',
+    participants: 198,
+    likes: 65,
+  },
+  {
+    id: 4,
+    title: '感恩日記',
+    status: 'inactive',
+    creator: '張小芳',
+    createdAt: '2025-09-10',
+    participants: 145,
+    likes: 43,
+  },
+  {
+    id: 5,
+    title: '數位排毒挑戰',
+    status: 'active',
+    creator: '李志明',
+    createdAt: '2025-08-05',
+    participants: 112,
+    likes: 38,
+  },
+  {
+    id: 6,
+    title: '早起習慣養成',
+    status: 'draft',
+    creator: '黃雅琪',
+    createdAt: '2025-07-22',
+    participants: 0,
+    likes: 12,
+  },
+  {
+    id: 7,
+    title: '每日學習 30 分鐘',
+    status: 'active',
+    creator: '劉建國',
+    createdAt: '2025-06-18',
+    participants: 95,
+    likes: 29,
+  },
+  {
+    id: 8,
+    title: '斷捨離生活實踐',
+    status: 'inactive',
+    creator: '吳佳蓉',
+    createdAt: '2025-05-30',
+    participants: 108,
+    likes: 34,
+  },
 ]
 
 const statusMap: Record<PracticeStatus, { label: string; className: string }> = {
-  active: { label: '活躍', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-  inactive: { label: '停用', className: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400' },
-  draft: { label: '草稿', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  active: {
+    label: '活躍',
+    className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  },
+  inactive: {
+    label: '停用',
+    className: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+  },
+  draft: {
+    label: '草稿',
+    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  },
 }
 
 const exportColumns = [
@@ -79,7 +152,12 @@ export function PracticesPage() {
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard title="總實踐數" value={practiceStats?.total ?? 42} icon={BookOpen} />
-        <StatCard title="活躍中" value={practiceStats?.active ?? 28} change={5.2} changeLabel="較上月" />
+        <StatCard
+          title="活躍中"
+          value={practiceStats?.active ?? 28}
+          change={5.2}
+          changeLabel="較上月"
+        />
         <StatCard
           title="總打卡次數"
           value={practiceStats?.totalCheckIns?.toLocaleString() ?? '1,234'}
@@ -140,10 +218,18 @@ export function PracticesPage() {
             {filtered.map((practice) => {
               const status = statusMap[practice.status]
               return (
-                <tr key={practice.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+                <tr
+                  key={practice.id}
+                  className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
+                >
                   <td className="px-5 py-3 font-medium">{practice.title}</td>
                   <td className="px-5 py-3">
-                    <span className={cn('inline-block rounded-full px-2.5 py-0.5 text-xs font-medium', status.className)}>
+                    <span
+                      className={cn(
+                        'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium',
+                        status.className,
+                      )}
+                    >
                       {status.label}
                     </span>
                   </td>

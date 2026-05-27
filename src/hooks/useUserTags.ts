@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { listTags, listTagRules } from '@/api/admin-users'
+import { listTagRules, listTags } from '@/api/admin-users'
 
 export function useUserTags() {
   return useQuery({

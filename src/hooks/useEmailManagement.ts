@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getEmailStats, getEmailHealth } from '@/api/admin-system'
+import { getEmailHealth, getEmailStats } from '@/api/admin-system'
 
 export function useEmailStats() {
   return useQuery({

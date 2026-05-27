@@ -1,8 +1,8 @@
 import { Bell, Clock, Eye, Megaphone, Plus } from 'lucide-react'
-import { StatCard } from '@/components/StatCard'
-import { cn } from '@/lib/utils'
-import { useNotifications } from '@/hooks/useNotifications'
 import type { NotificationListResponse } from '@/api/admin-communication'
+import { StatCard } from '@/components/StatCard'
+import { useNotifications } from '@/hooks/useNotifications'
+import { cn } from '@/lib/utils'
 
 const mockNotifications = [
   {
@@ -71,7 +71,13 @@ export function NotificationsPage() {
   const { data: apiData } = useNotifications()
 
   const notifications = apiData?.items ?? mockNotifications
-  const stats = apiData?.stats ?? { totalSent: 156, avgReadRate: 72.3, scheduled: 3, sentChange: 12.5, readRateChange: 3.1 }
+  const stats = apiData?.stats ?? {
+    totalSent: 156,
+    avgReadRate: 72.3,
+    scheduled: 3,
+    sentChange: 12.5,
+    readRateChange: 3.1,
+  }
 
   return (
     <div className="space-y-6">
@@ -90,8 +96,20 @@ export function NotificationsPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="總發送" value={stats.totalSent} icon={Megaphone} change={stats.sentChange} changeLabel="較上月" />
-        <StatCard title="平均已讀率" value={`${stats.avgReadRate}%`} icon={Eye} change={stats.readRateChange} changeLabel="較上月" />
+        <StatCard
+          title="總發送"
+          value={stats.totalSent}
+          icon={Megaphone}
+          change={stats.sentChange}
+          changeLabel="較上月"
+        />
+        <StatCard
+          title="平均已讀率"
+          value={`${stats.avgReadRate}%`}
+          icon={Eye}
+          change={stats.readRateChange}
+          changeLabel="較上月"
+        />
         <StatCard title="排程中" value={stats.scheduled} icon={Clock} />
       </div>
 

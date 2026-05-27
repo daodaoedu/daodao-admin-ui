@@ -1,14 +1,4 @@
-import {
-  Calendar,
-  Clock,
-  Edit,
-  MapPin,
-  Plus,
-  RefreshCw,
-  Send,
-  Users,
-  Video,
-} from 'lucide-react'
+import { Calendar, Clock, Edit, MapPin, Plus, RefreshCw, Send, Users, Video } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -182,9 +172,7 @@ export function EventsPage() {
               key={event.id}
               className={cn(
                 'rounded-xl border bg-card p-5 shadow-sm transition-colors',
-                selectedEventId === event.id
-                  ? 'border-primary'
-                  : 'border-border',
+                selectedEventId === event.id ? 'border-primary' : 'border-border',
               )}
             >
               <h3 className="font-medium text-foreground">{event.name}</h3>
@@ -208,9 +196,7 @@ export function EventsPage() {
                   <Users className="h-3.5 w-3.5" />
                   RSVP: {event.rsvp}/{event.capacity ?? '∞'}
                   {event.waitlist > 0 && (
-                    <span className="text-warning">
-                      · Waitlist: {event.waitlist}
-                    </span>
+                    <span className="text-warning">· Waitlist: {event.waitlist}</span>
                   )}
                 </div>
               </div>
@@ -259,9 +245,7 @@ export function EventsPage() {
       {/* ── RSVP summary card ──────────────────────────── */}
       {activeTab === 'upcoming' && selectedEvent && (
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="mb-4 heading-sm">
-            RSVP 詳情 — {selectedEvent.name}
-          </h2>
+          <h2 className="mb-4 heading-sm">RSVP 詳情 — {selectedEvent.name}</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

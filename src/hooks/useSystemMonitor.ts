@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getSystemMonitor, getDbInfo, getRedisInfo } from '@/api/admin-system'
+import { getDbInfo, getRedisInfo, getSystemMonitor } from '@/api/admin-system'
 
 export function useSystemMonitor() {
   return useQuery({

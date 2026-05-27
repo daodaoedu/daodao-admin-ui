@@ -39,10 +39,7 @@ export function LearningPathsPage() {
 
       {/* ── Path cards ─────────────────────────────────── */}
       {MOCK_PATHS.map((path) => (
-        <div
-          key={path.name}
-          className="rounded-xl border border-border bg-card p-5 shadow-sm"
-        >
+        <div key={path.name} className="rounded-xl border border-border bg-card p-5 shadow-sm">
           {/* Path header */}
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3">
@@ -86,12 +83,18 @@ export function LearningPathsPage() {
               <div
                 className={cn(
                   'h-2 rounded-full',
-                  path.completionRate >= 40 ? 'bg-success' : path.completionRate >= 30 ? 'bg-warning' : 'bg-destructive',
+                  path.completionRate >= 40
+                    ? 'bg-success'
+                    : path.completionRate >= 30
+                      ? 'bg-warning'
+                      : 'bg-destructive',
                 )}
                 style={{ width: `${path.completionRate}%` }}
               />
             </div>
-            <span className="text-sm font-medium text-foreground">{path.completionRate}% 完成率</span>
+            <span className="text-sm font-medium text-foreground">
+              {path.completionRate}% 完成率
+            </span>
           </div>
         </div>
       ))}

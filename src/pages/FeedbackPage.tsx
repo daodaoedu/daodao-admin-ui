@@ -1,11 +1,11 @@
 import { ChevronDown, Clock, Inbox, MessageSquare, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
+import { StatCard } from '@/components/StatCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/input'
-import { StatCard } from '@/components/StatCard'
-import { cn } from '@/lib/utils'
 import { useFeedback } from '@/hooks/useFeedback'
+import { cn } from '@/lib/utils'
 
 type FeedbackStatus = '待處理' | '已回覆' | '已關閉'
 type FeedbackCategory = 'Bug' | '功能建議' | '問題' | '其他'
@@ -111,8 +111,16 @@ export function FeedbackPage() {
     category: categoryFilter !== '全部' ? categoryFilter : undefined,
   })
 
-  const feedbackItems: FeedbackItem[] = (apiData?.items as unknown as FeedbackItem[] | undefined) ?? mockFeedback
-  const feedbackStats = apiData?.stats ?? { total: 89, pending: 12, thisMonth: 23, totalChange: 8.2, pendingChange: -15.3, thisMonthChange: 5.1 }
+  const feedbackItems: FeedbackItem[] =
+    (apiData?.items as unknown as FeedbackItem[] | undefined) ?? mockFeedback
+  const feedbackStats = apiData?.stats ?? {
+    total: 89,
+    pending: 12,
+    thisMonth: 23,
+    totalChange: 8.2,
+    pendingChange: -15.3,
+    thisMonthChange: 5.1,
+  }
 
   const filtered = feedbackItems.filter((f) => {
     if (statusFilter !== '全部' && f.status !== statusFilter) return false
@@ -153,9 +161,27 @@ export function FeedbackPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="總回饋" value={feedbackStats.total} icon={MessageSquare} change={feedbackStats.totalChange} changeLabel="較上月" />
-        <StatCard title="待處理" value={feedbackStats.pending} icon={Inbox} change={feedbackStats.pendingChange} changeLabel="較上月" />
-        <StatCard title="本月新增" value={feedbackStats.thisMonth} icon={TrendingUp} change={feedbackStats.thisMonthChange} changeLabel="較上月" />
+        <StatCard
+          title="總回饋"
+          value={feedbackStats.total}
+          icon={MessageSquare}
+          change={feedbackStats.totalChange}
+          changeLabel="較上月"
+        />
+        <StatCard
+          title="待處理"
+          value={feedbackStats.pending}
+          icon={Inbox}
+          change={feedbackStats.pendingChange}
+          changeLabel="較上月"
+        />
+        <StatCard
+          title="本月新增"
+          value={feedbackStats.thisMonth}
+          icon={TrendingUp}
+          change={feedbackStats.thisMonthChange}
+          changeLabel="較上月"
+        />
       </div>
 
       {/* Feedback List */}
@@ -262,9 +288,7 @@ export function FeedbackPage() {
                           type="button"
                           variant="secondary"
                           onClick={() =>
-                            alert(
-                              `狀態已變更為：${statusChanges[item.id] ?? item.status}`,
-                            )
+                            alert(`狀態已變更為：${statusChanges[item.id] ?? item.status}`)
                           }
                         >
                           確認

@@ -118,12 +118,14 @@ export function DashboardPage() {
           </p>
         </div>
         <ExportButton
-          data={[
-            { label: '總費用 (USD)', value: `$${(Number(data.total_cost_usd) || 0).toFixed(4)}` },
-            { label: '總查詢次數', value: data.total_queries },
-            { label: 'Input Tokens', value: data.total_input_tokens },
-            { label: 'Output Tokens', value: data.total_output_tokens },
-          ] as unknown as Record<string, unknown>[]}
+          data={
+            [
+              { label: '總費用 (USD)', value: `$${(Number(data.total_cost_usd) || 0).toFixed(4)}` },
+              { label: '總查詢次數', value: data.total_queries },
+              { label: 'Input Tokens', value: data.total_input_tokens },
+              { label: 'Output Tokens', value: data.total_output_tokens },
+            ] as unknown as Record<string, unknown>[]
+          }
           columns={[
             { key: 'label', header: '指標' },
             { key: 'value', header: '數值' },

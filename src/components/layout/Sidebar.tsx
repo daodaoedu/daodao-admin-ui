@@ -154,7 +154,13 @@ function SidebarGroup({
   group,
   collapsed,
   onToggle,
-}: { group: NavGroup; collapsed: boolean; onToggle: () => void }) {
+  onNavigate,
+}: {
+  group: NavGroup
+  collapsed: boolean
+  onToggle: () => void
+  onNavigate?: () => void
+}) {
   const location = useLocation()
 
   return (
@@ -165,9 +171,7 @@ function SidebarGroup({
         className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
       >
         {group.title}
-        <ChevronDown
-          className={cn('h-3 w-3 transition-transform', collapsed && '-rotate-90')}
-        />
+        <ChevronDown className={cn('h-3 w-3 transition-transform', collapsed && '-rotate-90')} />
       </button>
       {!collapsed && (
         <div className="mt-0.5 space-y-0.5">
@@ -177,6 +181,7 @@ function SidebarGroup({
               <Link
                 key={to}
                 to={to}
+                onClick={onNavigate}
                 className={cn(
                   'flex items-center gap-3 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   active
@@ -199,16 +204,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { logout } = useAuth()
   const [collapsed, setCollapsed] = useState(getInitialCollapsed)
 
-  const toggle = useCallback(
-    (title: string) => {
-      setCollapsed((prev) => {
-        const next = { ...prev, [title]: !prev[title] }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-        return next
-      })
-    },
-    [],
-  )
+  const toggle = useCallback((title: string) => {
+    setCollapsed((prev) => {
+      const next = { ...prev, [title]: !prev[title] }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }, [])
 
   return (
     <>
@@ -216,17 +218,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <span className="heading-sm text-primary">DaoDao Admin</span>
       </div>
 
-      <nav
-        className="flex-1 overflow-y-auto px-2 py-3 space-y-3 scrollbar-hide"
-        onClick={onNavigate}
-        onKeyDown={undefined}
-      >
+      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-3 scrollbar-hide">
         {navGroups.map((group) => (
           <SidebarGroup
             key={group.title}
             group={group}
             collapsed={!!collapsed[group.title]}
             onToggle={() => toggle(group.title)}
+            onNavigate={onNavigate}
           />
         ))}
       </nav>
@@ -259,7 +258,9 @@ export function MobileHeader({ children }: { children?: ReactNode }) {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden'
-      return () => { document.body.style.overflow = '' }
+      return () => {
+        document.body.style.overflow = ''
+      }
     }
   }, [open])
 
@@ -275,10 +276,18 @@ export function MobileHeader({ children }: { children?: ReactNode }) {
 
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} onKeyDown={undefined} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setOpen(false)}
+            onKeyDown={undefined}
+          />
           <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-card shadow-xl">
             <div className="absolute right-2 top-3">
-              <button type="button" onClick={() => setOpen(false)} className="text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-muted-foreground"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
