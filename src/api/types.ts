@@ -329,3 +329,86 @@ export interface AdminUserListItem {
   createdAt: string
   lastLoginAt: string | null
 }
+
+// ── Admin User Detail ─────────────────────────────────────
+export interface AdminUserDetail {
+  id: string
+  internalId: number
+  name: string | null
+  email: string | null
+  photoURL: string | null
+  emailVerified: boolean
+  isActive: boolean
+  roles: Array<{ id: number; name: string }>
+  permissions: string[]
+  createdAt: string
+  lastLoginAt: string | null
+  activityStats?: {
+    totalCheckins: number
+    totalPosts: number
+    totalComments: number
+    lastActivityAt: string | null
+  }
+}
+
+export interface AdminLoginHistoryItem {
+  id: number
+  loginAt: string
+  ipAddress: string | null
+  userAgent: string | null
+}
+
+export interface AdminActivityStats {
+  totalCheckins: number
+  totalPosts: number
+  totalComments: number
+  totalReactions: number
+  lastActivityAt: string | null
+}
+
+export interface PracticeStats {
+  total: number
+  active: number
+  completed: number
+  totalCheckIns: number
+  avgCheckInsPerPractice: number
+}
+
+export interface ActiveUsersTrendPoint {
+  date: string
+  dau: number
+  wau: number
+  mau: number
+}
+
+export interface ActiveUsersTrendResponse {
+  data: ActiveUsersTrendPoint[]
+  summary: {
+    currentDau: number
+    currentWau: number
+    currentMau: number
+    dauChangePercent: number
+    wauChangePercent: number
+    mauChangePercent: number
+  }
+}
+
+export interface EmailHistoryItem {
+  id: number
+  recipient: string
+  subject: string
+  status: string
+  sentAt: string
+  type: string
+}
+
+export interface EmailHistoryResponse {
+  items: EmailHistoryItem[]
+  summary: {
+    totalSent: number
+    successCount: number
+    failedCount: number
+    successRate: number
+  }
+  pagination: OffsetPagination
+}

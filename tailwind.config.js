@@ -63,6 +63,10 @@ export default {
         'logo-cyan': 'var(--logo-cyan)',
         'logo-orange': 'var(--logo-orange)',
         'logo-yellow': 'var(--logo-yellow)',
+        'logo-gray': 'var(--logo-gray)',
+        // Mascot colors
+        'mascot-aqua': 'var(--mascot-aqua)',
+        'mascot-bright-blue': 'var(--mascot-bright-blue)',
         // Basic / grayscale
         'basic-100': 'var(--basic-100)',
         'basic-200': 'var(--basic-200)',
@@ -76,6 +80,18 @@ export default {
         tips: 'var(--tips)',
         success: 'var(--success)',
         alert: 'var(--alert)',
+        warning: 'var(--warning)',
+        info: 'var(--info)',
+        // Background variants
+        'bg-dark': 'var(--bg-dark)',
+        'bg-gray': 'var(--bg-gray)',
+        'very-light-gray': 'var(--very-light-gray)',
+        'light-gray': 'var(--light-gray)',
+        'light-cyan': 'var(--light-cyan)',
+        'light-blue': 'var(--light-blue)',
+        'very-light-blue': 'var(--very-light-blue)',
+        blue: 'var(--blue)',
+        red: 'var(--red)',
         // Chart
         'chart-1': 'var(--chart-1)',
         'chart-2': 'var(--chart-2)',

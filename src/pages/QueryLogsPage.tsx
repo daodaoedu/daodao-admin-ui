@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { useState } from 'react'
 import { listQueryLogs } from '@/api/admin'
 import type { AIQueryLog, QueryLogFilters } from '@/api/types'
+import { ExportButton } from '@/components/ExportButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +25,25 @@ export function QueryLogsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="heading-lg">AI 查詢日誌</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="heading-lg">AI 查詢日誌</h1>
+        <ExportButton
+          data={logs as unknown as Record<string, unknown>[]}
+          fileName="query-logs"
+          columns={[
+            { key: 'id', header: 'ID' },
+            { key: 'backend', header: 'Backend' },
+            { key: 'context', header: 'Context' },
+            { key: 'user_id', header: 'User' },
+            { key: 'total_tokens', header: 'Tokens' },
+            { key: 'cost_usd', header: 'Cost (USD)' },
+            { key: 'latency_ms', header: 'Latency (ms)' },
+            { key: 'finish_reason', header: 'Finish' },
+            { key: 'status', header: 'Status' },
+            { key: 'created_at', header: '時間' },
+          ]}
+        />
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
