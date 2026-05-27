@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
+import { useActiveUsersTrend } from '@/hooks/useActiveUsersTrend'
 import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
@@ -77,6 +78,8 @@ export function UserAnalyticsPage() {
   const [dateFrom, setDateFrom] = useState(() => format(subDays(new Date(), 29), 'yyyy-MM-dd'))
   const [dateTo, setDateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'))
 
+  const { data: trendData } = useActiveUsersTrend(30)
+
   const registrationTrend = useMemo(() => generateRegistrationTrend(), [])
   const cohortData = useMemo(() => generateCohortData(), [])
 
@@ -119,18 +122,24 @@ export function UserAnalyticsPage() {
 
       {/* Section 1: DAU / WAU / MAU */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard title="DAU (日活躍)" value="1,234" change={5.2} changeLabel="vs 上週" icon={Users} />
+        <StatCard
+          title="DAU (日活躍)"
+          value={trendData?.summary?.currentDau?.toLocaleString() ?? '1,234'}
+          change={trendData?.summary?.dauChangePercent ?? 5.2}
+          changeLabel="vs 上週"
+          icon={Users}
+        />
         <StatCard
           title="WAU (週活躍)"
-          value="4,567"
-          change={3.1}
+          value={trendData?.summary?.currentWau?.toLocaleString() ?? '4,567'}
+          change={trendData?.summary?.wauChangePercent ?? 3.1}
           changeLabel="vs 上週"
           icon={Activity}
         />
         <StatCard
           title="MAU (月活躍)"
-          value="12,345"
-          change={8.7}
+          value={trendData?.summary?.currentMau?.toLocaleString() ?? '12,345'}
+          change={trendData?.summary?.mauChangePercent ?? 8.7}
           changeLabel="vs 上月"
           icon={TrendingUp}
         />

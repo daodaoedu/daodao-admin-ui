@@ -21,6 +21,10 @@ export const getAdminActivityStats = (userId: string) =>
 export const updateAdminUserStatus = (userId: string, data: { isActive: boolean }) =>
   apiClient.put<ApiResponse<{ success: boolean }>>(`/api/v1/admin/users/${userId}/status`, data)
 
+// ── Tags ────────────────────────────────────────────────
+export const listTags = () =>
+  apiClient.get<ApiResponse<unknown>>('/api/v1/admin/tags')
+
 // ── Statistics ───────────────────────────────────────────
 export const getActiveUsersTrend = (days?: number) =>
   apiClient.get<ApiResponse<ActiveUsersTrendResponse>>('/api/v1/admin/user-stats/active-users/trend', { params: { days } })

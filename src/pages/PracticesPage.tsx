@@ -3,6 +3,7 @@ import { BookOpen, ChevronLeft, ChevronRight, Search, Users } from 'lucide-react
 import { cn } from '@/lib/utils'
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
+import { usePracticeStats } from '@/hooks/usePracticeStats'
 
 type PracticeStatus = 'active' | 'inactive' | 'draft'
 
@@ -48,6 +49,8 @@ export function PracticesPage() {
   const [sort, setSort] = useState<'createdAt' | 'likes' | 'participants'>('createdAt')
   const [currentPage, setCurrentPage] = useState(1)
 
+  const { data: practiceStats } = usePracticeStats()
+
   const filtered = mockPractices
     .filter((p) => {
       if (statusFilter !== 'all' && p.status !== statusFilter) return false
@@ -75,9 +78,15 @@ export function PracticesPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard title="總實踐數" value={42} icon={BookOpen} />
-        <StatCard title="活躍中" value={28} change={5.2} changeLabel="較上月" />
-        <StatCard title="總參與人數" value="1,234" icon={Users} change={12.3} changeLabel="較上月" />
+        <StatCard title="總實踐數" value={practiceStats?.total ?? 42} icon={BookOpen} />
+        <StatCard title="活躍中" value={practiceStats?.active ?? 28} change={5.2} changeLabel="較上月" />
+        <StatCard
+          title="總打卡次數"
+          value={practiceStats?.totalCheckIns?.toLocaleString() ?? '1,234'}
+          icon={Users}
+          change={12.3}
+          changeLabel="較上月"
+        />
       </div>
 
       {/* Filters */}

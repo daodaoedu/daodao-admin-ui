@@ -6,6 +6,7 @@ import {
   DollarSign,
   FileText,
   Hash,
+  Loader2,
   LogIn,
   MapPin,
   Monitor,
@@ -16,9 +17,15 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { updateAdminUserStatus } from '@/api/admin-users'
 import { StatCard } from '@/components/StatCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  useAdminUserDetail,
+  useAdminLoginHistory,
+  useAdminActivityStats,
+} from '@/hooks/useAdminUserDetail'
 import { cn } from '@/lib/utils'
 
 // ── Mock Data ──────────────────────────────────────────────
@@ -178,7 +185,11 @@ function AIUsageTab() {
   )
 }
 
-function LoginHistoryTab() {
+function LoginHistoryTab({
+  rows,
+}: {
+  rows: { id: number; time: string; ip: string; device: string }[]
+}) {
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full text-sm">
@@ -190,7 +201,7 @@ function LoginHistoryTab() {
           </tr>
         </thead>
         <tbody>
-          {mockLoginHistory.map((row) => (
+          {rows.map((row) => (
             <tr key={row.id} className="border-b border-border last:border-b-0">
               <td className="whitespace-nowrap px-4 py-3 text-foreground">{row.time}</td>
               <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">
@@ -281,10 +292,58 @@ function RoleManagementTab() {
 // ── Main Page ──────────────────────────────────────────────
 
 export function UserDetailPage() {
-  const { userId: _userId } = useParams<{ userId: string }>()
+  const { userId } = useParams<{ userId: string }>()
   const [activeTab, setActiveTab] = useState<Tab>('活動時間軸')
+  const [disabling, setDisabling] = useState(false)
 
-  const initials = mockUser.name.slice(-2)
+  const userDetail = useAdminUserDetail(userId ?? '')
+  const loginHistory = useAdminLoginHistory(userId ?? '')
+  const activityStats = useAdminActivityStats(userId ?? '')
+
+  const user = userDetail.data
+    ? {
+        id: userDetail.data.internalId,
+        name: userDetail.data.name ?? '未命名',
+        email: userDetail.data.email ?? '-',
+        avatar: userDetail.data.photoURL,
+        registeredAt: userDetail.data.createdAt?.slice(0, 10) ?? '-',
+        lastLoginAt: userDetail.data.lastLoginAt ?? '-',
+        status: userDetail.data.isActive ? ('active' as const) : ('inactive' as const),
+        role: userDetail.data.roles[0]?.name ?? '-',
+      }
+    : mockUser
+
+  const loginHistoryRows = loginHistory.data
+    ? loginHistory.data.map((item, idx) => ({
+        id: item.id ?? idx,
+        time: item.loginAt,
+        ip: item.ipAddress ?? '-',
+        device: item.userAgent ?? '-',
+      }))
+    : mockLoginHistory
+
+  const isLoading = userDetail.isLoading
+
+  const handleDisableAccount = async () => {
+    if (!userId) return
+    setDisabling(true)
+    try {
+      await updateAdminUserStatus(userId, { isActive: false })
+      userDetail.refetch()
+    } finally {
+      setDisabling(false)
+    }
+  }
+
+  const initials = user.name.slice(-2)
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -300,8 +359,10 @@ export function UserDetailPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <h1 className="heading-lg">{mockUser.name}</h1>
-        <Badge variant="success">活躍</Badge>
+        <h1 className="heading-lg">{user.name}</h1>
+        <Badge variant={user.status === 'active' ? 'success' : 'error'}>
+          {user.status === 'active' ? '活躍' : '停用'}
+        </Badge>
       </div>
 
       {/* Profile card */}
@@ -317,18 +378,30 @@ export function UserDetailPage() {
           {/* Info */}
           <div className="flex-1 space-y-3">
             <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
-              <InfoRow label="名稱" value={mockUser.name} />
-              <InfoRow label="Email" value={mockUser.email} />
-              <InfoRow label="註冊日期" value={mockUser.registeredAt} />
-              <InfoRow label="最後登入" value={mockUser.lastLoginAt} />
-              <InfoRow label="狀態" value={<Badge variant="success">活躍</Badge>} />
-              <InfoRow label="角色" value={mockUser.role} />
+              <InfoRow label="名稱" value={user.name} />
+              <InfoRow label="Email" value={user.email} />
+              <InfoRow label="註冊日期" value={user.registeredAt} />
+              <InfoRow label="最後登入" value={user.lastLoginAt} />
+              <InfoRow
+                label="狀態"
+                value={
+                  <Badge variant={user.status === 'active' ? 'success' : 'error'}>
+                    {user.status === 'active' ? '活躍' : '停用'}
+                  </Badge>
+                }
+              />
+              <InfoRow label="角色" value={user.role} />
             </div>
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2 pt-2">
-              <Button variant="destructive" size="sm">
-                停用帳號
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={disabling}
+                onClick={handleDisableAccount}
+              >
+                {disabling ? '處理中...' : '停用帳號'}
               </Button>
               <Button variant="secondary" size="sm" onClick={() => alert('功能開發中')}>
                 匯出個人資料
@@ -361,7 +434,7 @@ export function UserDetailPage() {
       <div>
         {activeTab === '活動時間軸' && <ActivityTimeline />}
         {activeTab === 'AI 用量' && <AIUsageTab />}
-        {activeTab === '登入歷史' && <LoginHistoryTab />}
+        {activeTab === '登入歷史' && <LoginHistoryTab rows={loginHistoryRows} />}
         {activeTab === '角色管理' && <RoleManagementTab />}
       </div>
     </div>

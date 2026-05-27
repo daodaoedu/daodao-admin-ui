@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin'
+import { listTags } from '@/api/admin-users'
 import type { AdminUserListItem } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
 import { Badge } from '@/components/ui/badge'
@@ -11,15 +12,27 @@ export function UserManagementPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [tagFilter, setTagFilter] = useState<string>('')
   const [assigningUser, setAssigningUser] = useState<AdminUserListItem | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string>('')
 
   const LIMIT = 20
 
+  const { data: tagsData } = useQuery({
+    queryKey: ['admin-tags'],
+    queryFn: () => listTags().then((r) => r.data.data),
+  })
+  const tags = (Array.isArray(tagsData) ? tagsData : []) as Array<{ id: number; name: string }>
+
   const { data: usersData, isLoading } = useQuery({
-    queryKey: ['admin-server-users', search, page],
+    queryKey: ['admin-server-users', search, page, tagFilter],
     queryFn: () =>
-      listAdminUsers({ search: search || undefined, page, limit: LIMIT }).then((r) => r.data),
+      listAdminUsers({
+        search: search || undefined,
+        page,
+        limit: LIMIT,
+        ...(tagFilter ? { tag: tagFilter } : {}),
+      } as Parameters<typeof listAdminUsers>[0]).then((r) => r.data),
   })
   const users = usersData?.data ?? []
   const pagination = usersData?.pagination
@@ -80,6 +93,21 @@ export function UserManagementPage() {
             setPage(1)
           }}
         />
+        <select
+          value={tagFilter}
+          onChange={(e) => {
+            setTagFilter(e.target.value)
+            setPage(1)
+          }}
+          className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          <option value="">全部標籤</option>
+          {tags.map((tag) => (
+            <option key={tag.id} value={tag.name}>
+              {tag.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">

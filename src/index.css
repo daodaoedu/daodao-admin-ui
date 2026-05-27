@@ -39,6 +39,11 @@
     --logo-cyan: oklch(0.711 0.12 190.6);
     --logo-orange: oklch(0.786 0.17 68.2);
     --logo-yellow: oklch(0.908 0.186 102.5);
+    --logo-gray: oklch(0.483 0.019 221.3);
+
+    /* Mascot colors */
+    --mascot-aqua: oklch(0.896 0.085 213.8);
+    --mascot-bright-blue: oklch(0.86 0.131 209.2);
 
     /* Basic colors */
     --basic-100: oklch(0.964 0 89.9);
@@ -54,10 +59,21 @@
     --tips: var(--logo-orange);
     --success: oklch(0.763 0.172 132.6);
     --alert: oklch(0.577 0.245 27.325);
+    --alert-foreground: oklch(0.577 0.245 27.325);
+    --warning: oklch(0.786 0.17 68.2);
+    --info: oklch(0.6 0.118 184.704);
 
     /* Background colors */
     --bg-dark: oklch(0.287 0.041 210.8);
     --text-dark: oklch(0.445 0.056 192);
+    --bg-gray: oklch(0.932 0.007 185.3);
+    --very-light-gray: oklch(0.972 0.0021 197.1);
+    --light-gray: oklch(0.757 0.025 206.6);
+    --light-cyan: oklch(0.9 0.068 190.3);
+    --light-blue: oklch(0.962 0.032 211.1);
+    --very-light-blue: oklch(0.992 0.011 182.9);
+    --blue: oklch(0.896 0.085 213.8);
+    --red: oklch(0.706 0.197 45.6);
 
     /* Sidebar */
     --sidebar: oklch(0.985 0 0);

@@ -22,6 +22,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
 import { useDashboardStats } from '@/hooks/useDashboardStats'
 
@@ -109,11 +110,26 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* ── Title + date range ─────────────────────────── */}
-      <div>
-        <h1 className="heading-lg">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {dateFrom} ~ {dateTo}
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="heading-lg">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {dateFrom} ~ {dateTo}
+          </p>
+        </div>
+        <ExportButton
+          data={[
+            { label: '總費用 (USD)', value: `$${(Number(data.total_cost_usd) || 0).toFixed(4)}` },
+            { label: '總查詢次數', value: data.total_queries },
+            { label: 'Input Tokens', value: data.total_input_tokens },
+            { label: 'Output Tokens', value: data.total_output_tokens },
+          ] as unknown as Record<string, unknown>[]}
+          columns={[
+            { key: 'label', header: '指標' },
+            { key: 'value', header: '數值' },
+          ]}
+          fileName="dashboard-kpi"
+        />
       </div>
 
       {/* ── KPI row ────────────────────────────────────── */}
