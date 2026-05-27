@@ -2,6 +2,8 @@ import { Edit2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useUserTags, useTagRules } from '@/hooks/useUserTags'
+import type { TagItem, TagRule } from '@/api/admin-users'
 
 interface ManualTag {
   id: number
@@ -36,7 +38,13 @@ const AUTO_TAG_RULES: AutoTagRule[] = [
 ]
 
 export function UserTagsPage() {
-  const [autoRules, setAutoRules] = useState<AutoTagRule[]>(AUTO_TAG_RULES)
+  const { data: apiTags } = useUserTags()
+  const { data: apiRules } = useTagRules()
+
+  const tags: ManualTag[] = (apiTags as unknown as ManualTag[] | undefined) ?? MANUAL_TAGS
+  const initialRules: AutoTagRule[] = (apiRules as unknown as AutoTagRule[] | undefined) ?? AUTO_TAG_RULES
+
+  const [autoRules, setAutoRules] = useState<AutoTagRule[]>(initialRules)
 
   const toggleRule = (id: number) => {
     setAutoRules((prev) =>
@@ -70,7 +78,7 @@ export function UserTagsPage() {
                 </tr>
               </thead>
               <tbody>
-                {MANUAL_TAGS.map((tag) => (
+                {tags.map((tag) => (
                   <tr
                     key={tag.id}
                     className="border-b border-border hover:bg-accent transition-colors"

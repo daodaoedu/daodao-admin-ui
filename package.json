@@ -10,7 +10,9 @@
     "lint": "biome check src",
     "lint:fix": "biome check --fix src",
     "format": "biome format --write src",
-    "check:fix": "biome check --fix --unsafe src"
+    "check:fix": "biome check --fix --unsafe src",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -43,13 +45,18 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.9",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
+    "jsdom": "^29.1.1",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.2.2",
-    "vite": "^5.0.8"
+    "vite": "^5.0.8",
+    "vitest": "^2.1.9"
   }
 }

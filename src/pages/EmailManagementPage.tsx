@@ -1,6 +1,24 @@
 import { Mail, MailCheck, MailWarning, Send, Timer } from 'lucide-react'
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
+import { useEmailStats, useEmailHealth } from '@/hooks/useEmailManagement'
+import type { EmailStats, EmailHealth } from '@/api/admin-system'
+
+const mockStats: EmailStats = {
+  totalSent: 12_345,
+  successRate: 98.5,
+  bounceRate: 1.2,
+  queuePending: 3,
+  sentChange: 8.1,
+  successRateChange: 0.3,
+  bounceRateChange: -0.2,
+}
+
+const mockHealth: EmailHealth = {
+  status: 'connected',
+  provider: 'SendGrid',
+  lastChecked: '2 分鐘前',
+}
 
 const exportColumns = [
   { key: 'to', header: '收件人' },
@@ -16,6 +34,14 @@ const exportData = [
 ]
 
 export function EmailManagementPage() {
+  const { data: statsData } = useEmailStats()
+  const { data: healthData } = useEmailHealth()
+
+  const stats = statsData ?? mockStats
+  const health = healthData ?? mockHealth
+
+  const isConnected = health.status === 'connected'
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -26,10 +52,10 @@ export function EmailManagementPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="總發送" value="12,345" icon={Mail} change={8.1} changeLabel="較上月" />
-        <StatCard title="成功率" value="98.5%" icon={MailCheck} change={0.3} changeLabel="較上月" />
-        <StatCard title="退信率" value="1.2%" icon={MailWarning} change={-0.2} changeLabel="較上月" />
-        <StatCard title="佇列待發" value={3} icon={Timer} />
+        <StatCard title="總發送" value={stats.totalSent.toLocaleString()} icon={Mail} change={stats.sentChange} changeLabel="較上月" />
+        <StatCard title="成功率" value={`${stats.successRate}%`} icon={MailCheck} change={stats.successRateChange} changeLabel="較上月" />
+        <StatCard title="退信率" value={`${stats.bounceRate}%`} icon={MailWarning} change={stats.bounceRateChange} changeLabel="較上月" />
+        <StatCard title="佇列待發" value={stats.queuePending} icon={Timer} />
       </div>
 
       {/* SMTP Status + Send Form */}
@@ -40,18 +66,18 @@ export function EmailManagementPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2 border-b border-border">
               <span className="text-sm text-muted-foreground">狀態</span>
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 dark:text-green-400">
-                <span className="h-2 w-2 rounded-full bg-green-500" />
-                已連線
+              <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                {isConnected ? '已連線' : '已斷線'}
               </span>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-border">
               <span className="text-sm text-muted-foreground">提供者</span>
-              <span className="text-sm font-medium">SendGrid</span>
+              <span className="text-sm font-medium">{health.provider}</span>
             </div>
             <div className="flex items-center justify-between py-2">
               <span className="text-sm text-muted-foreground">最後檢查</span>
-              <span className="text-sm font-medium">2 分鐘前</span>
+              <span className="text-sm font-medium">{health.lastChecked}</span>
             </div>
           </div>
         </div>

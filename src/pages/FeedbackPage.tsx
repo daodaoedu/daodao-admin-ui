@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/input'
 import { StatCard } from '@/components/StatCard'
 import { cn } from '@/lib/utils'
+import { useFeedback } from '@/hooks/useFeedback'
 
 type FeedbackStatus = '待處理' | '已回覆' | '已關閉'
 type FeedbackCategory = 'Bug' | '功能建議' | '問題' | '其他'
@@ -105,7 +106,15 @@ export function FeedbackPage() {
   const [replyTexts, setReplyTexts] = useState<Record<number, string>>({})
   const [statusChanges, setStatusChanges] = useState<Record<number, FeedbackStatus>>({})
 
-  const filtered = mockFeedback.filter((f) => {
+  const { data: apiData } = useFeedback({
+    status: statusFilter !== '全部' ? statusFilter : undefined,
+    category: categoryFilter !== '全部' ? categoryFilter : undefined,
+  })
+
+  const feedbackItems: FeedbackItem[] = (apiData?.items as unknown as FeedbackItem[] | undefined) ?? mockFeedback
+  const feedbackStats = apiData?.stats ?? { total: 89, pending: 12, thisMonth: 23, totalChange: 8.2, pendingChange: -15.3, thisMonthChange: 5.1 }
+
+  const filtered = feedbackItems.filter((f) => {
     if (statusFilter !== '全部' && f.status !== statusFilter) return false
     if (categoryFilter !== '全部' && f.category !== categoryFilter) return false
     return true
@@ -144,9 +153,9 @@ export function FeedbackPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="總回饋" value={89} icon={MessageSquare} change={8.2} changeLabel="較上月" />
-        <StatCard title="待處理" value={12} icon={Inbox} change={-15.3} changeLabel="較上月" />
-        <StatCard title="本月新增" value={23} icon={TrendingUp} change={5.1} changeLabel="較上月" />
+        <StatCard title="總回饋" value={feedbackStats.total} icon={MessageSquare} change={feedbackStats.totalChange} changeLabel="較上月" />
+        <StatCard title="待處理" value={feedbackStats.pending} icon={Inbox} change={feedbackStats.pendingChange} changeLabel="較上月" />
+        <StatCard title="本月新增" value={feedbackStats.thisMonth} icon={TrendingUp} change={feedbackStats.thisMonthChange} changeLabel="較上月" />
       </div>
 
       {/* Feedback List */}

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ExportButton } from '@/components/ExportButton'
 import { cn } from '@/lib/utils'
+import { useAuditLogs } from '@/hooks/useAuditLogs'
 
 type ActionType = '登入' | '角色變更' | '用戶停用' | '設定修改' | '資料匯出' | '通知發送'
 
@@ -151,7 +152,19 @@ export function AuditLogPage() {
 
   const PAGE_SIZE = 5
 
-  const filtered = mockLogs.filter((log) => {
+  const { data: apiData } = useAuditLogs({
+    admin: adminFilter !== '全部' ? adminFilter : undefined,
+    actionType: actionFilter !== '全部' ? actionFilter : undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: searchText || undefined,
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  })
+
+  const allLogs = (apiData?.items as unknown as AuditLogItem[] | undefined) ?? mockLogs
+
+  const filtered = allLogs.filter((log) => {
     if (adminFilter !== '全部' && log.admin !== adminFilter) return false
     if (actionFilter !== '全部' && log.actionType !== actionFilter) return false
     if (dateFrom && log.time < dateFrom) return false

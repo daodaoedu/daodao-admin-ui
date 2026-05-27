@@ -22,8 +22,28 @@ export const updateAdminUserStatus = (userId: string, data: { isActive: boolean 
   apiClient.put<ApiResponse<{ success: boolean }>>(`/api/v1/admin/users/${userId}/status`, data)
 
 // ── Tags ────────────────────────────────────────────────
+export interface TagItem {
+  id: number
+  name: string
+  color: string
+  colorClass: string
+  userCount: number
+  createdAt: string
+}
+
+export interface TagRule {
+  id: number
+  name: string
+  condition: string
+  matchedUsers: number
+  enabled: boolean
+}
+
 export const listTags = () =>
-  apiClient.get<ApiResponse<unknown>>('/api/v1/admin/tags')
+  apiClient.get<ApiResponse<TagItem[]>>('/api/v1/admin/tags')
+
+export const listTagRules = () =>
+  apiClient.get<ApiResponse<TagRule[]>>('/api/v1/admin/tags/rules')
 
 // ── Statistics ───────────────────────────────────────────
 export const getActiveUsersTrend = (days?: number) =>
