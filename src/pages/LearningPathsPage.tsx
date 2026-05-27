@@ -31,7 +31,10 @@ export function LearningPathsPage() {
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <h1 className="heading-lg">學習路徑</h1>
-        <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
           <Plus className="h-4 w-4" />
           建立路徑
         </button>

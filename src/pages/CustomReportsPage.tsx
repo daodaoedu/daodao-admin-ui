@@ -203,8 +203,8 @@ export function CustomReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {mockData.map((row, i) => (
-                  <tr key={i} className="border-b border-border last:border-0">
+                {mockData.map((row) => (
+                  <tr key={row.用戶ID} className="border-b border-border last:border-0">
                     {selectedFields.map((field) => (
                       <td key={field} className="py-3 pr-4 text-foreground">
                         {row[field]}

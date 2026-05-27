@@ -158,8 +158,11 @@ export function TrustLevelsPage() {
               </tr>
             </thead>
             <tbody>
-              {recentChanges.map((row, i) => (
-                <tr key={i} className="border-b border-border hover:bg-accent transition-colors">
+              {recentChanges.map((row) => (
+                <tr
+                  key={`${row.user}-${row.time}`}
+                  className="border-b border-border hover:bg-accent transition-colors"
+                >
                   <td className="px-4 py-2 font-medium">{row.user}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-1">

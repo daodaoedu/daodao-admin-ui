@@ -375,8 +375,11 @@ export function AutoModPage() {
               </tr>
             </thead>
             <tbody>
-              {auditLog.map((row, i) => (
-                <tr key={i} className="border-b border-border hover:bg-accent transition-colors">
+              {auditLog.map((row) => (
+                <tr
+                  key={`${row.time}-${row.user}`}
+                  className="border-b border-border hover:bg-accent transition-colors"
+                >
                   <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
                     {row.time}
                   </td>

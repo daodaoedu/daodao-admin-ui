@@ -298,7 +298,7 @@ export function UserDetailPage() {
 
   const userDetail = useAdminUserDetail(userId ?? '')
   const loginHistory = useAdminLoginHistory(userId ?? '')
-  const activityStats = useAdminActivityStats(userId ?? '')
+  const _activityStats = useAdminActivityStats(userId ?? '')
 
   const user = userDetail.data
     ? {

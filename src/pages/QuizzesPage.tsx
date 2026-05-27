@@ -1,4 +1,4 @@
-import { CheckCircle, ClipboardList, FileQuestion, Hash, Percent, Plus } from 'lucide-react'
+import { ClipboardList, FileQuestion, Hash, Percent, Plus } from 'lucide-react'
 import { StatCard } from '@/components/StatCard'
 import { cn } from '@/lib/utils'
 
@@ -73,7 +73,10 @@ export function QuizzesPage() {
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <h1 className="heading-lg">測驗管理</h1>
-        <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
           <Plus className="h-4 w-4" />
           建立測驗
         </button>
@@ -138,7 +141,9 @@ export function QuizzesPage() {
                     </div>
                   </td>
                   <td className="py-3">
-                    <button className="text-primary hover:underline">編輯</button>
+                    <button type="button" className="text-primary hover:underline">
+                      編輯
+                    </button>
                   </td>
                 </tr>
               ))}

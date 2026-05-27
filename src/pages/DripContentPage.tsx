@@ -1,6 +1,5 @@
-import { Calendar, Clock, Lock, Unlock, Users } from 'lucide-react'
+import { Calendar, Clock, Lock, Unlock } from 'lucide-react'
 import { useState } from 'react'
-import { StatCard } from '@/components/StatCard'
 
 const MOCK_SCHEDULE = [
   {
@@ -90,8 +89,11 @@ export function DripContentPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_SCHEDULE.map((row, i) => (
-                <tr key={i} className="border-b border-border last:border-0">
+              {MOCK_SCHEDULE.map((row) => (
+                <tr
+                  key={`${row.course}-${row.module}`}
+                  className="border-b border-border last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground">{row.course}</td>
                   <td className="py-3 pr-4 text-foreground">{row.module}</td>
                   <td className="py-3 pr-4">
@@ -137,8 +139,14 @@ export function DripContentPage() {
         </div>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <label className="mb-1 block text-sm font-medium text-foreground">用戶</label>
+            <label
+              htmlFor="drip-user-select"
+              className="mb-1 block text-sm font-medium text-foreground"
+            >
+              用戶
+            </label>
             <select
+              id="drip-user-select"
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -152,21 +160,28 @@ export function DripContentPage() {
             </select>
           </div>
           <div className="flex-1">
-            <label className="mb-1 block text-sm font-medium text-foreground">Module</label>
+            <label
+              htmlFor="drip-module-select"
+              className="mb-1 block text-sm font-medium text-foreground"
+            >
+              Module
+            </label>
             <select
+              id="drip-module-select"
               value={selectedModule}
               onChange={(e) => setSelectedModule(e.target.value)}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">選擇模組...</option>
-              {MOCK_SCHEDULE.map((row, i) => (
-                <option key={i} value={`${row.course} — ${row.module}`}>
+              {MOCK_SCHEDULE.map((row) => (
+                <option key={`${row.course}-${row.module}`} value={`${row.course} — ${row.module}`}>
                   {row.course} — {row.module}
                 </option>
               ))}
             </select>
           </div>
           <button
+            type="button"
             onClick={handleUnlock}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >

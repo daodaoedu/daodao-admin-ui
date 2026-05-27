@@ -154,9 +154,15 @@ export function LeaderboardsPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {WEIGHT_CONFIG.map((item) => (
             <div key={item.key} className="flex items-center gap-3">
-              <label className="w-20 shrink-0 text-sm text-muted-foreground">{item.label}</label>
+              <label
+                htmlFor={`weight-${item.key}`}
+                className="w-20 shrink-0 text-sm text-muted-foreground"
+              >
+                {item.label}
+              </label>
               <div className="flex flex-1 items-center gap-2">
                 <input
+                  id={`weight-${item.key}`}
                   type="range"
                   min={1}
                   max={100}

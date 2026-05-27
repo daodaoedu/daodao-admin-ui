@@ -1,6 +1,5 @@
 import { Edit2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import type { TagItem, TagRule } from '@/api/admin-users'
 import { Button } from '@/components/ui/button'
 import { useTagRules, useUserTags } from '@/hooks/useUserTags'
 

@@ -256,26 +256,44 @@ export function AIAssistantPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">人格</label>
+                <label
+                  htmlFor="ai-persona"
+                  className="mb-1.5 block text-sm font-medium text-foreground"
+                >
+                  人格
+                </label>
                 <textarea
+                  id="ai-persona"
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   rows={3}
                   defaultValue="你是島島阿學的AI助手，專門協助社群成員解答學習相關問題。請用繁體中文、友善的語氣回答。"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">語氣</label>
-                <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                <label
+                  htmlFor="ai-tone"
+                  className="mb-1.5 block text-sm font-medium text-foreground"
+                >
+                  語氣
+                </label>
+                <select
+                  id="ai-tone"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                >
                   <option>友善</option>
                   <option>專業</option>
                   <option>輕鬆</option>
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                <label
+                  htmlFor="ai-fallback"
+                  className="mb-1.5 block text-sm font-medium text-foreground"
+                >
                   Fallback 訊息
                 </label>
                 <input
+                  id="ai-fallback"
                   type="text"
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   defaultValue="抱歉，我無法回答這個問題，將為您轉接人工客服。"

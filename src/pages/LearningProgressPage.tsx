@@ -1,4 +1,4 @@
-import { AlertTriangle, BookOpen, Eye, Percent, Users } from 'lucide-react'
+import { AlertTriangle, BookOpen, Eye, Percent } from 'lucide-react'
 import { StatCard } from '@/components/StatCard'
 import { cn } from '@/lib/utils'
 
@@ -108,7 +108,10 @@ export function LearningProgressPage() {
                   <td className="py-3 pr-4 text-foreground">{course.avgProgress}%</td>
                   <td className="py-3 pr-4 text-muted-foreground">{course.stuckLesson}</td>
                   <td className="py-3">
-                    <button className="inline-flex items-center gap-1 text-primary hover:underline">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
                       <Eye className="h-3.5 w-3.5" />
                       查看詳情
                     </button>

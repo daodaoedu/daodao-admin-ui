@@ -1,5 +1,4 @@
 import { Bell, Clock, Eye, Megaphone, Plus } from 'lucide-react'
-import type { NotificationListResponse } from '@/api/admin-communication'
 import { StatCard } from '@/components/StatCard'
 import { useNotifications } from '@/hooks/useNotifications'
 import { cn } from '@/lib/utils'

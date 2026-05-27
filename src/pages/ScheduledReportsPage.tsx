@@ -141,8 +141,8 @@ export function ScheduledReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {executionHistory.map((h, i) => (
-                <tr key={i} className="border-b border-border last:border-0">
+              {executionHistory.map((h) => (
+                <tr key={`${h.name}-${h.sentAt}`} className="border-b border-border last:border-0">
                   <td className="py-3 pr-4 font-medium text-foreground">{h.name}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{h.sentAt}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{h.recipients}</td>

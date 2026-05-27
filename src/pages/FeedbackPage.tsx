@@ -1,7 +1,6 @@
-import { ChevronDown, Clock, Inbox, MessageSquare, TrendingUp } from 'lucide-react'
+import { ChevronDown, Inbox, MessageSquare, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
 import { StatCard } from '@/components/StatCard'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/input'
 import { useFeedback } from '@/hooks/useFeedback'

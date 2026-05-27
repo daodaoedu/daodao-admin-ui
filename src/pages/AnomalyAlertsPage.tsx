@@ -159,8 +159,11 @@ export function AnomalyAlertsPage() {
               </tr>
             </thead>
             <tbody>
-              {alertHistory.map((h, i) => (
-                <tr key={i} className="border-b border-border last:border-0">
+              {alertHistory.map((h) => (
+                <tr
+                  key={`${h.rule}-${h.triggeredAt}`}
+                  className="border-b border-border last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground">
                     <span className="inline-flex items-center gap-1.5">
                       <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />

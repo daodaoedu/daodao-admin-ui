@@ -276,10 +276,12 @@ export function MobileHeader({ children }: { children?: ReactNode }) {
 
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50"
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label="Close sidebar"
+            className="absolute inset-0 bg-black/50 appearance-none border-none p-0 cursor-default"
             onClick={() => setOpen(false)}
-            onKeyDown={undefined}
           />
           <aside className="absolute inset-y-0 left-0 flex w-64 flex-col bg-card shadow-xl">
             <div className="absolute right-2 top-3">

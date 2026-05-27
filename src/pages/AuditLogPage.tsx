@@ -199,8 +199,14 @@ export function AuditLogPage() {
       {/* Filter Bar */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">管理員</label>
+          <label
+            htmlFor="audit-admin-filter"
+            className="mb-1 block text-xs font-medium text-muted-foreground"
+          >
+            管理員
+          </label>
           <select
+            id="audit-admin-filter"
             className="rounded-md border border-border bg-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             value={adminFilter}
             onChange={(e) => {
@@ -217,8 +223,14 @@ export function AuditLogPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">操作類型</label>
+          <label
+            htmlFor="audit-action-filter"
+            className="mb-1 block text-xs font-medium text-muted-foreground"
+          >
+            操作類型
+          </label>
           <select
+            id="audit-action-filter"
             className="rounded-md border border-border bg-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             value={actionFilter}
             onChange={(e) => {
@@ -235,8 +247,14 @@ export function AuditLogPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">起始日期</label>
+          <label
+            htmlFor="audit-date-from"
+            className="mb-1 block text-xs font-medium text-muted-foreground"
+          >
+            起始日期
+          </label>
           <Input
+            id="audit-date-from"
             type="date"
             className="w-40"
             value={dateFrom}
@@ -248,8 +266,14 @@ export function AuditLogPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">結束日期</label>
+          <label
+            htmlFor="audit-date-to"
+            className="mb-1 block text-xs font-medium text-muted-foreground"
+          >
+            結束日期
+          </label>
           <Input
+            id="audit-date-to"
             type="date"
             className="w-40"
             value={dateTo}
@@ -261,10 +285,16 @@ export function AuditLogPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">全文搜尋</label>
+          <label
+            htmlFor="audit-search"
+            className="mb-1 block text-xs font-medium text-muted-foreground"
+          >
+            全文搜尋
+          </label>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              id="audit-search"
               placeholder="搜尋..."
               className="w-52 pl-8"
               value={searchText}
@@ -366,10 +396,14 @@ export function AuditLogPage() {
         </p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+            <label
+              htmlFor="audit-lock-from"
+              className="mb-1 block text-xs font-medium text-muted-foreground"
+            >
               鎖定起始日期
             </label>
             <Input
+              id="audit-lock-from"
               type="date"
               className="w-44"
               value={lockFrom}
@@ -377,10 +411,14 @@ export function AuditLogPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+            <label
+              htmlFor="audit-lock-to"
+              className="mb-1 block text-xs font-medium text-muted-foreground"
+            >
               鎖定結束日期
             </label>
             <Input
+              id="audit-lock-to"
               type="date"
               className="w-44"
               value={lockTo}

@@ -60,7 +60,10 @@ export function CertificatesPage() {
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <h1 className="heading-lg">證書管理</h1>
-        <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
           <Plus className="h-4 w-4" />
           建立模板
         </button>
@@ -91,10 +94,16 @@ export function CertificatesPage() {
                 已發放 <span className="font-medium text-foreground">{tpl.issued}</span> 張
               </p>
               <div className="flex gap-2">
-                <button className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <button
+                  type="button"
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
                   編輯
                 </button>
-                <button className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                <button
+                  type="button"
+                  className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
                   發放
                 </button>
               </div>
@@ -121,8 +130,8 @@ export function CertificatesPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_ISSUED.map((row, i) => (
-                <tr key={i} className="border-b border-border last:border-0">
+              {MOCK_ISSUED.map((row) => (
+                <tr key={row.link} className="border-b border-border last:border-0">
                   <td className="py-3 pr-4 font-medium text-foreground">{row.cert}</td>
                   <td className="py-3 pr-4 text-foreground">{row.user}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{row.date}</td>
