@@ -1,15 +1,6 @@
 import apiClient from './client'
-import type { ApiResponse } from './types'
+import type { ApiResponse, EmailHistoryResponse } from './types'
 
-// ── System Monitoring, Email Management ──────────────────
-
-export const getSystemMonitor = () =>
-  apiClient.get<ApiResponse<unknown>>('/api/v1/admin/system/monitor')
-
-export const getEmailStats = () =>
-  apiClient.get<ApiResponse<unknown>>('/api/v1/admin/email/stats')
-
-export const getEmailHealth = () =>
-  apiClient.get<ApiResponse<unknown>>('/api/v1/admin/email/health')
-
-// TODO: implement remaining system endpoints
+// ── Email ────────────────────────────────────────────────
+export const getEmailHistory = (params?: { limit?: number; offset?: number; status?: string }) =>
+  apiClient.get<ApiResponse<EmailHistoryResponse>>('/api/v1/admin/email/history', { params })
