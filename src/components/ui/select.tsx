@@ -103,7 +103,7 @@ interface SelectProps {
 }
 
 export function Select({
-  id: _id,
+  id,
   value,
   onValueChange,
   options,
@@ -114,7 +114,7 @@ export function Select({
 }: SelectProps) {
   return (
     <SelectRoot value={value || undefined} onValueChange={onValueChange} disabled={disabled}>
-      <SelectTrigger className={cn('w-full', triggerClassName)}>
+      <SelectTrigger id={id} className={cn('w-full', triggerClassName)}>
         <SelectValue placeholder={placeholder ?? '選擇…'} />
       </SelectTrigger>
       <SelectContent className={className}>
