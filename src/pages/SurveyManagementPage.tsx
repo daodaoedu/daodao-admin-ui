@@ -1,17 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
+import { Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import {
+  createAdminSurvey,
   deleteAdminSurvey,
   deleteAdminSurveyResponse,
   getAdminSurvey,
+  getAdminSurveyResponseDetail,
   listAdminSurveyResponses,
   listAdminSurveys,
+  updateAdminSurvey,
   updateAdminSurveyStatus,
 } from '@/api/admin-survey'
-import type { AdminSurveyDetail, AdminSurveyListItem, SurveyStatus } from '@/api/types'
+import type {
+  AdminSurveyDetail,
+  AdminSurveyListItem,
+  AdminSurveyQuestionForm,
+  SurveyStatus,
+} from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -30,6 +40,28 @@ const STATUS_OPTIONS = [
   { value: 'archived', label: '已封存' },
 ]
 
+const QUESTION_TYPE_OPTIONS = [
+  { value: 'single_choice', label: '單選' },
+  { value: 'multiple_choice', label: '多選' },
+  { value: 'text', label: '文字' },
+  { value: 'rating', label: '評分' },
+  { value: 'yesno', label: '是非' },
+  { value: 'scale', label: '量表' },
+  { value: 'ranking', label: '排序' },
+]
+
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  single_choice: '單選',
+  multiple_choice: '多選',
+  text: '文字',
+  rating: '評分',
+  yesno: '是非',
+  scale: '量表',
+  ranking: '排序',
+}
+
+const OPTION_TYPES = new Set(['single_choice', 'multiple_choice', 'ranking'])
+
 function statusVariant(status: SurveyStatus): 'success' | 'warning' | 'default' {
   if (status === 'active') return 'success'
   if (status === 'draft') return 'warning'
@@ -38,7 +70,7 @@ function statusVariant(status: SurveyStatus): 'success' | 'warning' | 'default' 
 
 const LIMIT = 30
 
-type DrawerMode = 'detail' | 'responses' | null
+type DrawerMode = 'detail' | 'responses' | 'create' | 'edit' | null
 
 export function SurveyManagementPage() {
   const qc = useQueryClient()
@@ -102,6 +134,11 @@ export function SurveyManagementPage() {
     setDrawerMode('responses')
   }
 
+  const openEdit = (id: number) => {
+    setActiveSurveyId(id)
+    setDrawerMode('edit')
+  }
+
   const closeDrawer = () => {
     setDrawerMode(null)
     setActiveSurveyId(null)
@@ -114,7 +151,20 @@ export function SurveyManagementPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="heading-lg">問卷管理</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="heading-lg">問卷管理</h1>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => {
+            setActiveSurveyId(null)
+            setDrawerMode('create')
+          }}
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          新增問卷
+        </Button>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-36">
@@ -211,6 +261,14 @@ export function SurveyManagementPage() {
                 >
                   查看回應 ({survey.response_count})
                 </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => openEdit(survey.id)}
+                >
+                  編輯
+                </Button>
                 <div className="w-28">
                   <Select
                     value={survey.status}
@@ -268,11 +326,34 @@ export function SurveyManagementPage() {
           {drawerMode === 'responses' && activeSurveyId && (
             <SurveyResponsesPanel surveyId={activeSurveyId} onClose={closeDrawer} />
           )}
+          {drawerMode === 'create' && (
+            <SurveyFormPanel
+              mode="create"
+              onClose={closeDrawer}
+              onSuccess={() => {
+                invalidate()
+                closeDrawer()
+              }}
+            />
+          )}
+          {drawerMode === 'edit' && activeSurveyId && (
+            <SurveyFormPanel
+              mode="edit"
+              surveyId={activeSurveyId}
+              onClose={closeDrawer}
+              onSuccess={() => {
+                invalidate()
+                closeDrawer()
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
   )
 }
+
+// ── SurveyDetailPanel ──────────────────────────────────────────────────────
 
 function SurveyDetailPanel({ surveyId, onClose }: { surveyId: number; onClose: () => void }) {
   const { data, isLoading } = useQuery({
@@ -352,7 +433,7 @@ function SurveyDetailPanel({ surveyId, onClose }: { surveyId: number; onClose: (
               <div className="flex-1">
                 <p className="font-medium">{q.question_text}</p>
                 <p className="text-xs text-muted-foreground">
-                  類型：{q.question_type}
+                  類型：{QUESTION_TYPE_LABELS[q.question_type] ?? q.question_type}
                   {q.is_required && ' · 必填'}
                 </p>
                 {q.options.length > 0 && (
@@ -371,9 +452,12 @@ function SurveyDetailPanel({ surveyId, onClose }: { surveyId: number; onClose: (
   )
 }
 
+// ── SurveyResponsesPanel ───────────────────────────────────────────────────
+
 function SurveyResponsesPanel({ surveyId, onClose }: { surveyId: number; onClose: () => void }) {
   const qc = useQueryClient()
   const [responsesOffset, setResponsesOffset] = useState(0)
+  const [detailResponseId, setDetailResponseId] = useState<number | null>(null)
   const RESP_LIMIT = 20
 
   const { data, isLoading } = useQuery({
@@ -399,6 +483,17 @@ function SurveyResponsesPanel({ surveyId, onClose }: { surveyId: number; onClose
     if (window.confirm('確定刪除此回應？')) {
       deleteResponseMut.mutate(responseId)
     }
+  }
+
+  if (detailResponseId !== null) {
+    return (
+      <ResponseDetailPanel
+        surveyId={surveyId}
+        responseId={detailResponseId}
+        onBack={() => setDetailResponseId(null)}
+        onClose={onClose}
+      />
+    )
   }
 
   return (
@@ -430,15 +525,25 @@ function SurveyResponsesPanel({ surveyId, onClose }: { surveyId: number; onClose
                   {format(new Date(r.completed_at), 'yyyy-MM-dd HH:mm')} · {r.answer_count} 個回答
                 </p>
               </div>
-              <Button
-                type="button"
-                size="xs"
-                variant="destructive"
-                onClick={() => handleDeleteResponse(r.id)}
-                disabled={deleteResponseMut.isPending}
-              >
-                刪除
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => setDetailResponseId(r.id)}
+                >
+                  查看內容
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="destructive"
+                  onClick={() => handleDeleteResponse(r.id)}
+                  disabled={deleteResponseMut.isPending}
+                >
+                  刪除
+                </Button>
+              </div>
             </div>
           ))}
         </div>
@@ -469,6 +574,436 @@ function SurveyResponsesPanel({ surveyId, onClose }: { surveyId: number; onClose
           </Button>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── ResponseDetailPanel ────────────────────────────────────────────────────
+
+function ResponseDetailPanel({
+  surveyId,
+  responseId,
+  onBack,
+  onClose,
+}: {
+  surveyId: number
+  responseId: number
+  onBack: () => void
+  onClose: () => void
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-survey-response-detail', surveyId, responseId],
+    queryFn: () => getAdminSurveyResponseDetail(surveyId, responseId).then((r) => r.data.data),
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={onBack}>
+            ← 返回
+          </Button>
+          <h2 className="heading-sm">回應 #{responseId} 內容</h2>
+        </div>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+          關閉
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">載入中...</p>
+      ) : !data ? (
+        <p className="text-sm text-muted-foreground">無法載入回應資料</p>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground">
+            {data.user_id ? `用戶 #${data.user_id}` : '匿名'} ·{' '}
+            {format(new Date(data.completed_at), 'yyyy-MM-dd HH:mm')}
+          </p>
+          <div className="space-y-3">
+            {data.answers.map((a, i) => (
+              <div key={a.question_id} className="rounded-lg border border-border p-3 text-sm">
+                <p className="font-medium">
+                  Q{i + 1}. {a.question_text}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {QUESTION_TYPE_LABELS[a.question_type] ?? a.question_type}
+                </p>
+                <div className="mt-2">
+                  {a.answer_text && <p>{a.answer_text}</p>}
+                  {a.selected_options.length > 0 && (
+                    <ul className="space-y-0.5">
+                      {a.selected_options.map((opt) => (
+                        <li key={opt} className="flex items-center gap-1">
+                          <span className="text-primary">✓</span> {opt}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {a.rating_value !== null && <p>評分：{a.rating_value}</p>}
+                  {a.boolean_value !== null && <p>{a.boolean_value ? '是' : '否'}</p>}
+                  {a.answer_text === null &&
+                    a.selected_options.length === 0 &&
+                    a.rating_value === null &&
+                    a.boolean_value === null && (
+                      <p className="text-muted-foreground italic">（未作答）</p>
+                    )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ── SurveyFormPanel ────────────────────────────────────────────────────────
+
+interface QuestionDraft extends AdminSurveyQuestionForm {
+  _key: string
+}
+
+function makeEmptyQuestion(position: number): QuestionDraft {
+  return {
+    _key: crypto.randomUUID(),
+    question_text: '',
+    question_type: 'text',
+    is_required: false,
+    position,
+    options: [],
+  }
+}
+
+function SurveyFormPanel({
+  mode,
+  surveyId,
+  onClose,
+  onSuccess,
+}: {
+  mode: 'create' | 'edit'
+  surveyId?: number
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const { data: existingData, isLoading: loadingExisting } = useQuery({
+    queryKey: ['admin-survey-detail', surveyId],
+    queryFn: () => getAdminSurvey(surveyId!).then((r) => r.data.data),
+    enabled: mode === 'edit' && surveyId !== undefined,
+  })
+
+  const [initialized, setInitialized] = useState(false)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [isAnonymous, setIsAnonymous] = useState(false)
+  const [tagsInput, setTagsInput] = useState('')
+  const [maxResponses, setMaxResponses] = useState('')
+  const [questions, setQuestions] = useState<QuestionDraft[]>([makeEmptyQuestion(1)])
+  const [error, setError] = useState('')
+
+  // Initialize form from existing survey data (edit mode)
+  if (mode === 'edit' && existingData && !initialized) {
+    const survey = existingData as AdminSurveyDetail
+    setTitle(survey.title)
+    setDescription(survey.description ?? '')
+    setIsAnonymous(survey.is_anonymous)
+    setTagsInput(survey.tags.join(', '))
+    setMaxResponses(survey.max_responses ? String(survey.max_responses) : '')
+    setQuestions(
+      survey.questions.length > 0
+        ? survey.questions.map((q) => ({
+            _key: String(q.id),
+            question_text: q.question_text,
+            question_type: q.question_type,
+            is_required: q.is_required,
+            position: q.position,
+            options: q.options.map((o) => ({ option_text: o.option_text, position: o.position })),
+          }))
+        : [makeEmptyQuestion(1)],
+    )
+    setInitialized(true)
+  }
+
+  const createMut = useMutation({
+    mutationFn: createAdminSurvey,
+    onSuccess,
+    onError: () => setError('建立失敗，請重試'),
+  })
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof updateAdminSurvey>[1] }) =>
+      updateAdminSurvey(id, data),
+    onSuccess,
+    onError: () => setError('更新失敗，請重試'),
+  })
+
+  const isPending = createMut.isPending || updateMut.isPending
+
+  const addQuestion = () => {
+    setQuestions((prev) => [...prev, makeEmptyQuestion(prev.length + 1)])
+  }
+
+  const removeQuestion = (key: string) => {
+    setQuestions((prev) =>
+      prev.filter((q) => q._key !== key).map((q, i) => ({ ...q, position: i + 1 })),
+    )
+  }
+
+  const updateQuestion = (key: string, patch: Partial<QuestionDraft>) => {
+    setQuestions((prev) => prev.map((q) => (q._key === key ? { ...q, ...patch } : q)))
+  }
+
+  const addOption = (key: string) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q._key === key
+          ? { ...q, options: [...q.options, { option_text: '', position: q.options.length }] }
+          : q,
+      ),
+    )
+  }
+
+  const removeOption = (key: string, idx: number) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q._key === key
+          ? {
+              ...q,
+              options: q.options.filter((_, i) => i !== idx).map((o, i) => ({ ...o, position: i })),
+            }
+          : q,
+      ),
+    )
+  }
+
+  const updateOption = (key: string, idx: number, text: string) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q._key === key
+          ? {
+              ...q,
+              options: q.options.map((o, i) => (i === idx ? { ...o, option_text: text } : o)),
+            }
+          : q,
+      ),
+    )
+  }
+
+  const handleSubmit = () => {
+    setError('')
+    if (!title.trim()) {
+      setError('標題為必填')
+      return
+    }
+    const tags = tagsInput
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+
+    const questionsPayload = questions
+      .filter((q) => q.question_text.trim())
+      .map((q, i) => ({
+        question_text: q.question_text.trim(),
+        question_type: q.question_type,
+        is_required: q.is_required,
+        position: i + 1,
+        options: OPTION_TYPES.has(q.question_type)
+          ? q.options
+              .filter((o) => o.option_text.trim())
+              .map((o, j) => ({ option_text: o.option_text.trim(), position: j }))
+          : [],
+      }))
+
+    const payload = {
+      title: title.trim(),
+      description: description.trim() || undefined,
+      is_anonymous: isAnonymous,
+      tags,
+      max_responses: maxResponses ? Number(maxResponses) : null,
+      questions: questionsPayload,
+    }
+
+    if (mode === 'create') {
+      createMut.mutate(payload)
+    } else if (surveyId !== undefined) {
+      updateMut.mutate({ id: surveyId, data: payload })
+    }
+  }
+
+  if (mode === 'edit' && loadingExisting) {
+    return <p className="text-sm text-muted-foreground">載入中...</p>
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="heading-sm">{mode === 'create' ? '新增問卷' : '編輯問卷'}</h2>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+          關閉
+        </Button>
+      </div>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {/* Basic info */}
+      <div className="space-y-3">
+        <div>
+          <label htmlFor="survey-title" className="mb-1 block text-sm font-medium">
+            標題 <span className="text-destructive">*</span>
+          </label>
+          <Input
+            id="survey-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="問卷標題"
+          />
+        </div>
+        <div>
+          <label htmlFor="survey-description" className="mb-1 block text-sm font-medium">
+            描述
+          </label>
+          <textarea
+            id="survey-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="問卷描述（選填）"
+            rows={3}
+            className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="is-anonymous"
+            checked={isAnonymous}
+            onCheckedChange={(v) => setIsAnonymous(!!v)}
+          />
+          <label htmlFor="is-anonymous" className="text-sm">
+            匿名問卷
+          </label>
+        </div>
+        <div>
+          <label htmlFor="survey-tags" className="mb-1 block text-sm font-medium">
+            標籤（逗號分隔）
+          </label>
+          <Input
+            id="survey-tags"
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="例：回饋, 滿意度"
+          />
+        </div>
+        <div>
+          <label htmlFor="survey-max-responses" className="mb-1 block text-sm font-medium">
+            最大回應數（選填）
+          </label>
+          <Input
+            id="survey-max-responses"
+            type="number"
+            value={maxResponses}
+            onChange={(e) => setMaxResponses(e.target.value)}
+            placeholder="不限制則留空"
+            min={1}
+          />
+        </div>
+      </div>
+
+      {/* Questions */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">題目（{questions.length} 題）</h3>
+          <Button type="button" size="xs" variant="secondary" onClick={addQuestion}>
+            <Plus className="mr-1 h-3 w-3" />
+            新增題目
+          </Button>
+        </div>
+
+        {questions.map((q, qi) => (
+          <div key={q._key} className="space-y-2 rounded-lg border border-border p-3">
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-xs font-medium text-muted-foreground">Q{qi + 1}</span>
+              <Input
+                value={q.question_text}
+                onChange={(e) => updateQuestion(q._key, { question_text: e.target.value })}
+                placeholder="題目內容"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                size="xs"
+                variant="ghost"
+                onClick={() => removeQuestion(q._key)}
+                className="shrink-0 text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-36">
+                <Select
+                  value={q.question_type}
+                  onValueChange={(v) => updateQuestion(q._key, { question_type: v, options: [] })}
+                  options={QUESTION_TYPE_OPTIONS}
+                  placeholder="題型"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Checkbox
+                  id={`req-${q._key}`}
+                  checked={q.is_required}
+                  onCheckedChange={(v) => updateQuestion(q._key, { is_required: !!v })}
+                />
+                <label htmlFor={`req-${q._key}`} className="text-xs text-muted-foreground">
+                  必填
+                </label>
+              </div>
+            </div>
+
+            {OPTION_TYPES.has(q.question_type) && (
+              <div className="space-y-1.5 pl-2">
+                {q.options.map((o, oi) => (
+                  <div key={oi} className="flex items-center gap-1.5">
+                    <span className="shrink-0 text-xs text-muted-foreground">{oi + 1}.</span>
+                    <Input
+                      value={o.option_text}
+                      onChange={(e) => updateOption(q._key, oi, e.target.value)}
+                      placeholder={`選項 ${oi + 1}`}
+                      className="h-7 flex-1 text-sm"
+                    />
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="ghost"
+                      onClick={() => removeOption(q._key, oi)}
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => addOption(q._key)}
+                  className="text-xs text-muted-foreground"
+                >
+                  <Plus className="mr-1 h-3 w-3" />
+                  新增選項
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-end gap-2 pt-2">
+        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+          取消
+        </Button>
+        <Button type="button" size="sm" onClick={handleSubmit} disabled={isPending}>
+          {isPending ? '儲存中...' : mode === 'create' ? '建立問卷' : '儲存變更'}
+        </Button>
+      </div>
     </div>
   )
 }
