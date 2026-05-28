@@ -1,555 +1,436 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { Search } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import {
-  archiveWish,
-  linkWish,
-  listAdminRoadmapItems,
-  listAdminWishes,
-  promoteWish,
-} from '@/api/admin-roadmap'
-import type { AdminRoadmapItem, AdminWishItem, WishCategory, WishStatus } from '@/api/types'
+import { useEffect, useState } from 'react'
+import { archiveWish, linkWish, listAdminRoadmapItems, listAdminWishes, promoteWish } from '@/api/admin-roadmap'
+import type { AdminWishItem, RoadmapStatus, WishCategory, WishStatus } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Input, Textarea } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
+import {
+  CATEGORY_LABELS,
+  CATEGORY_OPTIONS,
+  ROADMAP_STATUS_OPTIONS,
+  WISH_STATUS_LABELS,
+  WISH_STATUS_OPTIONS,
+} from '@/constants/wishpool'
 
-const CATEGORY_LABELS: Record<WishCategory, string> = {
-  operation: '營運',
-  practice: '實踐',
-  social: '社群',
-  explore: '探索',
-  challenge: '挑戰',
-  ai: 'AI',
-  profile: '個人檔案',
-  other: '其他',
+const LIMIT = 30
+
+interface Filters {
+  status?: WishStatus
+  category?: WishCategory
+  q?: string
 }
 
-const STATUS_LABELS: Record<WishStatus, string> = {
-  pending: '待處理',
-  linked: '已連結',
-  archived: '已封存',
-}
+type ActionMode = 'link' | 'promote' | null
 
-const CATEGORY_CLASS: Record<WishCategory, string> = {
-  operation: 'bg-warning/15 text-warning',
-  practice: 'bg-success/15 text-success',
-  social: 'bg-info/15 text-info',
-  explore: 'bg-primary/15 text-primary',
-  challenge: 'bg-destructive/15 text-destructive',
-  ai: 'bg-warning/15 text-warning',
-  profile: 'bg-info/15 text-info',
-  other: 'bg-muted text-muted-foreground',
-}
-
-const STATUS_CLASS: Record<WishStatus, string> = {
-  pending: 'bg-warning/15 text-warning',
-  linked: 'bg-info/15 text-info',
-  archived: 'bg-muted text-muted-foreground',
-}
-
-const ROADMAP_STATUS_LABELS = {
-  collected: '收集中',
-  discussing: '討論中',
-  planned: '已規劃',
-  in_progress: '進行中',
-  done: '已完成',
-  parked: '暫停',
-}
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value)
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay)
-    return () => clearTimeout(t)
-  }, [value, delay])
-  return debounced
+function statusBadgeVariant(status: WishStatus): 'warning' | 'success' | 'default' {
+  if (status === 'pending') return 'warning'
+  if (status === 'linked') return 'success'
+  return 'default'
 }
 
 export function WishInboxPage() {
   const qc = useQueryClient()
-
-  const [statusFilter, setStatusFilter] = useState<WishStatus | ''>('')
-  const [categoryFilter, setCategoryFilter] = useState<WishCategory | ''>('')
-  const [searchInput, setSearchInput] = useState('')
-  const debouncedQ = useDebounce(searchInput, 300)
-
-  const [cursors, setCursors] = useState<string[]>([])
-  const [allWishes, setAllWishes] = useState<AdminWishItem[]>([])
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-
-  const queryParams = useMemo(
-    () => ({
-      status: statusFilter || undefined,
-      category: categoryFilter || undefined,
-      q: debouncedQ || undefined,
-      cursor: cursors[cursors.length - 1],
-      limit: 20,
-    }),
-    [statusFilter, categoryFilter, debouncedQ, cursors],
-  )
+  const [filters, setFilters] = useState<Filters>({ status: 'pending' })
+  const [search, setSearch] = useState('')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-wishes', queryParams],
-    queryFn: () => listAdminWishes(queryParams).then((r) => r.data),
+    queryKey: ['admin-wishes', filters],
+    queryFn: () => listAdminWishes({ ...filters, limit: LIMIT }).then((r) => r.data),
   })
 
-  useEffect(() => {
-    if (!data) return
-    const items = data.data ?? []
-    if (cursors.length === 0) {
-      setAllWishes(items)
-    } else {
-      setAllWishes((prev) => {
-        const ids = new Set(prev.map((w) => w.id))
-        return [...prev, ...items.filter((w) => !ids.has(w.id))]
-      })
-    }
-    setNextCursor(
-      (data as { pagination?: { next_cursor?: string | null } }).pagination?.next_cursor ?? null,
-    )
-  }, [data, cursors.length])
+  const [extraPages, setExtraPages] = useState<AdminWishItem[][]>([])
+  const [moreCursor, setMoreCursor] = useState<string | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
 
-  const resetFilters = () => {
-    setCursors([])
-    setAllWishes([])
-    setNextCursor(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: filters 作為重置觸發
+  useEffect(() => {
+    setExtraPages([])
+    setMoreCursor(null)
+  }, [filters])
+
+  const page1 = data?.data ?? []
+  const seenIds = new Set<number>()
+  const wishes = [...page1, ...extraPages.flat()].filter((w) => {
+    if (seenIds.has(w.id)) return false
+    seenIds.add(w.id)
+    return true
+  })
+  const effectiveCursor =
+    extraPages.length === 0 ? (data?.pagination?.nextCursor ?? null) : moreCursor
+
+  const invalidate = () => {
+    setExtraPages([])
+    setMoreCursor(null)
+    qc.invalidateQueries({ queryKey: ['admin-wishes'] })
   }
 
-  const pendingCount = allWishes.filter((w) => w.status === 'pending').length
+  const loadMore = async () => {
+    if (!effectiveCursor || loadingMore) return
+    setLoadingMore(true)
+    try {
+      const res = await listAdminWishes({ ...filters, limit: LIMIT, cursor: effectiveCursor })
+      setExtraPages((p) => [...p, res.data.data])
+      setMoreCursor(res.data.pagination?.nextCursor ?? null)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
-  const [linkTarget, setLinkTarget] = useState<AdminWishItem | null>(null)
-  const [linkRoadmapId, setLinkRoadmapId] = useState<string>('')
-  const [linkModuleTag, setLinkModuleTag] = useState('')
-  const [roadmapSearch, setRoadmapSearch] = useState('')
+  const [actionWish, setActionWish] = useState<AdminWishItem | null>(null)
+  const [mode, setMode] = useState<ActionMode>(null)
 
-  const [promoteTarget, setPromoteTarget] = useState<AdminWishItem | null>(null)
-  const [promoteTitle, setPromoteTitle] = useState('')
-  const [promoteDesc, setPromoteDesc] = useState('')
-  const [promoteCategory, setPromoteCategory] = useState<WishCategory>('other')
-  const [promoteStatus, setPromoteStatus] = useState('collected')
-  const [promoteModuleTag, setPromoteModuleTag] = useState('')
-
-  const { data: roadmapData } = useQuery({
-    queryKey: ['admin-roadmap-items-select'],
-    queryFn: () => listAdminRoadmapItems({ limit: 100 }).then((r) => r.data),
-    enabled: !!linkTarget,
+  const [linkForm, setLinkForm] = useState<{
+    roadmap_item_id: string
+    internal_module_tag: string
+  }>({ roadmap_item_id: '', internal_module_tag: '' })
+  const [promoteForm, setPromoteForm] = useState<{
+    title: string
+    description: string
+    category: WishCategory
+    status: RoadmapStatus
+    internal_module_tag: string
+  }>({
+    title: '',
+    description: '',
+    category: 'operation',
+    status: 'collected',
+    internal_module_tag: '',
   })
-  const roadmapItems: AdminRoadmapItem[] = roadmapData?.data ?? []
 
-  const filteredRoadmapItems = useMemo(() => {
-    if (!roadmapSearch) return roadmapItems
-    return roadmapItems.filter((item) =>
-      item.title.toLowerCase().includes(roadmapSearch.toLowerCase()),
-    )
-  }, [roadmapItems, roadmapSearch])
+  const { data: itemsData } = useQuery({
+    queryKey: ['admin-roadmap-items-for-link'],
+    queryFn: () => listAdminRoadmapItems({ limit: 100 }).then((r) => r.data),
+    enabled: mode === 'link',
+  })
+  const itemOptions = (itemsData?.data ?? []).map((it) => ({
+    value: String(it.id),
+    label: `${it.title}（${it.support_count} 票）`,
+  }))
+
+  const openLink = (wish: AdminWishItem) => {
+    setActionWish(wish)
+    setLinkForm({ roadmap_item_id: '', internal_module_tag: '' })
+    setMode('link')
+  }
+
+  const openPromote = (wish: AdminWishItem) => {
+    setActionWish(wish)
+    setPromoteForm({
+      title: '',
+      description: wish.desire,
+      category: wish.category,
+      status: 'collected',
+      internal_module_tag: '',
+    })
+    setMode('promote')
+  }
+
+  const closeDialog = () => {
+    setMode(null)
+    setActionWish(null)
+  }
+
+  const isOther = actionWish?.category === 'other'
 
   const linkMut = useMutation({
-    mutationFn: ({
-      id,
-      roadmap_item_id,
-      internal_module_tag,
-    }: {
-      id: number
-      roadmap_item_id: number
-      internal_module_tag?: string
-    }) => linkWish(id, { roadmap_item_id, internal_module_tag: internal_module_tag || undefined }),
+    mutationFn: () =>
+      linkWish(actionWish?.id ?? 0, {
+        roadmap_item_id: Number(linkForm.roadmap_item_id),
+        internal_module_tag: linkForm.internal_module_tag || undefined,
+      }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-wishes'] })
-      setLinkTarget(null)
-      setLinkRoadmapId('')
-      setLinkModuleTag('')
-      setRoadmapSearch('')
-      resetFilters()
+      invalidate()
+      closeDialog()
     },
   })
 
   const promoteMut = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: Parameters<typeof promoteWish>[1] }) =>
-      promoteWish(id, payload),
+    mutationFn: () =>
+      promoteWish(actionWish?.id ?? 0, {
+        title: promoteForm.title,
+        description: promoteForm.description,
+        category: promoteForm.category,
+        status: promoteForm.status,
+        internal_module_tag: promoteForm.internal_module_tag || undefined,
+      }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-wishes'] })
-      setPromoteTarget(null)
-      resetFilters()
+      invalidate()
+      closeDialog()
     },
   })
 
   const archiveMut = useMutation({
     mutationFn: (id: number) => archiveWish(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-wishes'] })
-      resetFilters()
-    },
+    onSuccess: invalidate,
   })
 
-  const openLink = (wish: AdminWishItem) => {
-    setLinkTarget(wish)
-    setLinkRoadmapId('')
-    setLinkModuleTag('')
-    setRoadmapSearch('')
+  const handleArchive = (wish: AdminWishItem) => {
+    if (window.confirm(`確定封存此許願？（保留原文）\n\n${wish.situation}`)) {
+      archiveMut.mutate(wish.id)
+    }
   }
 
-  const openPromote = (wish: AdminWishItem) => {
-    setPromoteTarget(wish)
-    setPromoteTitle(wish.desire.slice(0, 60))
-    setPromoteDesc(`情境：${wish.situation}\n\n期望：${wish.desire}`)
-    setPromoteCategory(wish.category)
-    setPromoteStatus('collected')
-    setPromoteModuleTag(wish.internal_module_tag ?? '')
-  }
+  const linkValid =
+    linkForm.roadmap_item_id !== '' && (!isOther || linkForm.internal_module_tag.trim() !== '')
+  const promoteValid =
+    promoteForm.title.trim() !== '' &&
+    promoteForm.description.trim() !== '' &&
+    (!isOther || promoteForm.internal_module_tag.trim() !== '')
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="heading-lg">許願收件匣</h1>
-        {allWishes.length > 0 && (
-          <p className="mt-1 text-sm text-muted-foreground">目前有 {pendingCount} 則待處理許願</p>
-        )}
-      </div>
+      <h1 className="heading-lg">許願收件匚</h1>
 
-      <div className="flex flex-wrap gap-2">
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => {
-            setStatusFilter(value as WishStatus | '')
-            resetFilters()
-          }}
-          options={[
-            { value: '', label: '全部狀態' },
-            { value: 'pending', label: '待處理' },
-            { value: 'linked', label: '已連結' },
-            { value: 'archived', label: '已封存' },
-          ]}
-          triggerClassName="admin-control"
-        />
-
-        <Select
-          value={categoryFilter}
-          onValueChange={(value) => {
-            setCategoryFilter(value as WishCategory | '')
-            resetFilters()
-          }}
-          options={[
-            { value: '', label: '全部分類' },
-            ...(Object.entries(CATEGORY_LABELS) as [WishCategory, string][]).map(
-              ([val, label]) => ({
-                value: val,
-                label,
-              }),
-            ),
-          ]}
-          triggerClassName="admin-control"
-        />
-
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="搜尋許願內容"
-            className="w-60 pl-8"
-            value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value)
-              resetFilters()
-            }}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="w-40">
+          <Select
+            value={filters.status ?? ''}
+            onValueChange={(v) =>
+              setFilters((f) => ({ ...f, status: (v || undefined) as WishStatus | undefined }))
+            }
+            options={[{ value: '', label: '全部狀態' }, ...WISH_STATUS_OPTIONS]}
+            placeholder="狀態"
           />
         </div>
+        <div className="w-40">
+          <Select
+            value={filters.category ?? ''}
+            onValueChange={(v) =>
+              setFilters((f) => ({ ...f, category: (v || undefined) as WishCategory | undefined }))
+            }
+            options={[{ value: '', label: '全部分類' }, ...CATEGORY_OPTIONS]}
+            placeholder="分類"
+          />
+        </div>
+        <Input
+          placeholder="搜尋情境 / 期待"
+          aria-label="搜尋關鍵字"
+          className="w-56"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') setFilters((f) => ({ ...f, q: search || undefined }))
+          }}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => setFilters((f) => ({ ...f, q: search || undefined }))}
+        >
+          搜尋
+        </Button>
       </div>
 
-      {isLoading && allWishes.length === 0 ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground">
-          <span>載入中...</span>
-        </div>
-      ) : allWishes.length === 0 ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground">
-          <span>目前沒有許願</span>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {allWishes.map((wish) => (
-            <div key={wish.id} className="admin-panel-card p-4 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={cn(
-                      'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
-                      CATEGORY_CLASS[wish.category],
-                    )}
-                  >
-                    {CATEGORY_LABELS[wish.category]}
-                  </span>
-                  <span
-                    className={cn(
-                      'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
-                      STATUS_CLASS[wish.status],
-                    )}
-                  >
-                    {STATUS_LABELS[wish.status]}
-                  </span>
-                </div>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {wish.submitter_nickname ?? `#${wish.submitter_user_id}`}
-                  {' · '}
-                  {format(new Date(wish.created_at), 'yyyy/MM/dd HH:mm')}
+      <div className="space-y-3">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">載入中...</p>
+        ) : wishes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">無符合的許願</p>
+        ) : (
+          wishes.map((wish) => (
+            <div key={wish.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="primary">{CATEGORY_LABELS[wish.category]}</Badge>
+                <Badge variant={statusBadgeVariant(wish.status)}>
+                  {WISH_STATUS_LABELS[wish.status]}
+                </Badge>
+                <span className="text-xs text-muted-foreground">來源：{wish.source}</span>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {format(new Date(wish.created_at), 'yyyy-MM-dd HH:mm')}
                 </span>
               </div>
 
-              <div className="space-y-1.5 text-sm">
-                <div>
-                  <span className="font-medium text-muted-foreground">情境　</span>
-                  <span>{wish.situation}</span>
-                </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">期望　</span>
-                  <span>{wish.desire}</span>
-                </div>
-                {wish.contact_email && (
-                  <div>
-                    <span className="font-medium text-muted-foreground">聯絡　</span>
-                    <span className="text-xs text-muted-foreground">{wish.contact_email}</span>
-                  </div>
-                )}
-                {wish.linked_roadmap_item_title && (
-                  <div>
-                    <span className="font-medium text-muted-foreground">路線圖　</span>
-                    <Badge variant="primary">{wish.linked_roadmap_item_title}</Badge>
-                  </div>
-                )}
+              <div className="mt-3 space-y-1 text-sm">
+                <p>
+                  <span className="text-muted-foreground">情境：</span>
+                  {wish.situation}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">期待：</span>
+                  {wish.desire}
+                </p>
               </div>
 
-              <div className="flex gap-2 pt-1">
-                {wish.status === 'pending' && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="xs"
-                      onClick={() => openLink(wish)}
-                    >
-                      連結
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="xs"
-                      onClick={() => openPromote(wish)}
-                    >
-                      升級
-                    </Button>
-                  </>
-                )}
-                {(wish.status === 'pending' || wish.status === 'linked') && (
+              <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                <span>許願者：{wish.submitter.nickname ?? '-'}</span>
+                <span>聯絡：{wish.contact_email ?? wish.submitter.email ?? '-'}</span>
+                {wish.internal_module_tag && <span>模組：{wish.internal_module_tag}</span>}
+              </div>
+
+              {wish.status === 'pending' && (
+                <div className="mt-3 flex gap-2">
+                  <Button type="button" size="xs" onClick={() => openLink(wish)}>
+                    歸入現有項目
+                  </Button>
                   <Button
                     type="button"
-                    variant="secondary"
                     size="xs"
-                    disabled={archiveMut.isPending}
-                    onClick={() => {
-                      if (window.confirm('確定要封存這則許願嗎？')) {
-                        archiveMut.mutate(wish.id)
-                      }
-                    }}
+                    variant="secondary"
+                    onClick={() => openPromote(wish)}
+                  >
+                    促成新項目
+                  </Button>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="destructive"
+                    onClick={() => handleArchive(wish)}
                   >
                     封存
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+        {effectiveCursor && (
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={loadingMore}
+              onClick={loadMore}
+            >
+              {loadingMore ? '載入中...' : '載入更多'}
+            </Button>
+          </div>
+        )}
+      </div>
 
-      {nextCursor && (
-        <div className="flex justify-center pt-2">
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={isLoading}
-            onClick={() => setCursors((prev) => [...prev, nextCursor])}
-          >
-            {isLoading ? '載入中...' : '載入更多'}
-          </Button>
-        </div>
-      )}
-
-      {linkTarget && (
-        <div className="admin-modal-overlay p-4">
-          <div className="admin-modal-panel w-full max-w-md p-6">
-            <h3 className="mb-4 font-semibold">連結到路線圖項目</h3>
-            <div className="space-y-3">
+      <Dialog open={mode !== null} onOpenChange={(o) => !o && closeDialog()}>
+        <DialogContent className="h-auto max-h-[85vh] max-w-lg overflow-y-auto p-6">
+          {mode === 'link' && actionWish && (
+            <div className="space-y-4">
+              <h2 className="heading-sm">歸入現有路線圖項目</h2>
               <div>
-                <label htmlFor="link-search" className="mb-1 block text-sm font-medium">
-                  搜尋路線圖項目
-                </label>
-                <Input
-                  id="link-search"
-                  placeholder="輸入關鍵字篩選..."
-                  value={roadmapSearch}
-                  onChange={(e) => setRoadmapSearch(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="link-roadmap-select" className="mb-1 block text-sm font-medium">
+                <label htmlFor="link-item" className="mb-1 block text-sm font-medium">
                   選擇項目
                 </label>
                 <Select
-                  id="link-roadmap-select"
-                  value={linkRoadmapId}
-                  onValueChange={(value) => setLinkRoadmapId(value)}
-                  options={[
-                    { value: '', label: '-- 請選擇 --' },
-                    ...filteredRoadmapItems.map((item) => ({
-                      value: String(item.id),
-                      label: item.title,
-                    })),
-                  ]}
-                  triggerClassName="w-full"
+                  id="link-item"
+                  value={linkForm.roadmap_item_id}
+                  onValueChange={(v) => setLinkForm((f) => ({ ...f, roadmap_item_id: v }))}
+                  options={itemOptions}
+                  placeholder="選擇要歸入的項目"
                 />
               </div>
-              <div>
-                <label htmlFor="link-module-tag" className="mb-1 block text-sm font-medium">
-                  模組標籤
-                  {linkTarget.category === 'other' && (
-                    <span className="ml-1 text-destructive">*</span>
-                  )}
-                </label>
-                <Input
-                  id="link-module-tag"
-                  placeholder="internal_module_tag（選填）"
-                  value={linkModuleTag}
-                  onChange={(e) => setLinkModuleTag(e.target.value)}
-                />
+              {isOther && (
+                <div>
+                  <label htmlFor="link-tag" className="mb-1 block text-sm font-medium">
+                    內部模組子標籤（其他分類必填）
+                  </label>
+                  <Input
+                    id="link-tag"
+                    value={linkForm.internal_module_tag}
+                    onChange={(e) =>
+                      setLinkForm((f) => ({ ...f, internal_module_tag: e.target.value }))
+                    }
+                  />
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={closeDialog}>
+                  取消
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!linkValid || linkMut.isPending}
+                  onClick={() => linkMut.mutate()}
+                >
+                  {linkMut.isPending ? '處理中…' : '確認歸併'}
+                </Button>
               </div>
             </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setLinkTarget(null)}>
-                取消
-              </Button>
-              <Button
-                type="button"
-                disabled={
-                  !linkRoadmapId ||
-                  (linkTarget.category === 'other' && !linkModuleTag) ||
-                  linkMut.isPending
-                }
-                onClick={() => {
-                  if (!linkRoadmapId) return
-                  linkMut.mutate({
-                    id: linkTarget.id,
-                    roadmap_item_id: Number(linkRoadmapId),
-                    internal_module_tag: linkModuleTag,
-                  })
-                }}
-              >
-                {linkMut.isPending ? '連結中...' : '確認連結'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {promoteTarget && (
-        <div className="admin-modal-overlay p-4">
-          <div className="admin-modal-panel w-full max-w-lg p-6">
-            <h3 className="mb-4 font-semibold">升級為路線圖項目</h3>
-            <div className="space-y-3">
+          {mode === 'promote' && actionWish && (
+            <div className="space-y-4">
+              <h2 className="heading-sm">促成新路線圖項目</h2>
               <div>
                 <label htmlFor="promote-title" className="mb-1 block text-sm font-medium">
-                  標題 <span className="text-destructive">*</span>
+                  對外標題
                 </label>
                 <Input
                   id="promote-title"
-                  value={promoteTitle}
-                  onChange={(e) => setPromoteTitle(e.target.value)}
-                  placeholder="路線圖項目標題"
+                  value={promoteForm.title}
+                  onChange={(e) => setPromoteForm((f) => ({ ...f, title: e.target.value }))}
                 />
               </div>
               <div>
                 <label htmlFor="promote-desc" className="mb-1 block text-sm font-medium">
-                  描述 <span className="text-destructive">*</span>
+                  對外描述
                 </label>
                 <Textarea
                   id="promote-desc"
-                  rows={5}
-                  value={promoteDesc}
-                  onChange={(e) => setPromoteDesc(e.target.value)}
-                  placeholder="詳細描述"
+                  rows={4}
+                  value={promoteForm.description}
+                  onChange={(e) => setPromoteForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </div>
-              <div className="flex gap-3">
-                <div className="flex-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
                   <label htmlFor="promote-category" className="mb-1 block text-sm font-medium">
                     分類
                   </label>
                   <Select
                     id="promote-category"
-                    value={promoteCategory}
-                    onValueChange={(value) => setPromoteCategory(value as WishCategory)}
-                    options={(Object.entries(CATEGORY_LABELS) as [WishCategory, string][]).map(
-                      ([val, label]) => ({ value: val, label }),
-                    )}
+                    value={promoteForm.category}
+                    onValueChange={(v) =>
+                      setPromoteForm((f) => ({ ...f, category: v as WishCategory }))
+                    }
+                    options={CATEGORY_OPTIONS}
                   />
                 </div>
-                <div className="flex-1">
+                <div>
                   <label htmlFor="promote-status" className="mb-1 block text-sm font-medium">
-                    狀態
+                    初始狀態
                   </label>
                   <Select
                     id="promote-status"
-                    value={promoteStatus}
-                    onValueChange={(value) => setPromoteStatus(value)}
-                    options={(Object.entries(ROADMAP_STATUS_LABELS) as [string, string][]).map(
-                      ([val, label]) => ({ value: val, label }),
-                    )}
+                    value={promoteForm.status}
+                    onValueChange={(v) =>
+                      setPromoteForm((f) => ({ ...f, status: v as RoadmapStatus }))
+                    }
+                    options={ROADMAP_STATUS_OPTIONS}
                   />
                 </div>
               </div>
-              <div>
-                <label htmlFor="promote-module-tag" className="mb-1 block text-sm font-medium">
-                  模組標籤
-                  {promoteCategory === 'other' && <span className="ml-1 text-destructive">*</span>}
-                </label>
-                <Input
-                  id="promote-module-tag"
-                  placeholder="internal_module_tag（選填）"
-                  value={promoteModuleTag}
-                  onChange={(e) => setPromoteModuleTag(e.target.value)}
-                />
+              {isOther && (
+                <div>
+                  <label htmlFor="promote-tag" className="mb-1 block text-sm font-medium">
+                    內部模組子標籤（其他分類必填）
+                  </label>
+                  <Input
+                    id="promote-tag"
+                    value={promoteForm.internal_module_tag}
+                    onChange={(e) =>
+                      setPromoteForm((f) => ({ ...f, internal_module_tag: e.target.value }))
+                    }
+                  />
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={closeDialog}>
+                  取消
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!promoteValid || promoteMut.isPending}
+                  onClick={() => promoteMut.mutate()}
+                >
+                  {promoteMut.isPending ? '處理中…' : '建立並歸併'}
+                </Button>
               </div>
             </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setPromoteTarget(null)}>
-                取消
-              </Button>
-              <Button
-                type="button"
-                disabled={
-                  !promoteTitle ||
-                  !promoteDesc ||
-                  (promoteCategory === 'other' && !promoteModuleTag) ||
-                  promoteMut.isPending
-                }
-                onClick={() => {
-                  if (!promoteTitle || !promoteDesc) return
-                  promoteMut.mutate({
-                    id: promoteTarget.id,
-                    payload: {
-                      title: promoteTitle,
-                      description: promoteDesc,
-                      category: promoteCategory,
-                      status: promoteStatus as Parameters<typeof promoteWish>[1]['status'],
-                      internal_module_tag: promoteModuleTag || undefined,
-                    },
-                  })
-                }}
-              >
-                {promoteMut.isPending ? '升級中...' : '確認升級'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
