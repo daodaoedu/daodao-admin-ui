@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { getRoadmapReport } from '@/api/admin'
+import { getRoadmapReport } from '@/api/admin-roadmap'
 import { Select } from '@/components/ui/select'
 import { CATEGORY_LABELS, ROADMAP_STATUS_LABELS } from '@/constants/wishpool'
 
@@ -67,7 +67,6 @@ export function RoadmapReportsPage() {
         <p className="text-sm text-destructive">載入失敗</p>
       ) : (
         <>
-          {/* 待處理積壓 */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <StatCard label="待處理許願" value={String(data.backlog.pendingCount)} />
             <StatCard
@@ -80,7 +79,6 @@ export function RoadmapReportsPage() {
             />
           </div>
 
-          {/* 熱門分類 */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <h2 className="mb-4 heading-sm">熱門分類（許願量）</h2>
             {categoryChart.length === 0 ? (
@@ -98,7 +96,6 @@ export function RoadmapReportsPage() {
             )}
           </div>
 
-          {/* 許願量趨勢 */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <h2 className="mb-4 heading-sm">許願量趨勢</h2>
             {trendChart.length === 0 ? (
@@ -116,7 +113,6 @@ export function RoadmapReportsPage() {
             )}
           </div>
 
-          {/* 熱門項目 */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <h2 className="mb-4 heading-sm">熱門項目（依票數）</h2>
             <div className="overflow-x-auto">

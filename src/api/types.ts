@@ -1,4 +1,4 @@
-// ── API 回應外殼 ──────────────────────────────────────────
+// ── API 回應外殼 ──────────────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean
   data: T
@@ -17,7 +17,7 @@ export interface OffsetPagination {
   has_next: boolean
 }
 
-// ── Auth ──────────────────────────────────────────────────
+// ── Auth ────────────────────────────────────────────────────────
 export interface AdminPingData {
   status: string
   admin_id: number
@@ -25,7 +25,7 @@ export interface AdminPingData {
   nickname: string | null
 }
 
-// ── Dashboard ─────────────────────────────────────────────
+// ── Dashboard ─────────────────────────────────────────────────────
 export interface BackendStat {
   backend: string
   query_count: number
@@ -49,7 +49,7 @@ export interface DashboardStats {
   daily_series: DailyStatPoint[]
 }
 
-// ── System Prompts ────────────────────────────────────────
+// ── System Prompts ────────────────────────────────────────────────
 export interface SystemPrompt {
   id: number
   name: string
@@ -74,7 +74,7 @@ export interface SystemPromptUpdate {
   is_active?: boolean
 }
 
-// ── LLM Models ────────────────────────────────────────────
+// ── LLM Models ─────────────────────────────────────────────────────
 export interface LLMModel {
   id: number
   provider: string
@@ -100,7 +100,7 @@ export interface LLMModelCreate {
   notes?: string
 }
 
-// ── AI Query Logs ─────────────────────────────────────────
+// ── AI Query Logs ───────────────────────────────────────────────────
 export interface AIQueryLog {
   id: number
   request_id: string
@@ -126,7 +126,7 @@ export interface AIQueryLog {
   usage_detail?: Record<string, unknown>
 }
 
-// ── Playground ────────────────────────────────────────────
+// ── Playground ────────────────────────────────────────────────────
 export interface PlaygroundChatRequest {
   model_id: number
   system_prompt_id?: number | null
@@ -159,7 +159,7 @@ export interface ChatMessage {
   }
 }
 
-// ── AI Query Log Filters ─────────────────────────────────
+// ── AI Query Log Filters ───────────────────────────────────────────
 export interface QueryLogFilters {
   backend?: string
   context?: string
@@ -171,7 +171,7 @@ export interface QueryLogFilters {
   offset?: number
 }
 
-// ── User Quotas ───────────────────────────────────────────
+// ── User Quotas ─────────────────────────────────────────────────────
 export interface UserQuota {
   id: number
   user_id: number
@@ -192,7 +192,7 @@ export interface UserWithQuota {
   quota: UserQuota | null
 }
 
-// ── Insight Playground ────────────────────────────────────
+// ── Insight Playground ────────────────────────────────────────────
 export interface InsightUser {
   id: number
   nickname: string | null
@@ -247,7 +247,7 @@ export interface ModelSyncResult {
   existing: number
 }
 
-// ── AI Service Configs ────────────────────────────────
+// ── AI Service Configs ──────────────────────────────────────
 export interface AIServiceConfig {
   id: number
   service: string
@@ -255,7 +255,7 @@ export interface AIServiceConfig {
   model_id: number
   system_prompt_id: number | null
   max_tokens: number | null
-  temperature: string | null // Decimal from backend comes as string
+  temperature: string | null
   top_p: string | null
   top_k: number | null
   is_active: boolean
@@ -289,7 +289,7 @@ export interface AIServiceConfigUpdate {
   notes?: string | null
 }
 
-// ── Roles & Permissions (daodao-server) ───────────────────
+// ── Roles & Permissions (daodao-server) ────────────────────────────────
 export interface Role {
   id: number
   name: string
@@ -330,7 +330,113 @@ export interface AdminUserListItem {
   lastLoginAt: string | null
 }
 
-// ── Wishpool / Roadmap ───────────────────────────────────
+// ── Admin User Detail ─────────────────────────────────────────────────
+export interface AdminUserDetail {
+  id: string
+  internalId: number
+  name: string | null
+  email: string | null
+  photoURL: string | null
+  emailVerified: boolean
+  isActive: boolean
+  roles: Array<{ id: number; name: string }>
+  permissions: string[]
+  createdAt: string
+  lastLoginAt: string | null
+  activityStats?: {
+    totalCheckins: number
+    totalPosts: number
+    totalComments: number
+    lastActivityAt: string | null
+  }
+}
+
+export interface AdminLoginHistoryItem {
+  id: number
+  loginAt: string
+  ipAddress: string | null
+  userAgent: string | null
+}
+
+export interface AdminActivityStats {
+  totalCheckins: number
+  totalPosts: number
+  totalComments: number
+  totalReactions: number
+  lastActivityAt: string | null
+}
+
+export interface PracticeStats {
+  total: number
+  active: number
+  completed: number
+  totalCheckIns: number
+  avgCheckInsPerPractice: number
+}
+
+export interface ActiveUsersTrendPoint {
+  date: string
+  dau: number
+  wau: number
+  mau: number
+}
+
+export interface ActiveUsersTrendResponse {
+  data: ActiveUsersTrendPoint[]
+  summary: {
+    currentDau: number
+    currentWau: number
+    currentMau: number
+    dauChangePercent: number
+    wauChangePercent: number
+    mauChangePercent: number
+  }
+}
+
+export interface ActiveUsersFunnelStep {
+  label: string
+  value: number
+}
+
+export interface ActiveUsersFunnelResponse {
+  steps: ActiveUsersFunnelStep[]
+}
+
+export interface UserCohortRow {
+  label: string
+  day1: number
+  day7: number
+  day14: number
+  day30: number
+  day60: number
+  day90: number
+}
+
+export interface UserCohortResponse {
+  rows: UserCohortRow[]
+}
+
+export interface EmailHistoryItem {
+  id: number
+  recipient: string
+  subject: string
+  status: string
+  sentAt: string
+  type: string
+}
+
+export interface EmailHistoryResponse {
+  items: EmailHistoryItem[]
+  summary: {
+    totalSent: number
+    successCount: number
+    failedCount: number
+    successRate: number
+  }
+  pagination: OffsetPagination
+}
+
+// ── Wish Pool / Roadmap ──────────────────────────────────────────────
 export type WishCategory =
   | 'operation'
   | 'practice'
@@ -398,6 +504,39 @@ export interface AdminRoadmapItem {
   shipped_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface LinkWishPayload {
+  roadmap_item_id: number
+  internal_module_tag?: string
+}
+
+export interface PromoteWishPayload {
+  title: string
+  description: string
+  category: WishCategory
+  status?: RoadmapStatus
+  internal_module_tag?: string
+}
+
+export interface CreateRoadmapItemPayload {
+  title: string
+  description: string
+  category: WishCategory
+  status?: RoadmapStatus
+  is_public?: boolean
+  pinned?: boolean
+  sort_order?: number
+}
+
+export interface UpdateRoadmapItemPayload {
+  title?: string
+  description?: string
+  category?: WishCategory
+  status?: RoadmapStatus
+  is_public?: boolean
+  pinned?: boolean
+  sort_order?: number
 }
 
 export interface RoadmapReport {

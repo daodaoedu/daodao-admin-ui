@@ -12,11 +12,12 @@ import {
   removeRolePermission,
   updatePermission,
   updateRole,
-} from '@/api/admin'
+} from '@/api/admin-server'
 import type { Permission, Role } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 type Tab = 'roles' | 'permissions'
 
@@ -154,20 +155,21 @@ export function RolesPermissionsPage() {
     <div className="space-y-4">
       <h1 className="heading-lg">角色權限</h1>
 
-      <div className="flex gap-1 border-b border-border">
+      <div className="admin-segmented">
         {(['roles', 'permissions'] as Tab[]).map((t) => (
-          <button
+          <Button
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={cn(
+              'admin-segmented-item flex-1 justify-center',
               tab === t
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
+                ? 'admin-segmented-item-active'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
           >
             {t === 'roles' ? '角色' : '權限'}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -187,7 +189,7 @@ export function RolesPermissionsPage() {
           </div>
 
           {showRoleForm && (
-            <div className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-3">
+            <div className="admin-panel-card p-4 space-y-3">
               <h3 className="font-medium text-sm">建立角色</h3>
               <div className="flex gap-2 items-end">
                 <div className="flex-1">
@@ -237,10 +239,10 @@ export function RolesPermissionsPage() {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto admin-panel-card">
+            <table className="admin-table-shell text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted text-muted-foreground">
+                <tr className="admin-table-head">
                   {['ID', '名稱', '說明', '建立時間', '操作'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left font-medium">
                       {h}
@@ -323,9 +325,11 @@ export function RolesPermissionsPage() {
                                     className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs text-primary"
                                   >
                                     {p.name}
-                                    <button
+                                    <Button
                                       type="button"
-                                      className="ml-1 text-primary/60 hover:text-primary"
+                                      variant="ghost"
+                                      size="xs"
+                                      className="h-4 w-4 p-0 text-primary/60 hover:text-primary"
                                       onClick={() =>
                                         removePermMut.mutate({
                                           roleId: role.id,
@@ -334,7 +338,7 @@ export function RolesPermissionsPage() {
                                       }
                                     >
                                       ×
-                                    </button>
+                                    </Button>
                                   </span>
                                 ))}
                                 {(expandedRoleData?.permissions ?? []).length === 0 && (
@@ -349,10 +353,11 @@ export function RolesPermissionsPage() {
                                   {permissions
                                     .filter((p) => !assignedPermIds.has(p.id))
                                     .map((p) => (
-                                      <button
+                                      <Button
                                         key={p.id}
                                         type="button"
-                                        className="rounded border border-border px-2 py-0.5 text-xs hover:bg-accent transition-colors"
+                                        size="sm"
+                                        variant="outline"
                                         onClick={() =>
                                           addPermMut.mutate({
                                             roleId: role.id,
@@ -361,7 +366,7 @@ export function RolesPermissionsPage() {
                                         }
                                       >
                                         + {p.name}
-                                      </button>
+                                      </Button>
                                     ))}
                                   {permissions.filter((p) => !assignedPermIds.has(p.id)).length ===
                                     0 && (
@@ -400,7 +405,7 @@ export function RolesPermissionsPage() {
           </div>
 
           {showPermForm && (
-            <div className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-3">
+            <div className="admin-panel-card p-4 space-y-3">
               <h3 className="font-medium text-sm">建立權限</h3>
               <p className="text-xs text-muted-foreground">
                 名稱格式：resource:action（例如 user:read）
@@ -453,10 +458,10 @@ export function RolesPermissionsPage() {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto admin-panel-card">
+            <table className="admin-table-shell text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted text-muted-foreground">
+                <tr className="admin-table-head">
                   {['ID', '名稱', '說明', '建立時間', '操作'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left font-medium">
                       {h}
@@ -479,10 +484,7 @@ export function RolesPermissionsPage() {
                   </tr>
                 ) : (
                   permissions.map((perm) => (
-                    <tr
-                      key={perm.id}
-                      className="border-b border-border hover:bg-accent transition-colors"
-                    >
+                    <tr key={perm.id} className="admin-table-row transition-colors">
                       <td className="px-4 py-2 font-mono text-xs">{perm.id}</td>
                       <td className="px-4 py-2">
                         <Badge variant="primary">{perm.name}</Badge>
@@ -525,8 +527,8 @@ export function RolesPermissionsPage() {
 
       {/* Edit Role Modal */}
       {editingRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-panel w-full max-w-md p-6">
             <h3 className="mb-4 font-semibold">編輯角色</h3>
             <div className="space-y-3">
               <div>
@@ -576,8 +578,8 @@ export function RolesPermissionsPage() {
 
       {/* Edit Permission Modal */}
       {editingPerm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-panel w-full max-w-md p-6">
             <h3 className="mb-4 font-semibold">編輯權限</h3>
             <div className="space-y-3">
               <div>

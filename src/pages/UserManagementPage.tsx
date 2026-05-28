@@ -1,26 +1,44 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin'
+import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin-server'
+import { listTags } from '@/api/admin-users'
 import type { AdminUserListItem } from '@/api/types'
+import { ExportButton } from '@/components/ExportButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 
 export function UserManagementPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [tagFilter, setTagFilter] = useState<string>('')
   const [assigningUser, setAssigningUser] = useState<AdminUserListItem | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string>('')
 
   const LIMIT = 20
 
-  const { data: usersData, isLoading } = useQuery({
-    queryKey: ['admin-server-users', search, page],
-    queryFn: () =>
-      listAdminUsers({ search: search || undefined, page, limit: LIMIT }).then((r) => r.data),
+  const { data: tagsData } = useQuery({
+    queryKey: ['admin-tags'],
+    queryFn: () => listTags().then((r) => r.data.data),
   })
-  const users = usersData?.data ?? []
+  const tags = (Array.isArray(tagsData) ? tagsData : []) as Array<{ id: number; name: string }>
+
+  const { data: usersData, isLoading } = useQuery({
+    queryKey: ['admin-server-users', search, page, tagFilter],
+    queryFn: () =>
+      listAdminUsers({
+        search: search || undefined,
+        page,
+        limit: LIMIT,
+        ...(tagFilter ? { tag: tagFilter } : {}),
+      } as Parameters<typeof listAdminUsers>[0]).then((r) => r.data),
+  })
+  const users = (Array.isArray(usersData?.data) ? usersData.data : []).map((user) => ({
+    ...user,
+    roles: Array.isArray(user.roles) ? user.roles : [],
+  }))
   const pagination = usersData?.pagination
 
   const { data: rolesData } = useQuery({
@@ -28,6 +46,14 @@ export function UserManagementPage() {
     queryFn: () => listRoles().then((r) => r.data),
   })
   const roles = rolesData?.data ?? []
+  const tagOptions = [
+    { value: '', label: '全部標籤' },
+    ...tags.map((tag) => ({ value: tag.name, label: tag.name })),
+  ]
+  const roleOptions = [
+    { value: '', label: '選擇角色' },
+    ...roles.map((role) => ({ value: String(role.id), label: role.name })),
+  ]
 
   const updateStatusMut = useMutation({
     mutationFn: ({ userId, isActive }: { userId: number; isActive: boolean }) =>
@@ -49,12 +75,26 @@ export function UserManagementPage() {
 
   const openAssignRole = (user: AdminUserListItem) => {
     setAssigningUser(user)
-    setSelectedRoleId(user.roles[0] ? String(user.roles[0].id) : '')
+    const userRoles = Array.isArray(user.roles) ? user.roles : []
+    setSelectedRoleId(userRoles[0] ? String(userRoles[0].id) : '')
   }
 
   return (
     <div className="space-y-4">
-      <h1 className="heading-lg">用戶管理</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="heading-lg">用戶管理</h1>
+        <ExportButton
+          data={users as unknown as Record<string, unknown>[]}
+          fileName="user-management"
+          columns={[
+            { key: 'internalId', header: 'ID' },
+            { key: 'name', header: '名稱' },
+            { key: 'email', header: 'Email' },
+            { key: 'isActive', header: '狀態' },
+            { key: 'lastLoginAt', header: '最後登入' },
+          ]}
+        />
+      </div>
 
       <div className="flex gap-2">
         <Input
@@ -66,12 +106,21 @@ export function UserManagementPage() {
             setPage(1)
           }}
         />
+        <Select
+          value={tagFilter}
+          onValueChange={(value) => {
+            setTagFilter(value)
+            setPage(1)
+          }}
+          options={tagOptions}
+          triggerClassName="admin-control"
+        />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto admin-panel-card">
+        <table className="admin-table-shell text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted text-muted-foreground">
+            <tr className="admin-table-head">
               {['ID', '名稱', 'Email', '狀態', '角色', '最後登入', '操作'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium">
                   {h}
@@ -94,10 +143,7 @@ export function UserManagementPage() {
               </tr>
             ) : (
               users.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-border hover:bg-accent transition-colors"
-                >
+                <tr key={user.id} className="admin-table-row transition-colors">
                   <td className="px-4 py-2 font-mono text-xs">{user.internalId}</td>
                   <td className="px-4 py-2 font-medium">{user.name ?? '-'}</td>
                   <td className="px-4 py-2 text-muted-foreground">{user.email ?? '-'}</td>
@@ -108,7 +154,7 @@ export function UserManagementPage() {
                   </td>
                   <td className="px-4 py-2">
                     <div className="flex flex-wrap gap-1">
-                      {user.roles.length > 0 ? (
+                      {(Array.isArray(user.roles) ? user.roles : []).length > 0 ? (
                         user.roles.map((r) => (
                           <Badge key={r.id} variant="primary">
                             {r.name}
@@ -185,8 +231,8 @@ export function UserManagementPage() {
 
       {/* Assign Role Modal */}
       {assigningUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-lg">
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-panel w-full max-w-sm p-6">
             <h3 className="mb-4 font-semibold">
               設定角色 —{' '}
               {assigningUser.name ?? assigningUser.email ?? `#${assigningUser.internalId}`}
@@ -196,19 +242,12 @@ export function UserManagementPage() {
                 <label htmlFor="role-select" className="mb-1 block text-sm font-medium">
                   角色
                 </label>
-                <select
+                <Select
                   id="role-select"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   value={selectedRoleId}
-                  onChange={(e) => setSelectedRoleId(e.target.value)}
-                >
-                  <option value="">選擇角色</option>
-                  {roles.map((r) => (
-                    <option key={r.id} value={String(r.id)}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(value) => setSelectedRoleId(value)}
+                  options={roleOptions}
+                />
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">

@@ -1,134 +1,112 @@
-# daodao-admin-ui
+# DaoDao Admin UI
 
-DaoDao 後台管理介面，供管理員操作 LLM 模型設定、System Prompt、AI 查詢日誌、使用者 Token 配額，以及測試 AI 對話的 Playground。
+統一管理後台 — 島島阿學平台的營運管理中心。
 
-## 相關 Repo
+## 功能模組
 
-| Repo | 說明 |
-|------|------|
-| [daodao-ai-backend](../daodao-ai-backend) | 後端 FastAPI，提供本 UI 所有 `/api/v1/admin/*` 端點 |
-| [daodao-f2e](../daodao-f2e) | 終端用戶前端（品牌設計來源，UI tokens 對齊此 repo） |
-| [daodao-storage](../daodao-storage) | 資料庫層（PostgreSQL、Qdrant、ClickHouse） |
+### 總覽
+- **Dashboard** — 用戶 KPI + AI 成本摘要 + 系統健康
 
----
+### 用戶管理
+- **用戶管理** — 搜尋、篩選、角色指派、標籤篩選、匯出
+- **用戶詳情** — 個人資料、活動時間軸、AI 用量、登入歷史
+- **用戶分析** — DAU/WAU/MAU、漏斗分析、Cohort 留存
+- **用戶標籤** — 手動/自動標籤、分群規則
+- **角色權限** — 角色 CRUD、權限指派
+- **Token 配額** — 用戶 token 額度管理
 
-## 快速開始
+### AI 服務
+- **查詢日誌** — AI 查詢記錄篩選、匯出
+- **模型管理** — LLM 模型設定
+- **System Prompts** — Prompt 版本管理
+- **服務設定** — AI 服務組合設定
+- **Playground** — 即時測試
 
-### 本地開發（Vite dev server）
+### 內容管理
+- **主題實踐** — 實踐管理、搜尋、篩選
+- **內容績效** — 閱讀深度、停留時間、策展
 
-```bash
-# 1. 安裝依賴
-pnpm install
+### 溝通
+- **站內通知** — 推送通知、排程、已讀統計
+- **觸發式郵件** — 自動郵件規則、模板、成效追蹤
 
-# 2. 確保 daodao-ai-backend 已在 localhost:8002 執行
-#    （vite.config.ts 會將 /api 反向代理至 http://localhost:8002）
+### 報表
+- **排程報表** — 週/月 KPI 自動寄送
+- **自訂報表** — 拖拉欄位組合查詢
+- **異常警報** — 閾值監控、自動通知
 
-# 3. 啟動開發伺服器
-pnpm dev
-# → http://localhost:5173/admin/
-```
+### 支援
+- **意見回饋** — 用戶回饋收件匣
+- **FAQ 管理** — 前台 FAQ 編輯
 
-### Docker（連接後端容器）
+### 系統
+- **系統監控** — CPU/記憶體/DB/Redis
+- **郵件管理** — 發送統計、SMTP 狀態
+- **審計日誌** — 操作紀錄、合規鎖定
 
-```bash
-# 複製環境設定
-cp .env.dev.sample .env.dev
+### 信任與審核
+- **信任等級** — Lv0-Lv3 自動升降級
+- **AutoMod** — 關鍵字過濾、檢舉佇列
 
-# 啟動（含自動建置）
-make up-dev
-# → nginx 服務於容器 port 80
-# → /api/* 自動代理至 backend-dev:8000
-```
+### 學習
+- **課程進度** — 完成率、卡關點分析
+- **內容滴灌** — 時間閘門排程
+- **測驗管理** — 題目、成績統計
+- **證書管理** — 模板、發放、驗證
+- **學習路徑** — 課程序列、先修條件
 
-詳細部署說明見 [docs/deployment.md](docs/deployment.md)。
+### 遊戲化
+- **徽章** — 自動/手動頒發
+- **挑戰** — 限時活動、進度追蹤
+- **排行榜** — 活動加權排名
 
----
+### 社群
+- **Onboarding** — 新手引導問卷
+- **會員名錄** — 自訂 Profile 欄位
+- **AI 助手** — 知識庫 RAG 回答
 
-## 功能頁面
-
-| 路由 | 頁面 | 說明 |
-|------|------|------|
-| `/admin/dashboard` | Dashboard | 近 7 日費用、查詢次數、Token 用量統計圖表 |
-| `/admin/query-logs` | AI 查詢日誌 | 查詢 AI 呼叫紀錄，支援 backend / context / status / 日期篩選 |
-| `/admin/system-prompts` | System Prompts | 建立、編輯、刪除 System Prompt，管理版本與啟用狀態 |
-| `/admin/models` | 模型管理 | 查看已匯入的 LLM 模型清單與費率資訊 |
-| `/admin/user-quotas` | Token 配額 | 設定各使用者的月 / 日 Token 上限 |
-| `/admin/playground` | Playground | 選擇模型與 System Prompt，即時測試 AI 對話 |
-
----
+### 活動
+- **活動管理** — RSVP、簽到、週期模板
 
 ## 技術棧
 
-| 類別 | 技術 |
-|------|------|
-| 框架 | React 18 + TypeScript |
-| 建置工具 | Vite 5 |
-| 路由 | React Router v6 |
-| 資料請求 | TanStack Query v5 |
-| HTTP 客戶端 | Axios（JWT 自動注入、401/403 自動登出） |
-| 樣式 | Tailwind CSS v3 + OKLCH 品牌色 tokens |
-| UI 原語 | Radix UI |
-| 圖表 | Recharts |
-| 表單驗證 | React Hook Form + Zod |
-| 程式碼品質 | Biome 2.4.9 |
+- **Framework**: React 18 + TypeScript + Vite 5
+- **Routing**: react-router-dom 6 (SPA)
+- **Data Fetching**: @tanstack/react-query 5 + axios
+- **UI**: Radix UI + Tailwind CSS 3 + tailwind-merge
+- **Charts**: Recharts
+- **Export**: xlsx (SheetJS)
+- **Rich Text**: Tiptap
+- **Drag & Drop**: @dnd-kit
+- **Auth**: JWT token + AuthContext
+- **Lint**: Biome
 
----
-
-## 常用指令
+## 開發
 
 ```bash
-make dev          # 啟動 Vite dev server
-make build        # 建置靜態產物
-make check        # lint + typecheck
-make format       # 自動修正 lint/format 問題
-
-make up-dev       # 啟動 Docker dev 環境
-make down-dev     # 停止 Docker dev 環境
-make rebuild-dev  # 強制重建 dev image
-
-make health-dev   # 確認 dev 容器健康狀態
-make help         # 列出所有指令
+pnpm install
+pnpm run dev        # http://localhost:5173/admin
+pnpm run build      # Production build
+pnpm run test       # Vitest
+pnpm run lint       # Biome lint
+pnpm run typecheck  # TypeScript check
 ```
 
----
-
-## 專案結構
+## 架構
 
 ```
-daodao-admin-ui/
-├── src/
-│   ├── api/               # HTTP 客戶端 + 所有 admin API 呼叫 + TypeScript 型別
-│   ├── auth/              # JWT 驗證 Context + ProtectedRoute
-│   ├── components/
-│   │   └── layout/        # AppShell（外框）、Sidebar（導覽列）
-│   └── pages/             # 各功能頁面元件
-├── .github/workflows/
-│   ├── ci.yml             # PR 觸發：pnpm lint + tsc --noEmit
-│   ├── cd.yml             # push main/dev：SSH 部署至 Linode
-│   └── code-review.yml    # AI Code Review（GitHub Models）
-├── Dockerfile             # 兩階段建置：Node 20 build → nginx:alpine serve
-├── nginx.conf.template    # nginx 設定（API proxy + SPA fallback）
-├── docker-entrypoint.sh   # 啟動時注入 BACKEND_HOST / BACKEND_PORT
-├── docker-compose.dev.yml
-├── docker-compose.prod.yml
-├── Makefile
-└── docs/
-    ├── arch.md            # 架構說明
-    └── deployment.md      # 部署指南
+src/
+├── api/              # API client + 13 domain files
+├── auth/             # AuthContext + ProtectedRoute
+├── components/       # Shared components (ExportButton, StatCard, layout/)
+├── hooks/            # Custom React Query hooks
+├── lib/              # Utilities (cn)
+├── pages/            # 39 page components (React.lazy loaded)
+└── test/             # Test setup
 ```
 
----
+## 相關 Repo
 
-## 認證方式
-
-登入頁（`/admin/login`）直接貼入 JWT Token。Token 儲存在 `localStorage`，由 Axios interceptor 自動附加至所有請求的 `Authorization: Bearer` header。收到 401/403 時自動清除 token 並跳回登入頁。
-
----
-
-## 品牌風格
-
-UI 色彩對齊 `daodao-f2e/packages/ui` 的 OKLCH 設計 tokens：
-
-- Primary（品牌青色）：`oklch(0.711 0.12 190.6)`
-- 字型：Noto Sans TC
-- 詳見 `src/index.css` 與 `tailwind.config.js`
+- [daodao-server](https://github.com/daodaoedu/daodao-server) — Backend API (157 admin endpoints)
+- [daodao-f2e](https://github.com/daodaoedu/daodao-f2e) — Frontend (admin routes removed)
+- [daodao-storage](https://github.com/daodaoedu/daodao-storage) — DB migrations (041-046)

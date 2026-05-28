@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { useEffect, useState } from 'react'
-import { archiveWish, linkWish, listRoadmapItems, listWishes, promoteWish } from '@/api/admin'
+import { archiveWish, linkWish, listAdminRoadmapItems, listAdminWishes, promoteWish } from '@/api/admin-roadmap'
 import type { AdminWishItem, RoadmapStatus, WishCategory, WishStatus } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -39,15 +39,13 @@ export function WishInboxPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-wishes', filters],
-    queryFn: () => listWishes({ ...filters, limit: LIMIT }).then((r) => r.data),
+    queryFn: () => listAdminWishes({ ...filters, limit: LIMIT }).then((r) => r.data),
   })
 
-  // 游標載入更多（於第一頁之後追加）
   const [extraPages, setExtraPages] = useState<AdminWishItem[][]>([])
   const [moreCursor, setMoreCursor] = useState<string | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
 
-  // 篩選變更時重置追加頁
   // biome-ignore lint/correctness/useExhaustiveDependencies: filters 作為重置觸發
   useEffect(() => {
     setExtraPages([])
@@ -74,7 +72,7 @@ export function WishInboxPage() {
     if (!effectiveCursor || loadingMore) return
     setLoadingMore(true)
     try {
-      const res = await listWishes({ ...filters, limit: LIMIT, cursor: effectiveCursor })
+      const res = await listAdminWishes({ ...filters, limit: LIMIT, cursor: effectiveCursor })
       setExtraPages((p) => [...p, res.data.data])
       setMoreCursor(res.data.pagination?.nextCursor ?? null)
     } finally {
@@ -82,7 +80,6 @@ export function WishInboxPage() {
     }
   }
 
-  // ── 動作 dialog ──────────────────────────────────────────
   const [actionWish, setActionWish] = useState<AdminWishItem | null>(null)
   const [mode, setMode] = useState<ActionMode>(null)
 
@@ -104,10 +101,9 @@ export function WishInboxPage() {
     internal_module_tag: '',
   })
 
-  // 歸併 dialog 需要既有項目清單
   const { data: itemsData } = useQuery({
     queryKey: ['admin-roadmap-items-for-link'],
-    queryFn: () => listRoadmapItems({ limit: 100 }).then((r) => r.data),
+    queryFn: () => listAdminRoadmapItems({ limit: 100 }).then((r) => r.data),
     enabled: mode === 'link',
   })
   const itemOptions = (itemsData?.data ?? []).map((it) => ({
@@ -187,9 +183,8 @@ export function WishInboxPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="heading-lg">許願收件匣</h1>
+      <h1 className="heading-lg">許願收件匚</h1>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-40">
           <Select
@@ -231,7 +226,6 @@ export function WishInboxPage() {
         </Button>
       </div>
 
-      {/* List */}
       <div className="space-y-3">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">載入中...</p>
@@ -309,7 +303,6 @@ export function WishInboxPage() {
         )}
       </div>
 
-      {/* Action dialog */}
       <Dialog open={mode !== null} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent className="h-auto max-h-[85vh] max-w-lg overflow-y-auto p-6">
           {mode === 'link' && actionWish && (

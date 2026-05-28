@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { useState } from 'react'
-import { listQueryLogs } from '@/api/admin'
+import { listQueryLogs } from '@/api/admin-ai'
 import type { AIQueryLog, QueryLogFilters } from '@/api/types'
+import { ExportButton } from '@/components/ExportButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +25,25 @@ export function QueryLogsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="heading-lg">AI 查詢日誌</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="heading-lg">AI 查詢日誌</h1>
+        <ExportButton
+          data={logs as unknown as Record<string, unknown>[]}
+          fileName="query-logs"
+          columns={[
+            { key: 'id', header: 'ID' },
+            { key: 'backend', header: 'Backend' },
+            { key: 'context', header: 'Context' },
+            { key: 'user_id', header: 'User' },
+            { key: 'total_tokens', header: 'Tokens' },
+            { key: 'cost_usd', header: 'Cost (USD)' },
+            { key: 'latency_ms', header: 'Latency (ms)' },
+            { key: 'finish_reason', header: 'Finish' },
+            { key: 'status', header: 'Status' },
+            { key: 'created_at', header: '時間' },
+          ]}
+        />
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
@@ -64,10 +83,10 @@ export function QueryLogsPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto admin-panel-card">
+        <table className="admin-table-shell text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted text-muted-foreground">
+            <tr className="admin-table-head">
               {[
                 'ID',
                 'Backend',
@@ -103,7 +122,7 @@ export function QueryLogsPage() {
               logs.map((log) => (
                 <tr
                   key={log.id}
-                  className="border-b border-border hover:bg-accent cursor-pointer transition-colors"
+                  className="admin-table-row cursor-pointer transition-colors"
                   onClick={() => setSelected(selected?.id === log.id ? null : log)}
                 >
                   <td className="px-4 py-2 font-mono text-xs">{log.id}</td>
@@ -143,7 +162,7 @@ export function QueryLogsPage() {
 
       {/* Detail panel */}
       {selected && (
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="admin-panel-card p-5">
           <h3 className="mb-3 font-semibold">Log #{selected.id} 詳情</h3>
           <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
             {JSON.stringify(selected, null, 2)}

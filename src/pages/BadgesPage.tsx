@@ -1,0 +1,102 @@
+import type { LucideIcon } from 'lucide-react'
+import { Award, Plus, Target } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useBadges } from '@/hooks/useBadges'
+import { cn } from '@/lib/utils'
+
+export function BadgesPage() {
+  const { data } = useBadges()
+
+  const badges = data?.items ?? []
+  const recentAwards = data?.recentAwards ?? []
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="heading-lg">徽章管理</h1>
+        <Button type="button">
+          <Plus className="h-4 w-4" />
+          建立徽章
+        </Button>
+      </div>
+
+      {/* Badge Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {badges.map((badge) => {
+          const Icon: LucideIcon =
+            'icon' in badge && badge.icon != null && typeof badge.icon !== 'string'
+              ? (badge.icon as LucideIcon)
+              : Target
+          return (
+            <div key={badge.id} className="admin-panel-card p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg bg-primary/10 p-2.5">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-foreground">{badge.name}</h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{badge.description}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-sm">
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                    badge.trigger === '自動' || badge.trigger === 'auto'
+                      ? 'bg-success/15 text-success'
+                      : 'bg-warning/15 text-warning',
+                  )}
+                >
+                  {badge.trigger}
+                </span>
+                <span className="text-muted-foreground">
+                  <Award className="mr-1 inline h-3.5 w-3.5" />
+                  已頒發 {(badge.awarded ?? 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Recent Awards Table */}
+      <div className="admin-panel-card p-5">
+        <h2 className="mb-4 heading-sm">最近頒發</h2>
+        <div className="overflow-x-auto">
+          <table className="admin-table-shell text-sm">
+            <thead>
+              <tr className="admin-table-head">
+                <th className="pb-3 font-medium text-muted-foreground">用戶</th>
+                <th className="pb-3 font-medium text-muted-foreground">徽章</th>
+                <th className="pb-3 font-medium text-muted-foreground">頒發方式</th>
+                <th className="pb-3 font-medium text-muted-foreground">時間</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentAwards.map((row) => (
+                <tr key={row.id} className="admin-table-row last:border-0">
+                  <td className="py-3 text-foreground">{row.user}</td>
+                  <td className="py-3 text-foreground">{row.badge}</td>
+                  <td className="py-3">
+                    <span
+                      className={cn(
+                        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                        row.method === '自動' || row.method === 'auto'
+                          ? 'bg-success/15 text-success'
+                          : 'bg-warning/15 text-warning',
+                      )}
+                    >
+                      {row.method}
+                    </span>
+                  </td>
+                  <td className="py-3 text-muted-foreground">{row.time}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}

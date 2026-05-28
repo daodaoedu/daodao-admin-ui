@@ -14,7 +14,7 @@ export function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        'flex items-center justify-between gap-1 rounded-md border border-input bg-card px-3 py-2 text-sm',
+        'admin-select',
         'placeholder:text-muted-foreground',
         'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
         'disabled:cursor-not-allowed disabled:opacity-50',
@@ -42,7 +42,7 @@ export function SelectContent({
         position="popper"
         sideOffset={4}
         className={cn(
-          'relative z-[300] min-w-[8rem] overflow-hidden rounded-md border border-border bg-card shadow-md',
+          'admin-popover relative z-[300] min-w-[8rem] overflow-hidden',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
           'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
@@ -92,6 +92,7 @@ export interface SelectOption {
 }
 
 interface SelectProps {
+  id?: string
   value: string
   onValueChange: (value: string) => void
   options: SelectOption[]
@@ -104,6 +105,7 @@ interface SelectProps {
 }
 
 export function Select({
+  id,
   value,
   onValueChange,
   options,

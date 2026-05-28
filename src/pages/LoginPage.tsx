@@ -26,8 +26,11 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--admin-shell-bg)] px-4">
+      <div className="w-full max-w-sm admin-panel-card p-8">
+        <p className="mb-2 text-center text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          Admin Console
+        </p>
         <h1 className="mb-6 text-center heading-lg text-foreground">DaoDao Admin</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

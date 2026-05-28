@@ -1,0 +1,240 @@
+import { Calendar, Clock, Edit, MapPin, Plus, RefreshCw, Send, Users, Video } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { useEventRSVPs, useEvents, useEventTemplates } from '@/hooks/useEvents'
+import { cn } from '@/lib/utils'
+
+// ── Types ────────────────────────────────────────────────
+interface RSVPEntry {
+  id: number
+  user: string
+  status: 'registered' | 'waitlist' | 'attended' | 'no-show'
+  time: string
+}
+
+type TabKey = 'upcoming' | 'past' | 'recurring'
+
+const RSVP_STATUS_STYLES: Record<RSVPEntry['status'], string> = {
+  registered: 'bg-success/15 text-success',
+  waitlist: 'bg-warning/15 text-warning',
+  attended: 'bg-primary/15 text-primary',
+  'no-show': 'bg-destructive/15 text-destructive',
+}
+
+const RSVP_STATUS_LABELS: Record<RSVPEntry['status'], string> = {
+  registered: '已報名',
+  waitlist: '候補',
+  attended: '已出席',
+  'no-show': '未出席',
+}
+
+// ── Component ────────────────────────────────────────────
+export function EventsPage() {
+  const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
+
+  const { data: upcomingEvents } = useEvents({ status: 'upcoming' })
+  const { data: pastEvents } = useEvents({ status: 'past' })
+  const { data: rsvps } = useEventRSVPs(activeTab === 'upcoming' ? selectedEventId : null)
+  const { data: templates } = useEventTemplates()
+
+  const displayUpcomingEvents = upcomingEvents ?? []
+  const displayPastEvents = pastEvents ?? []
+  const displayRsvps = rsvps ?? []
+  const displayTemplates = templates ?? []
+
+  const TABS = [
+    { key: 'upcoming', label: '即將舉行', count: displayUpcomingEvents.length },
+    { key: 'past', label: '已結束', count: displayPastEvents.length },
+    { key: 'recurring', label: '週期性', count: displayTemplates.length },
+  ] as const
+
+  useEffect(() => {
+    if (selectedEventId === null && displayUpcomingEvents.length > 0) {
+      setSelectedEventId(displayUpcomingEvents[0].id)
+    }
+  }, [selectedEventId, displayUpcomingEvents])
+
+  const selectedEvent = displayUpcomingEvents.find((e) => e.id === selectedEventId)
+
+  return (
+    <div className="space-y-6">
+      {/* ── Header ──────────────────────────────────────── */}
+      <div className="flex items-center justify-between">
+        <h1 className="heading-lg">活動管理</h1>
+        <Button type="button">
+          <Plus className="h-4 w-4" />
+          建立活動
+        </Button>
+      </div>
+
+      {/* ── Filter tabs ─────────────────────────────────── */}
+      <div className="admin-segmented">
+        {TABS.map((tab) => (
+          <Button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              'admin-segmented-item inline-flex items-center gap-1.5 flex-1',
+              activeTab === tab.key
+                ? 'admin-segmented-item-active'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {tab.label}
+            <span
+              className={cn(
+                'rounded-full px-1.5 py-0.5 text-xs',
+                activeTab === tab.key
+                  ? 'bg-primary/15 text-primary'
+                  : 'bg-muted text-muted-foreground',
+              )}
+            >
+              {tab.count}
+            </span>
+          </Button>
+        ))}
+      </div>
+
+      {/* ── Event cards (即將舉行) ──────────────────────── */}
+      {activeTab === 'upcoming' && (
+        <div className="grid gap-4 lg:grid-cols-3">
+          {displayUpcomingEvents.map((event) => (
+            <div
+              key={event.id}
+              className={cn(
+                'admin-panel-card transition-colors',
+                selectedEventId === event.id ? 'border-primary' : 'border-border',
+              )}
+            >
+              <h3 className="font-medium text-foreground">{event.name}</h3>
+
+              <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {event.date}
+                  <Clock className="ml-1 h-3.5 w-3.5" />
+                  {event.time}
+                </div>
+                <div className="flex items-center gap-2">
+                  {event.locationType === 'online' ? (
+                    <Video className="h-3.5 w-3.5" />
+                  ) : (
+                    <MapPin className="h-3.5 w-3.5" />
+                  )}
+                  {event.location}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5" />
+                  RSVP: {event.rsvp}/{event.capacity ?? '∞'}
+                  {event.waitlist > 0 && (
+                    <span className="text-warning">· Waitlist: {event.waitlist}</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  onClick={() => setSelectedEventId(event.id)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Users className="h-3 w-3" />
+                  查看 RSVP
+                </Button>
+                <Button type="button" size="sm" variant="outline">
+                  <Send className="h-3 w-3" />
+                  發送提醒
+                </Button>
+                <Button type="button" size="sm" variant="outline">
+                  <Edit className="h-3 w-3" />
+                  編輯
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'past' && (
+        <div className="admin-panel-card p-5">
+          <p className="text-muted-foreground">已結束活動列表（{displayPastEvents.length} 筆）</p>
+        </div>
+      )}
+
+      {activeTab === 'recurring' && (
+        <div className="admin-panel-card p-5">
+          <p className="text-muted-foreground">週期性活動列表（{displayTemplates.length} 筆）</p>
+        </div>
+      )}
+
+      {/* ── RSVP summary card ──────────────────────────── */}
+      {activeTab === 'upcoming' && selectedEvent && (
+        <div className="admin-panel-card p-5">
+          <h2 className="mb-4 heading-sm">RSVP 詳情 — {selectedEvent.name}</h2>
+          <div className="overflow-x-auto">
+            <table className="admin-table-shell text-sm">
+              <thead>
+                <tr className="admin-table-head">
+                  <th className="pb-3 font-medium text-muted-foreground">用戶</th>
+                  <th className="pb-3 font-medium text-muted-foreground">報名狀態</th>
+                  <th className="pb-3 font-medium text-muted-foreground">報名時間</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayRsvps.map((row) => (
+                  <tr key={row.id} className="admin-table-row last:border-0">
+                    <td className="py-3 text-foreground">{row.user}</td>
+                    <td className="py-3">
+                      <span
+                        className={cn(
+                          'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                          RSVP_STATUS_STYLES[row.status],
+                        )}
+                      >
+                        {RSVP_STATUS_LABELS[row.status]}
+                      </span>
+                    </td>
+                    <td className="py-3 text-muted-foreground">{row.time}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── 週期性模板 card ─────────────────────────────── */}
+      <div className="admin-panel-card p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <RefreshCw className="h-4 w-4 text-muted-foreground" />
+          <h2 className="heading-sm">週期性模板</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="admin-table-shell text-sm">
+            <thead>
+              <tr className="admin-table-head">
+                <th className="pb-3 font-medium text-muted-foreground">模板名稱</th>
+                <th className="pb-3 font-medium text-muted-foreground">頻率</th>
+                <th className="pb-3 font-medium text-muted-foreground">下次場次</th>
+                <th className="pb-3 font-medium text-muted-foreground">已生成場次數</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayTemplates.map((tpl) => (
+                <tr key={tpl.id} className="admin-table-row last:border-0">
+                  <td className="py-3 font-medium text-foreground">{tpl.name}</td>
+                  <td className="py-3 text-muted-foreground">{tpl.frequency}</td>
+                  <td className="py-3 text-foreground">{tpl.nextSession}</td>
+                  <td className="py-3 text-muted-foreground">{tpl.totalGenerated} 場</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
