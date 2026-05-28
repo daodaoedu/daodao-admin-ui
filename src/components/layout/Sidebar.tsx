@@ -5,6 +5,7 @@ import {
   Bot,
   Calendar,
   ChevronDown,
+  ClipboardList,
   Cpu,
   FileText,
   Folder,
@@ -151,6 +152,10 @@ const navGroups: NavGroup[] = [
       { to: '/roadmap-items', label: '路線圖項目', icon: ListTodo },
       { to: '/roadmap-reports', label: '許願池報表', icon: LineChart },
     ],
+  },
+  {
+    title: '問卷',
+    items: [{ to: '/surveys', label: '問卷管理', icon: ClipboardList }],
   },
 ]
 

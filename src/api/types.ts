@@ -553,3 +553,45 @@ export interface RoadmapReport {
     oldestPendingWaitingHours: number | null
   }
 }
+
+// ── Survey (問卷) ─────────────────────────────────────────────────
+export type SurveyStatus = 'draft' | 'active' | 'closed' | 'archived'
+
+export interface AdminSurveyListItem {
+  id: number
+  external_id: string
+  title: string
+  status: SurveyStatus
+  is_anonymous: boolean
+  tags: string[]
+  view_count: number
+  created_at: string
+  response_count: number
+  creator: {
+    id: number | null
+    email: string | null
+    nickname: string | null
+  }
+}
+
+export interface AdminSurveyDetail extends AdminSurveyListItem {
+  description: string | null
+  max_responses: number | null
+  cover_url: string | null
+  updated_at: string
+  questions: Array<{
+    id: number
+    question_text: string
+    question_type: string
+    is_required: boolean
+    position: number
+    options: Array<{ id: number; option_text: string; position: number }>
+  }>
+}
+
+export interface AdminSurveyResponse {
+  id: number
+  user_id: number | null
+  completed_at: string
+  answer_count: number
+}
