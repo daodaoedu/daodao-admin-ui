@@ -1,4 +1,4 @@
-// ── API 回應外殼 ──────────────────────────────────────────
+// ── API 回應外殼 ──────────────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean
   data: T
@@ -17,7 +17,7 @@ export interface OffsetPagination {
   has_next: boolean
 }
 
-// ── Auth ──────────────────────────────────────────────────
+// ── Auth ────────────────────────────────────────────────────────
 export interface AdminPingData {
   status: string
   admin_id: number
@@ -25,7 +25,7 @@ export interface AdminPingData {
   nickname: string | null
 }
 
-// ── Dashboard ─────────────────────────────────────────────
+// ── Dashboard ─────────────────────────────────────────────────────
 export interface BackendStat {
   backend: string
   query_count: number
@@ -49,7 +49,7 @@ export interface DashboardStats {
   daily_series: DailyStatPoint[]
 }
 
-// ── System Prompts ────────────────────────────────────────
+// ── System Prompts ────────────────────────────────────────────────
 export interface SystemPrompt {
   id: number
   name: string
@@ -74,7 +74,7 @@ export interface SystemPromptUpdate {
   is_active?: boolean
 }
 
-// ── LLM Models ────────────────────────────────────────────
+// ── LLM Models ─────────────────────────────────────────────────────
 export interface LLMModel {
   id: number
   provider: string
@@ -100,7 +100,7 @@ export interface LLMModelCreate {
   notes?: string
 }
 
-// ── AI Query Logs ─────────────────────────────────────────
+// ── AI Query Logs ───────────────────────────────────────────────────
 export interface AIQueryLog {
   id: number
   request_id: string
@@ -126,7 +126,7 @@ export interface AIQueryLog {
   usage_detail?: Record<string, unknown>
 }
 
-// ── Playground ────────────────────────────────────────────
+// ── Playground ────────────────────────────────────────────────────
 export interface PlaygroundChatRequest {
   model_id: number
   system_prompt_id?: number | null
@@ -159,7 +159,7 @@ export interface ChatMessage {
   }
 }
 
-// ── AI Query Log Filters ─────────────────────────────────
+// ── AI Query Log Filters ───────────────────────────────────────────
 export interface QueryLogFilters {
   backend?: string
   context?: string
@@ -171,7 +171,7 @@ export interface QueryLogFilters {
   offset?: number
 }
 
-// ── User Quotas ───────────────────────────────────────────
+// ── User Quotas ─────────────────────────────────────────────────────
 export interface UserQuota {
   id: number
   user_id: number
@@ -192,7 +192,7 @@ export interface UserWithQuota {
   quota: UserQuota | null
 }
 
-// ── Insight Playground ────────────────────────────────────
+// ── Insight Playground ────────────────────────────────────────────
 export interface InsightUser {
   id: number
   nickname: string | null
@@ -247,7 +247,7 @@ export interface ModelSyncResult {
   existing: number
 }
 
-// ── AI Service Configs ────────────────────────────────
+// ── AI Service Configs ──────────────────────────────────────
 export interface AIServiceConfig {
   id: number
   service: string
@@ -255,7 +255,7 @@ export interface AIServiceConfig {
   model_id: number
   system_prompt_id: number | null
   max_tokens: number | null
-  temperature: string | null // Decimal from backend comes as string
+  temperature: string | null
   top_p: string | null
   top_k: number | null
   is_active: boolean
@@ -289,7 +289,7 @@ export interface AIServiceConfigUpdate {
   notes?: string | null
 }
 
-// ── Roles & Permissions (daodao-server) ───────────────────
+// ── Roles & Permissions (daodao-server) ────────────────────────────────
 export interface Role {
   id: number
   name: string
@@ -330,7 +330,7 @@ export interface AdminUserListItem {
   lastLoginAt: string | null
 }
 
-// ── Admin User Detail ─────────────────────────────────────
+// ── Admin User Detail ─────────────────────────────────────────────────
 export interface AdminUserDetail {
   id: string
   internalId: number
@@ -436,12 +436,7 @@ export interface EmailHistoryResponse {
   pagination: OffsetPagination
 }
 
-// ── Wish Pool / Roadmap ──────────────────────────────────
-
-export interface CursorPagination {
-  nextCursor: string | null
-}
-
+// ── Wish Pool / Roadmap ──────────────────────────────────────────────
 export type WishCategory =
   | 'operation'
   | 'practice'
@@ -462,21 +457,37 @@ export type RoadmapStatus =
   | 'done'
   | 'parked'
 
+/** 游標分頁（許願池端點，與 OffsetPagination 不同） */
+export interface CursorPagination {
+  hasMore: boolean
+  nextCursor: string | null
+  count: number
+  limit: number
+}
+
+export interface CursorResponse<T> {
+  success: boolean
+  data: T[]
+  pagination: CursorPagination
+  timestamp: string
+}
+
 export interface AdminWishItem {
   id: number
   category: WishCategory
   situation: string
   desire: string
-  contact_email: string | null
   status: WishStatus
-  source: string
+  contact_email: string | null
   internal_module_tag: string | null
+  source: 'web' | 'app'
   linked_roadmap_item_id: number | null
-  linked_roadmap_item_title: string | null
-  submitter_user_id: number
-  submitter_nickname: string | null
   created_at: string
-  updated_at: string
+  submitter: {
+    external_id: string | null
+    nickname: string | null
+    email: string | null
+  }
 }
 
 export interface AdminRoadmapItem {
@@ -528,27 +539,15 @@ export interface UpdateRoadmapItemPayload {
   sort_order?: number
 }
 
-export interface RoadmapReportPopularCategory {
-  category: string
-  count: number
-}
-
-export interface RoadmapReportPopularItem {
-  external_id: string
-  title: string
-  status: string
-  support_count: number
-}
-
-export interface RoadmapReportWishTrend {
-  period: string
-  count: number
-}
-
 export interface RoadmapReport {
-  popularCategories: RoadmapReportPopularCategory[]
-  popularItems: RoadmapReportPopularItem[]
-  wishTrend: RoadmapReportWishTrend[]
+  popularCategories: Array<{ category: WishCategory; count: number }>
+  popularItems: Array<{
+    external_id: string
+    title: string
+    status: RoadmapStatus
+    support_count: number
+  }>
+  wishTrend: Array<{ period: string; count: number }>
   backlog: {
     pendingCount: number
     oldestPendingWaitingHours: number | null
