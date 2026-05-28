@@ -9,8 +9,11 @@ import {
   FileText,
   Folder,
   HelpCircle,
+  Inbox,
   LayoutDashboard,
+  LineChart,
   List,
+  ListTodo,
   LogOut,
   Mail,
   Medal,
@@ -121,7 +124,7 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: '遊戲化',
+    title: '遲戲化',
     items: [
       { to: '/badges', label: '徽章', icon: Trophy },
       { to: '/challenges', label: '挑戰', icon: Target },
@@ -140,6 +143,14 @@ const navGroups: NavGroup[] = [
   {
     title: '活動',
     items: [{ to: '/events', label: '活動管理', icon: Calendar }],
+  },
+  {
+    title: '許願池',
+    items: [
+      { to: '/wishes', label: '許願收件匚', icon: Inbox },
+      { to: '/roadmap-items', label: '路線圖項目', icon: ListTodo },
+      { to: '/roadmap-reports', label: '許願池報表', icon: LineChart },
+    ],
   },
 ]
 
