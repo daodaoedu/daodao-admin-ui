@@ -1,24 +1,15 @@
 import { Mail, MailCheck, MailWarning, Send, Timer } from 'lucide-react'
-import type { EmailHealth, EmailStats } from '@/api/admin-system'
+import { useState } from 'react'
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
-import { useEmailHealth, useEmailStats } from '@/hooks/useEmailManagement'
-
-const mockStats: EmailStats = {
-  totalSent: 12_345,
-  successRate: 98.5,
-  bounceRate: 1.2,
-  queuePending: 3,
-  sentChange: 8.1,
-  successRateChange: 0.3,
-  bounceRateChange: -0.2,
-}
-
-const mockHealth: EmailHealth = {
-  status: 'connected',
-  provider: 'SendGrid',
-  lastChecked: '2 分鐘前',
-}
+import { Button } from '@/components/ui/button'
+import { Input, Textarea } from '@/components/ui/input'
+import {
+  useEmailHealth,
+  useEmailHistory,
+  useEmailStats,
+  useSendEmail,
+} from '@/hooks/useEmailManagement'
 
 const exportColumns = [
   { key: 'to', header: '收件人' },
@@ -27,18 +18,36 @@ const exportColumns = [
   { key: 'sentAt', header: '發送時間' },
 ]
 
-const exportData = [
-  { to: 'user1@example.com', subject: '歡迎加入', status: '已發送', sentAt: '2025-12-20 10:30' },
-  { to: 'user2@example.com', subject: '密碼重設', status: '已發送', sentAt: '2025-12-20 09:15' },
-  { to: 'user3@example.com', subject: '週報通知', status: '退信', sentAt: '2025-12-19 18:00' },
-]
-
 export function EmailManagementPage() {
   const { data: statsData } = useEmailStats()
   const { data: healthData } = useEmailHealth()
+  const { data: historyData } = useEmailHistory({ limit: 50 })
+  const sendEmailMutation = useSendEmail()
 
-  const stats = statsData ?? mockStats
-  const health = healthData ?? mockHealth
+  const [emailTo, setEmailTo] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+
+  const stats = statsData ?? {
+    totalSent: 0,
+    successRate: 0,
+    bounceRate: 0,
+    queuePending: 0,
+    sentChange: 0,
+    successRateChange: 0,
+    bounceRateChange: 0,
+  }
+  const health = healthData ?? {
+    status: 'disconnected',
+    provider: '未設定',
+    lastChecked: '-',
+  }
+  const exportData = (historyData?.items ?? []).map((item) => ({
+    to: item.recipient,
+    subject: item.subject,
+    status: item.status,
+    sentAt: item.sentAt,
+  }))
 
   const isConnected = health.status === 'connected'
 
@@ -47,7 +56,11 @@ export function EmailManagementPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="heading-lg">郵件管理</h1>
-        <ExportButton data={exportData} columns={exportColumns} fileName="emails" />
+        <ExportButton
+          data={exportData as unknown as Record<string, unknown>[]}
+          columns={exportColumns}
+          fileName="emails"
+        />
       </div>
 
       {/* Stats */}
@@ -79,16 +92,16 @@ export function EmailManagementPage() {
       {/* SMTP Status + Send Form */}
       <div className="grid gap-4 sm:grid-cols-2">
         {/* SMTP Status */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="admin-panel-card p-5">
           <h2 className="heading-sm mb-4">SMTP 狀態</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2 border-b border-border">
               <span className="text-sm text-muted-foreground">狀態</span>
               <span
-                className={`inline-flex items-center gap-1.5 text-sm font-medium ${isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                className={`inline-flex items-center gap-1.5 text-sm font-medium ${isConnected ? 'text-success' : 'text-destructive'}`}
               >
                 <span
-                  className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                  className={`h-2 w-2 rounded-full ${isConnected ? 'bg-success' : 'bg-destructive'}`}
                 />
                 {isConnected ? '已連線' : '已斷線'}
               </span>
@@ -105,55 +118,73 @@ export function EmailManagementPage() {
         </div>
 
         {/* Send Email Form */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="admin-panel-card p-5">
           <h2 className="heading-sm mb-4">手動發信</h2>
           <form
             className="space-y-3"
             onSubmit={(e) => {
               e.preventDefault()
-              alert('功能開發中')
+              if (!emailTo || !emailSubject || !emailBody) return
+              sendEmailMutation.mutate(
+                { to: emailTo, subject: emailSubject, body: emailBody },
+                {
+                  onSuccess: () => {
+                    setEmailTo('')
+                    setEmailSubject('')
+                    setEmailBody('')
+                  },
+                },
+              )
             }}
           >
             <div>
               <label htmlFor="email-to" className="mb-1 block text-sm font-medium">
                 收件人
               </label>
-              <input
+              <Input
                 id="email-to"
                 type="email"
+                value={emailTo}
+                onChange={(e) => setEmailTo(e.target.value)}
                 placeholder="user@example.com"
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
             <div>
               <label htmlFor="email-subject" className="mb-1 block text-sm font-medium">
                 主旨
               </label>
-              <input
+              <Input
                 id="email-subject"
                 type="text"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
                 placeholder="郵件主旨"
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
             <div>
               <label htmlFor="email-body" className="mb-1 block text-sm font-medium">
                 內容
               </label>
-              <textarea
+              <Textarea
                 id="email-body"
                 rows={4}
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
                 placeholder="郵件內容..."
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                className="resize-none"
               />
             </div>
-            <button
+            <Button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              disabled={sendEmailMutation.isPending || !emailTo || !emailSubject || !emailBody}
             >
               <Send className="h-4 w-4" />
-              發送
-            </button>
+              {sendEmailMutation.isPending ? '發送中...' : '發送'}
+            </Button>
+            {sendEmailMutation.isError && (
+              <p className="text-sm text-destructive">發送失敗，請稍後再試</p>
+            )}
+            {sendEmailMutation.isSuccess && <p className="text-sm text-success">郵件已成功發送</p>}
           </form>
         </div>
       </div>

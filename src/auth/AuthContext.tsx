@@ -7,7 +7,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { ping } from '@/api/admin'
+import { ping } from '@/api/admin-ai'
 import { TOKEN_KEY } from '@/api/client'
 
 interface AdminInfo {

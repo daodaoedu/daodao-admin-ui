@@ -7,9 +7,9 @@ const badgeVariants = cva('inline-flex items-center rounded px-2 py-0.5 text-xs 
     variant: {
       default: 'bg-muted text-muted-foreground',
       primary: 'bg-primary/10 text-primary',
-      success: 'bg-green-100 text-green-700',
-      error: 'bg-red-100 text-red-700',
-      warning: 'bg-orange-100 text-orange-700',
+      success: 'bg-success/15 text-success',
+      error: 'bg-destructive/15 text-destructive',
+      warning: 'bg-warning/15 text-warning',
     },
   },
   defaultVariants: {

@@ -26,12 +26,13 @@ export interface RedisInfo {
 }
 
 export const getSystemMonitor = () =>
-  apiClient.get<ApiResponse<SystemMonitorData>>('/api/v1/admin/system/monitor')
+  apiClient.get<ApiResponse<SystemMonitorData>>('/daodao-server/api/v1/admin/system/monitor')
 
-export const getDbInfo = () => apiClient.get<ApiResponse<DbInfo>>('/api/v1/admin/system/db')
+export const getDbInfo = () =>
+  apiClient.get<ApiResponse<DbInfo>>('/daodao-server/api/v1/admin/system/db-info')
 
 export const getRedisInfo = () =>
-  apiClient.get<ApiResponse<RedisInfo>>('/api/v1/admin/system/redis')
+  apiClient.get<ApiResponse<RedisInfo>>('/daodao-server/api/v1/admin/system/redis-info')
 
 // ── Email ────────────────────────────────────────────────
 export interface EmailStats {
@@ -51,10 +52,21 @@ export interface EmailHealth {
 }
 
 export const getEmailHistory = (params?: { limit?: number; offset?: number; status?: string }) =>
-  apiClient.get<ApiResponse<EmailHistoryResponse>>('/api/v1/admin/email/history', { params })
+  apiClient.get<ApiResponse<EmailHistoryResponse>>('/daodao-server/api/v1/admin/email/history', {
+    params,
+  })
 
 export const getEmailStats = () =>
-  apiClient.get<ApiResponse<EmailStats>>('/api/v1/admin/email/stats')
+  apiClient.get<ApiResponse<EmailStats>>('/daodao-server/api/v1/admin/email/stats')
 
 export const getEmailHealth = () =>
-  apiClient.get<ApiResponse<EmailHealth>>('/api/v1/admin/email/health')
+  apiClient.get<ApiResponse<EmailHealth>>('/daodao-server/api/v1/admin/email/health')
+
+export const sendEmail = (data: { to: string; subject: string; body: string }) =>
+  apiClient.post<ApiResponse<{ success: boolean }>>('/daodao-server/api/v1/admin/email/send', data)
+
+export const bulkSendEmail = (data: { recipients: string[]; subject: string; body: string }) =>
+  apiClient.post<ApiResponse<{ success: boolean }>>(
+    '/daodao-server/api/v1/admin/email/bulk-send',
+    data,
+  )

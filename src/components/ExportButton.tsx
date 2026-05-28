@@ -1,5 +1,6 @@
 import { Download, FileSpreadsheet, FileText } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 interface ColumnConfig {
@@ -67,38 +68,39 @@ export function ExportButton({ data, columns, fileName, disabled }: ExportButton
 
   return (
     <div className="relative" ref={ref}>
-      <button
+      <Button
         type="button"
+        variant="secondary"
         disabled={disabled || loading}
         onClick={() => setOpen(!open)}
-        className={cn(
-          'inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium transition-colors',
-          'hover:bg-accent hover:text-accent-foreground',
-          'disabled:pointer-events-none disabled:opacity-50',
-        )}
+        className={cn('h-9', loading && 'pointer-events-none')}
       >
         <Download className="h-4 w-4" />
         {loading ? '匯出中...' : '匯出'}
-      </button>
+      </Button>
 
       {open && (
-        <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-md border border-border bg-card p-1 shadow-md">
-          <button
+        <div className="absolute right-0 top-full z-10 mt-1 w-40 admin-card-soft p-1 shadow-md">
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start px-3 py-2 text-xs"
             onClick={() => handleExport('csv')}
-            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-accent"
           >
             <FileText className="h-4 w-4" />
             CSV
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start px-3 py-2 text-xs"
             onClick={() => handleExport('xlsx')}
-            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-accent"
           >
             <FileSpreadsheet className="h-4 w-4" />
             Excel (.xlsx)
-          </button>
+          </Button>
         </div>
       )}
     </div>

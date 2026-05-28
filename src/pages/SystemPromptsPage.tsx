@@ -5,7 +5,7 @@ import {
   deleteSystemPrompt,
   listSystemPrompts,
   updateSystemPrompt,
-} from '@/api/admin'
+} from '@/api/admin-ai'
 import type { SystemPrompt } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -63,11 +63,11 @@ export function SystemPromptsPage() {
   }
 
   return (
-    <div className="flex gap-6 h-full">
+    <div className="grid gap-6 lg:grid-cols-[20rem_1fr]">
       {/* List */}
-      <div className="w-72 shrink-0 space-y-2">
+      <div className="admin-panel-card p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h1 className="heading-lg">System Prompts</h1>
+          <h1 className="heading-sm">System Prompts</h1>
           <Button type="button" size="xs" onClick={openNew} className="px-3">
             + 新增
           </Button>
@@ -75,10 +75,11 @@ export function SystemPromptsPage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">載入中...</p>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {(data ?? []).map((p) => (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 key={p.id}
                 onClick={() => openEdit(p)}
                 className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition-colors
@@ -95,7 +96,7 @@ export function SystemPromptsPage() {
                 <div className="mt-0.5 flex gap-2 text-xs text-muted-foreground">
                   <span>v{p.version}</span>
                 </div>
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -103,8 +104,8 @@ export function SystemPromptsPage() {
 
       {/* Editor */}
       {(isNew || selected) && (
-        <div className="flex-1 space-y-4">
-          <h2 className="font-semibold">{isNew ? '新增 Prompt' : `編輯：${selected?.name}`}</h2>
+        <div className="admin-panel-card p-5 space-y-4">
+          <h2 className="heading-sm">{isNew ? '新增 Prompt' : `編輯：${selected?.name}`}</h2>
           <div className="grid grid-cols-2 gap-3">
             {['name'].map((field) => (
               <div key={field}>
@@ -113,7 +114,6 @@ export function SystemPromptsPage() {
                 </label>
                 <Input
                   id={`field-${field}`}
-                  className="rounded"
                   value={(form as unknown as Record<string, string>)[field]}
                   onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
                 />
@@ -137,7 +137,7 @@ export function SystemPromptsPage() {
             <Textarea
               id="prompt-content"
               rows={16}
-              className="rounded font-mono"
+              className="font-mono"
               value={form.content}
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
             />
@@ -186,6 +186,12 @@ export function SystemPromptsPage() {
               取消
             </Button>
           </div>
+        </div>
+      )}
+
+      {!isNew && !selected && (
+        <div className="admin-panel-card p-5 text-sm text-muted-foreground">
+          請從左側選擇一筆提示詞，或點擊「新增」建立新項目。
         </div>
       )}
     </div>

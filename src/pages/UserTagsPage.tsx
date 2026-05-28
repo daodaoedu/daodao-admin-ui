@@ -24,40 +24,40 @@ const MANUAL_TAGS: ManualTag[] = [
   {
     id: 1,
     name: 'VIP',
-    color: 'bg-purple-500',
-    colorClass: 'text-purple-700',
+    color: 'bg-info',
+    colorClass: 'text-info',
     userCount: 128,
     createdAt: '2025-01-15',
   },
   {
     id: 2,
     name: '合作學校',
-    color: 'bg-blue-500',
-    colorClass: 'text-blue-700',
+    color: 'bg-info',
+    colorClass: 'text-info',
     userCount: 456,
     createdAt: '2025-02-20',
   },
   {
     id: 3,
     name: '早期用戶',
-    color: 'bg-green-500',
-    colorClass: 'text-green-700',
+    color: 'bg-success',
+    colorClass: 'text-success',
     userCount: 1024,
     createdAt: '2024-11-01',
   },
   {
     id: 4,
     name: '測試帳號',
-    color: 'bg-orange-500',
-    colorClass: 'text-orange-700',
+    color: 'bg-warning',
+    colorClass: 'text-warning',
     userCount: 23,
     createdAt: '2025-03-10',
   },
   {
     id: 5,
     name: '志工',
-    color: 'bg-teal-500',
-    colorClass: 'text-teal-700',
+    color: 'bg-info',
+    colorClass: 'text-info',
     userCount: 67,
     createdAt: '2025-04-05',
   },
@@ -104,12 +104,12 @@ export function UserTagsPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Manual Tags */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="admin-panel-card p-5">
           <h2 className="heading-sm mb-4">手動標籤</h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="admin-table-shell text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted text-muted-foreground">
+                <tr className="admin-table-head">
                   {['標籤名稱', '用戶數', '建立日期', '操作'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left font-medium">
                       {h}
@@ -119,10 +119,7 @@ export function UserTagsPage() {
               </thead>
               <tbody>
                 {tags.map((tag) => (
-                  <tr
-                    key={tag.id}
-                    className="border-b border-border hover:bg-accent transition-colors"
-                  >
+                  <tr key={tag.id} className="admin-table-row transition-colors">
                     <td className="px-4 py-2">
                       <span className="inline-flex items-center gap-2">
                         <span className={`inline-block h-2.5 w-2.5 rounded-full ${tag.color}`} />
@@ -159,12 +156,12 @@ export function UserTagsPage() {
         </div>
 
         {/* Auto Tag Rules */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="admin-panel-card p-5">
           <h2 className="heading-sm mb-4">自動標籤規則</h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="admin-table-shell text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted text-muted-foreground">
+                <tr className="admin-table-head">
                   {['標籤名稱', '條件描述', '符合用戶數', '狀態', '操作'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left font-medium">
                       {h}
@@ -174,15 +171,12 @@ export function UserTagsPage() {
               </thead>
               <tbody>
                 {autoRules.map((rule) => (
-                  <tr
-                    key={rule.id}
-                    className="border-b border-border hover:bg-accent transition-colors"
-                  >
+                  <tr key={rule.id} className="admin-table-row transition-colors">
                     <td className="px-4 py-2 font-medium">{rule.name}</td>
                     <td className="px-4 py-2 text-muted-foreground">{rule.condition}</td>
                     <td className="px-4 py-2 font-mono">{rule.matchedUsers.toLocaleString()}</td>
                     <td className="px-4 py-2">
-                      <button
+                      <Button
                         type="button"
                         role="switch"
                         aria-checked={rule.enabled}
@@ -192,11 +186,11 @@ export function UserTagsPage() {
                         }`}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                          className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow-sm transition-transform ${
                             rule.enabled ? 'translate-x-4' : 'translate-x-0'
                           }`}
                         />
-                      </button>
+                      </Button>
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex gap-1">

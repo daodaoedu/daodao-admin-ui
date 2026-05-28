@@ -2,6 +2,9 @@ import { BookOpen, ChevronLeft, ChevronRight, Search, Users } from 'lucide-react
 import { useState } from 'react'
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { usePracticeStats } from '@/hooks/usePracticeStats'
 import { cn } from '@/lib/utils'
 
@@ -17,93 +20,20 @@ interface Practice {
   likes: number
 }
 
-const mockPractices: Practice[] = [
-  {
-    id: 1,
-    title: '每日冥想 10 分鐘',
-    status: 'active',
-    creator: '陳小明',
-    createdAt: '2025-12-01',
-    participants: 320,
-    likes: 89,
-  },
-  {
-    id: 2,
-    title: '閱讀一本好書',
-    status: 'active',
-    creator: '林美玲',
-    createdAt: '2025-11-15',
-    participants: 256,
-    likes: 72,
-  },
-  {
-    id: 3,
-    title: '每週運動三次',
-    status: 'active',
-    creator: '王大華',
-    createdAt: '2025-10-20',
-    participants: 198,
-    likes: 65,
-  },
-  {
-    id: 4,
-    title: '感恩日記',
-    status: 'inactive',
-    creator: '張小芳',
-    createdAt: '2025-09-10',
-    participants: 145,
-    likes: 43,
-  },
-  {
-    id: 5,
-    title: '數位排毒挑戰',
-    status: 'active',
-    creator: '李志明',
-    createdAt: '2025-08-05',
-    participants: 112,
-    likes: 38,
-  },
-  {
-    id: 6,
-    title: '早起習慣養成',
-    status: 'draft',
-    creator: '黃雅琪',
-    createdAt: '2025-07-22',
-    participants: 0,
-    likes: 12,
-  },
-  {
-    id: 7,
-    title: '每日學習 30 分鐘',
-    status: 'active',
-    creator: '劉建國',
-    createdAt: '2025-06-18',
-    participants: 95,
-    likes: 29,
-  },
-  {
-    id: 8,
-    title: '斷捨離生活實踐',
-    status: 'inactive',
-    creator: '吳佳蓉',
-    createdAt: '2025-05-30',
-    participants: 108,
-    likes: 34,
-  },
-]
+const fallbackPractices: Practice[] = []
 
 const statusMap: Record<PracticeStatus, { label: string; className: string }> = {
   active: {
     label: '活躍',
-    className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    className: 'bg-success/15 text-success',
   },
   inactive: {
     label: '停用',
-    className: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+    className: 'bg-muted text-muted-foreground',
   },
   draft: {
     label: '草稿',
-    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    className: 'bg-warning/15 text-warning',
   },
 }
 
@@ -124,7 +54,7 @@ export function PracticesPage() {
 
   const { data: practiceStats } = usePracticeStats()
 
-  const filtered = mockPractices
+  const filtered = (fallbackPractices ?? [])
     .filter((p) => {
       if (statusFilter !== 'all' && p.status !== statusFilter) return false
       if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false
@@ -171,40 +101,42 @@ export function PracticesPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
+          <Input
             type="text"
             placeholder="搜尋實踐..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-md border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-3"
           />
         </div>
-        <select
+        <Select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as 'all' | PracticeStatus)}
-          className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-        >
-          <option value="all">全部狀態</option>
-          <option value="active">活躍</option>
-          <option value="inactive">停用</option>
-          <option value="draft">草稿</option>
-        </select>
-        <select
+          onValueChange={(v) => setStatusFilter(v as 'all' | PracticeStatus)}
+          options={[
+            { value: 'all', label: '全部狀態' },
+            { value: 'active', label: '活躍' },
+            { value: 'inactive', label: '停用' },
+            { value: 'draft', label: '草稿' },
+          ]}
+          triggerClassName="admin-control"
+        />
+        <Select
           value={sort}
-          onChange={(e) => setSort(e.target.value as 'createdAt' | 'likes' | 'participants')}
-          className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-        >
-          <option value="createdAt">建立日期</option>
-          <option value="likes">按讚數</option>
-          <option value="participants">參與人數</option>
-        </select>
+          onValueChange={(v) => setSort(v as 'createdAt' | 'likes' | 'participants')}
+          options={[
+            { value: 'createdAt', label: '建立日期' },
+            { value: 'likes', label: '按讚數' },
+            { value: 'participants', label: '參與人數' },
+          ]}
+          triggerClassName="admin-control"
+        />
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="admin-panel-card overflow-x-auto">
+        <table className="admin-table-shell text-sm">
           <thead>
-            <tr className="border-b border-border text-left">
+            <tr className="admin-table-head">
               <th className="px-5 py-3 font-medium text-muted-foreground">標題</th>
               <th className="px-5 py-3 font-medium text-muted-foreground">狀態</th>
               <th className="px-5 py-3 font-medium text-muted-foreground">建立者</th>
@@ -218,10 +150,7 @@ export function PracticesPage() {
             {filtered.map((practice) => {
               const status = statusMap[practice.status]
               return (
-                <tr
-                  key={practice.id}
-                  className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
-                >
+                <tr key={practice.id} className="admin-table-row last:border-0 transition-colors">
                   <td className="px-5 py-3 font-medium">{practice.title}</td>
                   <td className="px-5 py-3">
                     <span
@@ -238,17 +167,20 @@ export function PracticesPage() {
                   <td className="px-5 py-3 text-right">{practice.participants.toLocaleString()}</td>
                   <td className="px-5 py-3 text-right">{practice.likes.toLocaleString()}</td>
                   <td className="px-5 py-3">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="xs"
+                      onClick={() => alert('功能開發中')}
                       className={cn(
                         'rounded-md px-3 py-1 text-xs font-medium transition-colors',
                         practice.status === 'active'
-                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                          : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50',
+                          ? 'bg-muted text-muted-foreground hover:bg-muted'
+                          : 'bg-success/15 text-success hover:text-success',
                       )}
                     >
                       {practice.status === 'active' ? '停用' : '啟用'}
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               )
@@ -259,37 +191,41 @@ export function PracticesPage() {
 
       {/* Pagination */}
       <div className="flex items-center justify-center gap-1">
-        <button
+        <Button
           type="button"
+          size="icon"
           onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
           disabled={currentPage === 1}
-          className="inline-flex items-center justify-center rounded-md border border-border p-2 text-sm hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+          variant="outline"
+          className="px-0"
         >
           <ChevronLeft className="h-4 w-4" />
-        </button>
+        </Button>
         {[1, 2, 3].map((page) => (
-          <button
+          <Button
             key={page}
             type="button"
+            size="sm"
             onClick={() => setCurrentPage(page)}
+            variant={currentPage === page ? 'primary' : 'outline'}
             className={cn(
-              'inline-flex h-9 w-9 items-center justify-center rounded-md text-sm font-medium transition-colors',
-              currentPage === page
-                ? 'bg-primary text-primary-foreground'
-                : 'border border-border hover:bg-accent',
+              'h-9 w-9',
+              currentPage === page && 'bg-primary text-primary-foreground hover:bg-primary/90',
             )}
           >
             {page}
-          </button>
+          </Button>
         ))}
-        <button
+        <Button
           type="button"
+          size="icon"
           onClick={() => setCurrentPage((p) => Math.min(3, p + 1))}
           disabled={currentPage === 3}
-          className="inline-flex items-center justify-center rounded-md border border-border p-2 text-sm hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+          variant="outline"
+          className="px-0"
         >
           <ChevronRight className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   )

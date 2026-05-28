@@ -393,6 +393,29 @@ export interface ActiveUsersTrendResponse {
   }
 }
 
+export interface ActiveUsersFunnelStep {
+  label: string
+  value: number
+}
+
+export interface ActiveUsersFunnelResponse {
+  steps: ActiveUsersFunnelStep[]
+}
+
+export interface UserCohortRow {
+  label: string
+  day1: number
+  day7: number
+  day14: number
+  day30: number
+  day60: number
+  day90: number
+}
+
+export interface UserCohortResponse {
+  rows: UserCohortRow[]
+}
+
 export interface EmailHistoryItem {
   id: number
   recipient: string
@@ -411,4 +434,123 @@ export interface EmailHistoryResponse {
     successRate: number
   }
   pagination: OffsetPagination
+}
+
+// ── Wish Pool / Roadmap ──────────────────────────────────
+
+export interface CursorPagination {
+  nextCursor: string | null
+}
+
+export type WishCategory =
+  | 'operation'
+  | 'practice'
+  | 'social'
+  | 'explore'
+  | 'challenge'
+  | 'ai'
+  | 'profile'
+  | 'other'
+
+export type WishStatus = 'pending' | 'linked' | 'archived'
+
+export type RoadmapStatus =
+  | 'collected'
+  | 'discussing'
+  | 'planned'
+  | 'in_progress'
+  | 'done'
+  | 'parked'
+
+export interface AdminWishItem {
+  id: number
+  category: WishCategory
+  situation: string
+  desire: string
+  contact_email: string | null
+  status: WishStatus
+  source: string
+  internal_module_tag: string | null
+  linked_roadmap_item_id: number | null
+  linked_roadmap_item_title: string | null
+  submitter_user_id: number
+  submitter_nickname: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminRoadmapItem {
+  id: number
+  external_id: string
+  title: string
+  description: string
+  category: WishCategory
+  status: RoadmapStatus
+  support_count: number
+  is_public: boolean
+  pinned: boolean
+  sort_order: number
+  shipped_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface LinkWishPayload {
+  roadmap_item_id: number
+  internal_module_tag?: string
+}
+
+export interface PromoteWishPayload {
+  title: string
+  description: string
+  category: WishCategory
+  status?: RoadmapStatus
+  internal_module_tag?: string
+}
+
+export interface CreateRoadmapItemPayload {
+  title: string
+  description: string
+  category: WishCategory
+  status?: RoadmapStatus
+  is_public?: boolean
+  pinned?: boolean
+  sort_order?: number
+}
+
+export interface UpdateRoadmapItemPayload {
+  title?: string
+  description?: string
+  category?: WishCategory
+  status?: RoadmapStatus
+  is_public?: boolean
+  pinned?: boolean
+  sort_order?: number
+}
+
+export interface RoadmapReportPopularCategory {
+  category: string
+  count: number
+}
+
+export interface RoadmapReportPopularItem {
+  external_id: string
+  title: string
+  status: string
+  support_count: number
+}
+
+export interface RoadmapReportWishTrend {
+  period: string
+  count: number
+}
+
+export interface RoadmapReport {
+  popularCategories: RoadmapReportPopularCategory[]
+  popularItems: RoadmapReportPopularItem[]
+  wishTrend: RoadmapReportWishTrend[]
+  backlog: {
+    pendingCount: number
+    oldestPendingWaitingHours: number | null
+  }
 }

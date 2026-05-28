@@ -30,4 +30,19 @@ export const listFeedback = (params?: {
   category?: string
   limit?: number
   offset?: number
-}) => apiClient.get<ApiResponse<FeedbackListResponse>>('/api/v1/admin/feedback', { params })
+}) =>
+  apiClient.get<ApiResponse<FeedbackListResponse>>('/daodao-server/api/v1/admin/feedback', {
+    params,
+  })
+
+export const updateFeedbackStatus = (id: number, data: { status: string }) =>
+  apiClient.patch<ApiResponse<{ success: boolean }>>(
+    `/daodao-server/api/v1/admin/feedback/${id}`,
+    data,
+  )
+
+export const replyToFeedback = (id: number, data: { content: string }) =>
+  apiClient.post<ApiResponse<{ success: boolean }>>(
+    `/daodao-server/api/v1/admin/feedback/${id}/reply`,
+    data,
+  )
