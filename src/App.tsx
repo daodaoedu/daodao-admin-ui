@@ -130,6 +130,11 @@ const RoadmapReportsPage = lazy(() =>
   import('@/pages/RoadmapReportsPage').then((m) => ({ default: m.RoadmapReportsPage })),
 )
 
+// Survey pages
+const SurveyManagementPage = lazy(() =>
+  import('@/pages/SurveyManagementPage').then((m) => ({ default: m.SurveyManagementPage })),
+)
+
 function PageLoader() {
   return (
     <div className="flex items-center justify-center py-20">
@@ -499,6 +504,16 @@ export function App() {
             element={
               <LazyPage>
                 <RoadmapReportsPage />
+              </LazyPage>
+            }
+          />
+
+          {/* 問卷 */}
+          <Route
+            path="/surveys"
+            element={
+              <LazyPage>
+                <SurveyManagementPage />
               </LazyPage>
             }
           />
