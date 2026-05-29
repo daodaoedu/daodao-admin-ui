@@ -104,12 +104,14 @@ export function SurveyManagementPage() {
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteAdminSurvey(id),
     onSuccess: invalidate,
+    onError: () => alert('刪除問卷失敗，請重試'),
   })
 
   const statusMut = useMutation({
     mutationFn: ({ id, status }: { id: number; status: SurveyStatus }) =>
       updateAdminSurveyStatus(id, status),
     onSuccess: invalidate,
+    onError: () => alert('更新狀態失敗，請重試'),
   })
 
   const handleDelete = (survey: AdminSurveyListItem) => {
@@ -477,6 +479,7 @@ function SurveyResponsesPanel({ surveyId, onClose }: { surveyId: number; onClose
       qc.invalidateQueries({ queryKey: ['admin-survey-responses', surveyId] })
       qc.invalidateQueries({ queryKey: ['admin-surveys'] })
     },
+    onError: () => alert('刪除回應失敗，請重試'),
   })
 
   const handleDeleteResponse = (responseId: number) => {
@@ -664,9 +667,14 @@ interface QuestionDraft extends AdminSurveyQuestionForm {
   _key: string
 }
 
+function generateKey(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+  return Math.random().toString(36).substring(2, 11)
+}
+
 function makeEmptyQuestion(position: number): QuestionDraft {
   return {
-    _key: crypto.randomUUID(),
+    _key: generateKey(),
     question_text: '',
     question_type: 'text',
     is_required: false,
@@ -692,37 +700,56 @@ function SurveyFormPanel({
     enabled: mode === 'edit' && surveyId !== undefined,
   })
 
-  const [initialized, setInitialized] = useState(false)
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [isAnonymous, setIsAnonymous] = useState(false)
-  const [tagsInput, setTagsInput] = useState('')
-  const [maxResponses, setMaxResponses] = useState('')
-  const [questions, setQuestions] = useState<QuestionDraft[]>([makeEmptyQuestion(1)])
-  const [error, setError] = useState('')
-
-  // Initialize form from existing survey data (edit mode)
-  if (mode === 'edit' && existingData && !initialized) {
-    const survey = existingData as AdminSurveyDetail
-    setTitle(survey.title)
-    setDescription(survey.description ?? '')
-    setIsAnonymous(survey.is_anonymous)
-    setTagsInput(survey.tags.join(', '))
-    setMaxResponses(survey.max_responses ? String(survey.max_responses) : '')
-    setQuestions(
-      survey.questions.length > 0
-        ? survey.questions.map((q) => ({
-            _key: String(q.id),
-            question_text: q.question_text,
-            question_type: q.question_type,
-            is_required: q.is_required,
-            position: q.position,
-            options: q.options.map((o) => ({ option_text: o.option_text, position: o.position })),
-          }))
-        : [makeEmptyQuestion(1)],
-    )
-    setInitialized(true)
+  if (mode === 'edit' && loadingExisting) {
+    return <p className="text-sm text-muted-foreground">載入中...</p>
   }
+
+  return (
+    <SurveyFormInner
+      key={mode === 'edit' ? surveyId : 'create'}
+      mode={mode}
+      surveyId={surveyId}
+      existingData={mode === 'edit' ? (existingData as AdminSurveyDetail | undefined) : undefined}
+      onClose={onClose}
+      onSuccess={onSuccess}
+    />
+  )
+}
+
+function SurveyFormInner({
+  mode,
+  surveyId,
+  existingData,
+  onClose,
+  onSuccess,
+}: {
+  mode: 'create' | 'edit'
+  surveyId?: number
+  existingData?: AdminSurveyDetail
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [title, setTitle] = useState(existingData?.title ?? '')
+  const [description, setDescription] = useState(existingData?.description ?? '')
+  const [isAnonymous, setIsAnonymous] = useState(existingData?.is_anonymous ?? false)
+  const [tagsInput, setTagsInput] = useState(existingData?.tags.join(', ') ?? '')
+  const [maxResponses, setMaxResponses] = useState(
+    existingData?.max_responses ? String(existingData.max_responses) : '',
+  )
+  const [questions, setQuestions] = useState<QuestionDraft[]>(() => {
+    if (existingData && existingData.questions.length > 0) {
+      return existingData.questions.map((q) => ({
+        _key: String(q.id),
+        question_text: q.question_text,
+        question_type: q.question_type,
+        is_required: q.is_required,
+        position: q.position,
+        options: q.options.map((o) => ({ option_text: o.option_text, position: o.position })),
+      }))
+    }
+    return [makeEmptyQuestion(1)]
+  })
+  const [error, setError] = useState('')
 
   const createMut = useMutation({
     mutationFn: createAdminSurvey,
@@ -795,6 +822,23 @@ function SurveyFormPanel({
       setError('標題為必填')
       return
     }
+    if (maxResponses) {
+      const parsed = parseInt(maxResponses, 10)
+      if (Number.isNaN(parsed) || parsed <= 0) {
+        setError('最大回應數必須為正整數')
+        return
+      }
+    }
+    const hasEmptyOptions = questions.some(
+      (q) =>
+        OPTION_TYPES.has(q.question_type) &&
+        q.question_text.trim() &&
+        q.options.filter((o) => o.option_text.trim()).length === 0,
+    )
+    if (hasEmptyOptions) {
+      setError('選擇題 / 排序題至少需要一個選項')
+      return
+    }
     const tags = tagsInput
       .split(',')
       .map((t) => t.trim())
@@ -819,7 +863,7 @@ function SurveyFormPanel({
       description: description.trim() || undefined,
       is_anonymous: isAnonymous,
       tags,
-      max_responses: maxResponses ? Number(maxResponses) : null,
+      max_responses: maxResponses ? parseInt(maxResponses, 10) : null,
       questions: questionsPayload,
     }
 
@@ -828,10 +872,6 @@ function SurveyFormPanel({
     } else if (surveyId !== undefined) {
       updateMut.mutate({ id: surveyId, data: payload })
     }
-  }
-
-  if (mode === 'edit' && loadingExisting) {
-    return <p className="text-sm text-muted-foreground">載入中...</p>
   }
 
   return (
@@ -941,7 +981,13 @@ function SurveyFormPanel({
               <div className="w-36">
                 <Select
                   value={q.question_type}
-                  onValueChange={(v) => updateQuestion(q._key, { question_type: v, options: [] })}
+                  onValueChange={(v) => {
+                    const keepOptions = OPTION_TYPES.has(v) && OPTION_TYPES.has(q.question_type)
+                    updateQuestion(q._key, {
+                      question_type: v,
+                      options: keepOptions ? q.options : [],
+                    })
+                  }}
                   options={QUESTION_TYPE_OPTIONS}
                   placeholder="題型"
                 />
