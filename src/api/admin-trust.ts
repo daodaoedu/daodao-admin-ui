@@ -196,34 +196,3 @@ export const updateAutoModCommunityModConfig = (body: AutoModCommunityModConfig)
     '/daodao-server/api/v1/admin/automod/community-mod-config',
     body,
   )
-
-// ── User Groups ───────────────────────────────────────────
-
-export interface UserGroup {
-  id: number
-  name: string
-  members: number
-  override: string
-}
-
-export interface UserGroupCreate {
-  name: string
-  override: string
-}
-
-export interface UserGroupUpdate {
-  name?: string
-  override?: string
-}
-
-export const listUserGroups = () =>
-  apiClient.get<ApiResponse<UserGroup[]>>('/daodao-server/api/v1/admin/user-groups')
-
-export const createUserGroup = (data: UserGroupCreate) =>
-  apiClient.post<ApiResponse<UserGroup>>('/daodao-server/api/v1/admin/user-groups', data)
-
-export const updateUserGroup = (id: number, data: UserGroupUpdate) =>
-  apiClient.put<ApiResponse<UserGroup>>(`/daodao-server/api/v1/admin/user-groups/${id}`, data)
-
-export const deleteUserGroup = (id: number) =>
-  apiClient.delete<ApiResponse<null>>(`/daodao-server/api/v1/admin/user-groups/${id}`)
