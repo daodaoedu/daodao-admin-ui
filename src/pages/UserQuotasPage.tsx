@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { listUsers, upsertUserQuota } from '@/api/admin'
+import { listUsers, upsertUserQuota } from '@/api/admin-ai'
 import type { UserWithQuota } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
 import { Button } from '@/components/ui/button'
@@ -81,10 +81,10 @@ export function UserQuotasPage() {
         />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto admin-panel-card">
+        <table className="admin-table-shell text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted text-muted-foreground">
+            <tr className="admin-table-head">
               {[
                 'ID',
                 'Nickname',
@@ -116,7 +116,7 @@ export function UserQuotasPage() {
               </tr>
             ) : (
               users.map((u) => (
-                <tr key={u.id} className="border-b border-border hover:bg-accent transition-colors">
+                <tr key={u.id} className="admin-table-row transition-colors">
                   <td className="px-4 py-2 font-mono text-xs">{u.id}</td>
                   <td className="px-4 py-2 font-medium">{u.nickname ?? '-'}</td>
                   <td className="px-4 py-2 font-mono text-xs truncate max-w-[120px]">
@@ -190,8 +190,8 @@ export function UserQuotasPage() {
 
       {/* Edit modal */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-panel w-full max-w-md p-6">
             <h3 className="mb-4 font-semibold">
               設定 Quota — {editing.nickname ?? editing.mongo_id ?? `User #${editing.id}`}
             </h3>

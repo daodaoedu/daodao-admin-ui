@@ -1,8 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, Loader2, RefreshCcw, Search } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { ChevronLeft, ChevronRight, Loader2, Search } from 'lucide-react'
 import { useState } from 'react'
-import type { EmailHistoryParams } from '@/api/admin-system'
-import { getEmailHistoryFiltered, retrySingleEmail } from '@/api/admin-system'
+import { getEmailHistory } from '@/api/admin-system'
+import type { EmailHistoryItem, EmailHistoryResponse } from '@/api/types'
+
+interface EmailHistoryParams {
+  status?: string
+  page?: number
+  limit?: number
+  sortBy?: string
+  sortOrder?: string
+  recipient?: string
+  emailType?: string
+  startDate?: string
+  endDate?: string
+}
 
 const STATUS_OPTIONS = [
   { value: '', label: '全部狀態' },
@@ -26,7 +38,6 @@ const STATUS_LABEL: Record<string, string> = {
 const PAGE_SIZE = 20
 
 export function EmailHistoryTable() {
-  const queryClient = useQueryClient()
   const [filters, setFilters] = useState<EmailHistoryParams>({
     status: 'failed',
     page: 1,
@@ -35,44 +46,24 @@ export function EmailHistoryTable() {
     sortOrder: 'desc',
   })
   const [searchInput, setSearchInput] = useState('')
-  const [retryingId, setRetryingId] = useState<number | null>(null)
-  const [retryResult, setRetryResult] = useState<{
-    id: number
-    type: 'success' | 'error'
-    message: string
-  } | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'email-history', filters],
-    queryFn: () => getEmailHistoryFiltered(filters).then((r) => r.data.data),
-  })
-
-  const retryMutation = useMutation({
-    mutationFn: (logId: number) => retrySingleEmail(logId),
-    onSuccess: (_res, logId) => {
-      setRetryResult({ id: logId, type: 'success', message: '已重新排入佇列' })
-      queryClient.invalidateQueries({ queryKey: ['admin', 'email-history'] })
-      setTimeout(() => setRetryResult(null), 3000)
-    },
-    onError: (err: Error, logId) => {
-      setRetryResult({ id: logId, type: 'error', message: err.message || '重試失敗' })
-      setTimeout(() => setRetryResult(null), 5000)
-    },
-    onSettled: () => setRetryingId(null),
+    queryFn: () =>
+      getEmailHistory({
+        limit: filters.limit,
+        offset: filters.page ? (filters.page - 1) * (filters.limit ?? PAGE_SIZE) : 0,
+        status: filters.status,
+      }).then((r: { data: { data: EmailHistoryResponse } }) => r.data.data),
   })
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    setFilters((prev) => ({
+    setFilters((prev: EmailHistoryParams) => ({
       ...prev,
       recipient: searchInput || undefined,
       page: 1,
     }))
-  }
-
-  function handleRetry(logId: number) {
-    setRetryingId(logId)
-    retryMutation.mutate(logId)
   }
 
   const items = data?.items ?? []
@@ -109,7 +100,7 @@ export function EmailHistoryTable() {
           <select
             value={filters.status ?? ''}
             onChange={(e) =>
-              setFilters((prev) => ({
+              setFilters((prev: EmailHistoryParams) => ({
                 ...prev,
                 status: e.target.value || undefined,
                 page: 1,
@@ -130,7 +121,7 @@ export function EmailHistoryTable() {
             placeholder="郵件類型"
             value={filters.emailType ?? ''}
             onChange={(e) =>
-              setFilters((prev) => ({
+              setFilters((prev: EmailHistoryParams) => ({
                 ...prev,
                 emailType: e.target.value || undefined,
                 page: 1,
@@ -144,7 +135,7 @@ export function EmailHistoryTable() {
             type="date"
             value={filters.startDate ?? ''}
             onChange={(e) =>
-              setFilters((prev) => ({
+              setFilters((prev: EmailHistoryParams) => ({
                 ...prev,
                 startDate: e.target.value || undefined,
                 page: 1,
@@ -157,7 +148,7 @@ export function EmailHistoryTable() {
             type="date"
             value={filters.endDate ?? ''}
             onChange={(e) =>
-              setFilters((prev) => ({
+              setFilters((prev: EmailHistoryParams) => ({
                 ...prev,
                 endDate: e.target.value || undefined,
                 page: 1,
@@ -188,11 +179,10 @@ export function EmailHistoryTable() {
                 <th className="px-5 py-3 font-medium">類型</th>
                 <th className="px-5 py-3 font-medium">狀態</th>
                 <th className="px-5 py-3 font-medium">發送時間</th>
-                <th className="px-5 py-3 font-medium">操作</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
+              {items.map((item: EmailHistoryItem) => (
                 <tr
                   key={item.id}
                   className="border-b border-border last:border-0 hover:bg-muted/50"
@@ -210,34 +200,6 @@ export function EmailHistoryTable() {
                   <td className="px-5 py-3 text-xs text-muted-foreground">
                     {item.sentAt ? new Date(item.sentAt).toLocaleString('zh-TW') : '—'}
                   </td>
-                  <td className="px-5 py-3">
-                    {item.status === 'failed' && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleRetry(item.id)}
-                          disabled={retryingId === item.id}
-                          className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
-                        >
-                          {retryingId === item.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <RefreshCcw className="h-3 w-3" />
-                          )}
-                          重試
-                        </button>
-                        {retryResult?.id === item.id && (
-                          <span
-                            className={`ml-2 text-xs ${
-                              retryResult.type === 'success' ? 'text-green-600' : 'text-red-600'
-                            }`}
-                          >
-                            {retryResult.message}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -252,7 +214,12 @@ export function EmailHistoryTable() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) - 1 }))}
+              onClick={() =>
+                setFilters((prev: EmailHistoryParams) => ({
+                  ...prev,
+                  page: (prev.page ?? 1) - 1,
+                }))
+              }
               disabled={!filters.page || filters.page <= 1}
               className="rounded-md border border-border p-1 hover:bg-muted disabled:opacity-30"
             >
@@ -261,7 +228,12 @@ export function EmailHistoryTable() {
             <span className="text-sm">第 {filters.page ?? 1} 頁</span>
             <button
               type="button"
-              onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) + 1 }))}
+              onClick={() =>
+                setFilters((prev: EmailHistoryParams) => ({
+                  ...prev,
+                  page: (prev.page ?? 1) + 1,
+                }))
+              }
               disabled={!pagination.has_next}
               className="rounded-md border border-border p-1 hover:bg-muted disabled:opacity-30"
             >

@@ -12,167 +12,73 @@ import {
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
+import type {
+  ConversationDetail,
+  ConversationListItem,
+  KnowledgeEntry,
+} from '@/api/admin-ai-assistant'
 import { StatCard } from '@/components/StatCard'
+import { Button } from '@/components/ui/button'
+import { Input, Textarea } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import {
+  useAIAssistantStats,
+  useConversation,
+  useConversations,
+  useKnowledgeEntries,
+} from '@/hooks/useAIAssistant'
 import { cn } from '@/lib/utils'
 
-// ── Types ────────────────────────────────────────────────
-interface KBFile {
-  id: number
-  name: string
-  type: 'text' | 'pdf' | 'md'
-  size: string
-  uploadedAt: string
-}
-
-interface Message {
-  id: number
-  sender: 'user' | 'ai'
-  content: string
-  time: string
-}
-
-interface Conversation {
-  id: number
-  user: string
-  lastMessage: string
-  status: 'ai-resolved' | 'escalated' | 'needs-human'
-  time: string
-  messages: Message[]
-}
-
-// ── Mock data ────────────────────────────────────────────
-const MOCK_KB_FILES: KBFile[] = [
-  { id: 1, name: 'FAQ常見問題.md', type: 'md', size: '12 KB', uploadedAt: '2024-06-01' },
-  { id: 2, name: '課程介紹.pdf', type: 'pdf', size: '2.3 MB', uploadedAt: '2024-05-28' },
-  { id: 3, name: '使用指南.txt', type: 'text', size: '8 KB', uploadedAt: '2024-05-20' },
-  { id: 4, name: '社群規範.md', type: 'md', size: '5 KB', uploadedAt: '2024-05-15' },
-]
-
-const MOCK_CONVERSATIONS: Conversation[] = [
-  {
-    id: 1,
-    user: '陳小明',
-    lastMessage: '請問如何重設密碼？',
-    status: 'ai-resolved',
-    time: '5 分鐘前',
-    messages: [
-      { id: 1, sender: 'user', content: '請問如何重設密碼？', time: '14:20' },
-      {
-        id: 2,
-        sender: 'ai',
-        content:
-          '您好！請前往「設定 > 帳號安全」，點擊「重設密碼」按鈕，系統會發送驗證信到您的信箱。',
-        time: '14:20',
-      },
-      { id: 3, sender: 'user', content: '收到了，謝謝！', time: '14:21' },
-      { id: 4, sender: 'ai', content: '不客氣！如有其他問題歡迎隨時詢問 😊', time: '14:21' },
-    ],
-  },
-  {
-    id: 2,
-    user: '林美玲',
-    lastMessage: '課程影片無法播放',
-    status: 'escalated',
-    time: '12 分鐘前',
-    messages: [
-      { id: 1, sender: 'user', content: '課程影片無法播放，一直顯示載入中', time: '14:08' },
-      {
-        id: 2,
-        sender: 'ai',
-        content: '很抱歉造成不便。請問您使用的是哪個瀏覽器？可以嘗試清除快取後重新載入。',
-        time: '14:08',
-      },
-      { id: 3, sender: 'user', content: '我用 Chrome，清快取還是不行', time: '14:10' },
-      {
-        id: 4,
-        sender: 'ai',
-        content: '了解，此問題已升級給人工客服，將會盡快為您處理。',
-        time: '14:10',
-      },
-    ],
-  },
-  {
-    id: 3,
-    user: '王大偉',
-    lastMessage: '我想申請退費',
-    status: 'needs-human',
-    time: '30 分鐘前',
-    messages: [
-      { id: 1, sender: 'user', content: '我想申請退費，買了課程但內容不符合預期', time: '13:50' },
-      {
-        id: 2,
-        sender: 'ai',
-        content: '關於退費申請，需要由人工客服為您處理。請稍候，我將為您轉接。',
-        time: '13:50',
-      },
-      { id: 3, sender: 'user', content: '好的，請問大概多久會有人回覆？', time: '13:52' },
-    ],
-  },
-  {
-    id: 4,
-    user: '張雅婷',
-    lastMessage: '學習路徑推薦',
-    status: 'ai-resolved',
-    time: '1 小時前',
-    messages: [
-      {
-        id: 1,
-        sender: 'user',
-        content: '我是初學者，想學 Python，有推薦的學習路徑嗎？',
-        time: '13:10',
-      },
-      {
-        id: 2,
-        sender: 'ai',
-        content:
-          '推薦您從「Python 入門基礎」開始，完成後可以接著「Python 資料分析實戰」。我們有完整的學習路徑可以參考！',
-        time: '13:10',
-      },
-      { id: 3, sender: 'user', content: '太棒了，我馬上去看！', time: '13:12' },
-    ],
-  },
-  {
-    id: 5,
-    user: '李志豪',
-    lastMessage: '社群活動報名問題',
-    status: 'ai-resolved',
-    time: '2 小時前',
-    messages: [
-      { id: 1, sender: 'user', content: '下週的讀書會還可以報名嗎？', time: '12:00' },
-      {
-        id: 2,
-        sender: 'ai',
-        content: '可以的！目前還有 12 個名額。您可以到「活動」頁面點擊「報名」按鈕。',
-        time: '12:00',
-      },
-      { id: 3, sender: 'user', content: '報名成功了，感謝！', time: '12:03' },
-    ],
-  },
-]
-
-const STATUS_STYLES: Record<Conversation['status'], string> = {
+const STATUS_STYLES: Record<ConversationListItem['status'], string> = {
   'ai-resolved': 'bg-success/15 text-success',
   escalated: 'bg-warning/15 text-warning',
   'needs-human': 'bg-destructive/15 text-destructive',
 }
 
-const STATUS_LABELS: Record<Conversation['status'], string> = {
+const STATUS_LABELS: Record<ConversationListItem['status'], string> = {
   'ai-resolved': 'AI 解決',
   escalated: '已升級',
   'needs-human': '需人工',
 }
 
-const FILE_TYPE_STYLES: Record<KBFile['type'], string> = {
+const FILE_TYPE_STYLES: Record<KnowledgeEntry['type'], string> = {
   text: 'bg-muted text-muted-foreground',
   pdf: 'bg-destructive/15 text-destructive',
   md: 'bg-primary/15 text-primary',
 }
 
+const AI_TONE_OPTIONS = [
+  { value: '友善', label: '友善' },
+  { value: '專業', label: '專業' },
+  { value: '輕鬆', label: '輕鬆' },
+]
+
 // ── Component ────────────────────────────────────────────
 export function AIAssistantPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null)
+  const [aiPersona, setAiPersona] = useState(
+    '你是島島阿學的AI助手，專門協助社群成員解答學習相關問題。請用繁體中文、友善的語氣回答。',
+  )
+  const [aiTone, setAiTone] = useState('友善')
+  const [aiFallback, setAiFallback] = useState('抱歉，我無法回答這個問題，將為您轉接人工客服。')
+  const [replyMessage, setReplyMessage] = useState('')
 
-  const selectedConversation = MOCK_CONVERSATIONS.find((c) => c.id === selectedConversationId)
+  const { data: kbFiles } = useKnowledgeEntries()
+  const { data: conversations } = useConversations()
+  const { data: stats } = useAIAssistantStats()
+  const { data: selectedConversationData } = useConversation(selectedConversationId)
+
+  const displayKbFiles = kbFiles ?? []
+  const displayConversations = (conversations ?? []) as ConversationListItem[]
+  const selectedConversationListItem = displayConversations.find(
+    (c) => c.id === selectedConversationId,
+  )
+  const selectedConversation =
+    selectedConversationData ??
+    (selectedConversationListItem
+      ? { ...selectedConversationListItem, messages: [] as ConversationDetail['messages'] }
+      : null) ??
+    null
 
   return (
     <div className="space-y-6">
@@ -181,10 +87,18 @@ export function AIAssistantPage() {
 
       {/* ── Stats ───────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard title="總對話" value={1234} icon={MessageSquare} />
-        <StatCard title="AI 解決率" value="78%" icon={Bot} />
-        <StatCard title="平均回應" value="2.3 秒" icon={Clock} />
-        <StatCard title="升級率" value="22%" icon={ArrowUpRight} />
+        <StatCard title="總對話" value={stats?.totalConversations ?? 0} icon={MessageSquare} />
+        <StatCard title="AI 解決率" value={stats ? `${stats.aiResolvedRate}%` : '0%'} icon={Bot} />
+        <StatCard
+          title="平均回應"
+          value={stats ? `${stats.avgResponseSeconds} 秒` : '0 秒'}
+          icon={Clock}
+        />
+        <StatCard
+          title="升級率"
+          value={stats ? `${stats.escalationRate}%` : '0%'}
+          icon={ArrowUpRight}
+        />
       </div>
 
       {/* ── Two-column layout ───────────────────────────── */}
@@ -192,15 +106,15 @@ export function AIAssistantPage() {
         {/* ── Left column ──────────────────────────────── */}
         <div className="space-y-6">
           {/* 知識庫 */}
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="admin-panel-card p-5">
             <div className="mb-4 flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <h2 className="heading-sm">知識庫</h2>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="admin-table-shell text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left">
+                  <tr className="admin-table-head">
                     <th className="pb-3 font-medium text-muted-foreground">檔案名稱</th>
                     <th className="pb-3 font-medium text-muted-foreground">類型</th>
                     <th className="pb-3 font-medium text-muted-foreground">大小</th>
@@ -209,8 +123,8 @@ export function AIAssistantPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {MOCK_KB_FILES.map((file) => (
-                    <tr key={file.id} className="border-b border-border last:border-0">
+                  {displayKbFiles.map((file) => (
+                    <tr key={file.id} className="admin-table-row last:border-0">
                       <td className="py-3 font-medium text-foreground">{file.name}</td>
                       <td className="py-3">
                         <span
@@ -225,12 +139,14 @@ export function AIAssistantPage() {
                       <td className="py-3 text-muted-foreground">{file.size}</td>
                       <td className="py-3 text-muted-foreground">{file.uploadedAt}</td>
                       <td className="py-3">
-                        <button
+                        <Button
                           type="button"
-                          className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          variant="destructive"
+                          size="xs"
+                          className="h-6 w-6 p-0"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -238,18 +154,15 @@ export function AIAssistantPage() {
               </table>
             </div>
             <div className="mt-4">
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-              >
+              <Button type="button" variant="outline" size="sm">
                 <Upload className="h-4 w-4" />
                 上傳文件
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* AI 設定 */}
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="admin-panel-card p-5">
             <div className="mb-4 flex items-center gap-2">
               <Settings className="h-4 w-4 text-muted-foreground" />
               <h2 className="heading-sm">AI 設定</h2>
@@ -262,11 +175,12 @@ export function AIAssistantPage() {
                 >
                   人格
                 </label>
-                <textarea
+                <Textarea
                   id="ai-persona"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full admin-control"
                   rows={3}
-                  defaultValue="你是島島阿學的AI助手，專門協助社群成員解答學習相關問題。請用繁體中文、友善的語氣回答。"
+                  value={aiPersona}
+                  onChange={(e) => setAiPersona(e.target.value)}
                 />
               </div>
               <div>
@@ -276,14 +190,12 @@ export function AIAssistantPage() {
                 >
                   語氣
                 </label>
-                <select
-                  id="ai-tone"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option>友善</option>
-                  <option>專業</option>
-                  <option>輕鬆</option>
-                </select>
+                <Select
+                  value={aiTone}
+                  onValueChange={setAiTone}
+                  options={AI_TONE_OPTIONS}
+                  triggerClassName="admin-control"
+                />
               </div>
               <div>
                 <label
@@ -292,19 +204,15 @@ export function AIAssistantPage() {
                 >
                   Fallback 訊息
                 </label>
-                <input
+                <Input
                   id="ai-fallback"
                   type="text"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  defaultValue="抱歉，我無法回答這個問題，將為您轉接人工客服。"
+                  className="w-full"
+                  value={aiFallback}
+                  onChange={(e) => setAiFallback(e.target.value)}
                 />
               </div>
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                儲存設定
-              </button>
+              <Button type="button">儲存設定</Button>
             </div>
           </div>
         </div>
@@ -312,23 +220,24 @@ export function AIAssistantPage() {
         {/* ── Right column ─────────────────────────────── */}
         <div className="space-y-6">
           {/* 共享收件匣 */}
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="admin-panel-card p-5">
             <div className="mb-4 flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
               <h2 className="heading-sm">共享收件匣</h2>
             </div>
 
             <div className="space-y-1">
-              {MOCK_CONVERSATIONS.map((conv) => (
+              {displayConversations.map((conv) => (
                 <div key={conv.id}>
                   {/* Conversation list item */}
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() =>
                       setSelectedConversationId(selectedConversationId === conv.id ? null : conv.id)
                     }
                     className={cn(
-                      'flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors',
+                      'w-full items-start gap-3 rounded-lg p-3 text-left transition-colors',
                       selectedConversationId === conv.id ? 'bg-primary/5' : 'hover:bg-muted/50',
                     )}
                   >
@@ -352,11 +261,11 @@ export function AIAssistantPage() {
                     >
                       {STATUS_LABELS[conv.status]}
                     </span>
-                  </button>
+                  </Button>
 
                   {/* Expanded conversation thread */}
                   {selectedConversationId === conv.id && selectedConversation && (
-                    <div className="ml-11 mt-1 rounded-lg border border-border bg-background p-4">
+                    <div className="ml-11 mt-1 admin-card-soft">
                       <div className="space-y-3">
                         {selectedConversation.messages.map((msg) => (
                           <div
@@ -404,26 +313,22 @@ export function AIAssistantPage() {
 
                       {/* Reply area */}
                       <div className="mt-4 space-y-2">
-                        <textarea
-                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        <Textarea
+                          className="w-full admin-control"
+                          value={replyMessage}
+                          onChange={(e) => setReplyMessage(e.target.value)}
                           rows={2}
                           placeholder="輸入回覆..."
                         />
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                          >
+                          <Button type="button" size="sm">
                             <Zap className="h-3 w-3" />
                             接管對話
-                          </button>
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-                          >
+                          </Button>
+                          <Button type="button" variant="outline" size="sm">
                             <Send className="h-3 w-3" />
                             發送
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>

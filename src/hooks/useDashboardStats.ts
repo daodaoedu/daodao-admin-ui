@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getDashboardStats } from '@/api/admin'
+import { getDashboardStats } from '@/api/admin-ai'
 
 export function useDashboardStats(dateFrom?: string, dateTo?: string) {
   return useQuery({

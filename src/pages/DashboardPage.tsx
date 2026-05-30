@@ -25,16 +25,11 @@ import {
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
 import { useDashboardStats } from '@/hooks/useDashboardStats'
+import { useEmailHealth } from '@/hooks/useEmailManagement'
+import { useDbInfo, useRedisInfo } from '@/hooks/useSystemMonitor'
 
-// ── Mock system health data (no backend endpoint yet) ────
-const MOCK_SYSTEM_HEALTH = {
-  status: 'healthy' as const,
-  services: [
-    { name: 'SMTP', status: 'healthy' as const, label: '郵件服務' },
-    { name: 'Database', status: 'healthy' as const, label: '資料庫' },
-    { name: 'Redis', status: 'healthy' as const, label: '快取' },
-  ],
-}
+const getServiceStatus = (status?: string) =>
+  status === 'connected' ? ('healthy' as const) : status ? ('down' as const) : ('degraded' as const)
 
 const SERVICE_ICONS: Record<string, typeof Mail> = {
   SMTP: Mail,
@@ -65,7 +60,7 @@ function DashboardSkeleton() {
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {['kpi-a', 'kpi-b', 'kpi-c', 'kpi-d'].map((id) => (
-          <div key={id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div key={id} className="admin-panel-card p-5">
             <div className="h-4 w-20 rounded bg-muted" />
             <div className="mt-2 h-7 w-28 rounded bg-muted" />
           </div>
@@ -75,7 +70,7 @@ function DashboardSkeleton() {
       {/* Chart placeholders */}
       <div className="grid gap-6 lg:grid-cols-2">
         {['chart-a', 'chart-b'].map((id) => (
-          <div key={id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div key={id} className="admin-panel-card p-5">
             <div className="h-5 w-32 rounded bg-muted" />
             <div className="mt-4 h-[240px] rounded bg-muted/50" />
           </div>
@@ -83,7 +78,7 @@ function DashboardSkeleton() {
       </div>
 
       {/* System health placeholder */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="admin-panel-card p-5">
         <div className="h-5 w-24 rounded bg-muted" />
         <div className="mt-4 grid grid-cols-3 gap-4">
           {['health-a', 'health-b', 'health-c'].map((id) => (
@@ -101,11 +96,46 @@ export function DashboardPage() {
   const [dateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'))
 
   const { data, isLoading, error } = useDashboardStats(dateFrom, dateTo)
+  const { data: emailHealth } = useEmailHealth()
+  const { data: dbInfo } = useDbInfo()
+  const { data: redisInfo } = useRedisInfo()
 
   if (isLoading) return <DashboardSkeleton />
   if (error || !data) return <div className="text-destructive">載入失敗</div>
 
-  const systemHealth = MOCK_SYSTEM_HEALTH
+  const serviceStatus = {
+    email: getServiceStatus(emailHealth?.status),
+    db: getServiceStatus(dbInfo?.status),
+    redis: getServiceStatus(redisInfo?.status),
+  }
+
+  const systemHealth = {
+    status:
+      serviceStatus.email === 'healthy' &&
+      serviceStatus.db === 'healthy' &&
+      serviceStatus.redis === 'healthy'
+        ? ('healthy' as const)
+        : emailHealth || dbInfo || redisInfo
+          ? ('degraded' as const)
+          : ('degraded' as const),
+    services: [
+      {
+        name: 'SMTP',
+        status: serviceStatus.email,
+        label: '郵件服務',
+      },
+      {
+        name: 'Database',
+        status: serviceStatus.db,
+        label: '資料庫',
+      },
+      {
+        name: 'Redis',
+        status: serviceStatus.redis,
+        label: '快取',
+      },
+    ],
+  }
 
   return (
     <div className="space-y-6">
@@ -161,7 +191,7 @@ export function DashboardPage() {
       {/* ── AI 成本 section ────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* By backend */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="admin-panel-card p-5">
           <h2 className="mb-4 heading-sm">各 Backend 費用</h2>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={data.by_backend}>
@@ -175,7 +205,7 @@ export function DashboardPage() {
         </div>
 
         {/* Daily trend */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="admin-panel-card p-5">
           <h2 className="mb-4 heading-sm">每日查詢趨勢</h2>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={data.daily_series}>
@@ -207,7 +237,7 @@ export function DashboardPage() {
       </div>
 
       {/* ── System health section ─────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="admin-panel-card p-5">
         <div className="mb-4 flex items-center gap-3">
           <h2 className="heading-sm">系統健康</h2>
           <span
@@ -222,10 +252,7 @@ export function DashboardPage() {
           {systemHealth.services.map((svc) => {
             const Icon = SERVICE_ICONS[svc.name] ?? Activity
             return (
-              <div
-                key={svc.name}
-                className="flex items-center gap-3 rounded-lg border border-border bg-background p-4"
-              >
+              <div key={svc.name} className="admin-card-soft flex items-center gap-3">
                 <div className={`rounded-lg p-2 ${STATUS_STYLES[svc.status]}`}>
                   <Icon className="h-4 w-4" />
                 </div>

@@ -7,19 +7,12 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { authLogout, getAuthMe } from '@/api/admin'
+import { ping } from '@/api/admin-ai'
 import { TOKEN_KEY } from '@/api/client'
-import type { AuthMeUser } from '@/api/types'
-
-const ADMIN_ROLES = ['admin', 'superadmin', 'Admin', 'SuperAdmin']
 
 interface AdminInfo {
-  userId: string
-  nickname: string | null
-  email: string | null
-  photoUrl: string | null
-  roles: string[]
-  permissions: string[]
+  adminId: number
+  adminNickname: string | null
 }
 
 interface AuthContextValue {
@@ -27,40 +20,22 @@ interface AuthContextValue {
   isLoading: boolean
   adminInfo: AdminInfo | null
   login: (token: string) => Promise<boolean>
-  loginWithGoogle: () => void
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
-
-function hasAdminRole(roles: string[]): boolean {
-  return roles.some((r) => ADMIN_ROLES.includes(r))
-}
-
-function toAdminInfo(user: AuthMeUser): AdminInfo {
-  return {
-    userId: user.id,
-    nickname: user.nickname ?? user.name,
-    email: user.email,
-    photoUrl: user.photo_url,
-    roles: user.roles,
-    permissions: user.permissions,
-  }
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
 
+  // 頁面載入時嘗試透過 cookie 或 localStorage token 自動驗證
   useEffect(() => {
-    getAuthMe()
+    ping()
       .then((res) => {
-        const { user, isTemporary } = res.data.data
-        if (isTemporary || !hasAdminRole(user.roles)) {
-          throw new Error('not admin')
-        }
-        setAdminInfo(toAdminInfo(user))
+        const d = res.data.data
+        setAdminInfo({ adminId: d.admin_id, adminNickname: d.nickname })
         setIsAuthenticated(true)
       })
       .catch(() => {
@@ -75,14 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (token: string): Promise<boolean> => {
     localStorage.setItem(TOKEN_KEY, token)
     try {
-      const res = await getAuthMe()
-      const { user, isTemporary } = res.data.data
-      if (isTemporary || !hasAdminRole(user.roles)) {
-        localStorage.removeItem(TOKEN_KEY)
-        setIsAuthenticated(false)
-        return false
-      }
-      setAdminInfo(toAdminInfo(user))
+      const res = await ping()
+      const d = res.data.data
+      setAdminInfo({ adminId: d.admin_id, adminNickname: d.nickname })
       setIsAuthenticated(true)
       return true
     } catch {
@@ -92,24 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const loginWithGoogle = useCallback(() => {
-    window.location.href = '/daodao-server/api/v1/auth/google?redirectUrl=/dashboard&source=admin'
-  }, [])
-
-  const logout = useCallback(async () => {
-    try {
-      await authLogout()
-    } catch {
-      // ignore
-    }
+  const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY)
     setIsAuthenticated(false)
     setAdminInfo(null)
   }, [])
 
   const value = useMemo(
-    () => ({ isAuthenticated, isLoading, adminInfo, login, loginWithGoogle, logout }),
-    [isAuthenticated, isLoading, adminInfo, login, loginWithGoogle, logout],
+    () => ({ isAuthenticated, isLoading, adminInfo, login, logout }),
+    [isAuthenticated, isLoading, adminInfo, login, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

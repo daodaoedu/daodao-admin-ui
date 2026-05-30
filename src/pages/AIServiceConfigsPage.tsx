@@ -6,7 +6,7 @@ import {
   deleteAIServiceConfig,
   listAIServiceConfigs,
   updateAIServiceConfig,
-} from '@/api/admin'
+} from '@/api/admin-ai'
 import type { AIServiceConfig, AIServiceConfigCreate, AIServiceConfigUpdate } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,7 +29,7 @@ const EMPTY_FORM: AIServiceConfigCreate = {
 function ParamBadge({ label, value }: { label: string; value: string | number | null }) {
   if (value === null || value === undefined) return null
   return (
-    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-muted text-muted-foreground">
+    <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs bg-muted text-muted-foreground">
       {label}={value}
     </span>
   )
@@ -153,20 +153,20 @@ export function AIServiceConfigsPage() {
       </div>
 
       {/* Service tab bar */}
-      <div className="flex gap-1 border-b border-border pb-0">
+      <div className="admin-segmented">
         {services.map((svc) => (
-          <button
+          <Button
             key={svc}
             type="button"
             onClick={() => setActiveService(svc)}
-            className={`px-3 py-1.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`admin-segmented-item flex-1 justify-center ${
               activeService === svc
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'admin-segmented-item-active'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {svc}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -176,10 +176,10 @@ export function AIServiceConfigsPage() {
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">目前沒有設定</p>
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="admin-panel-card overflow-hidden">
+          <table className="admin-table-shell text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40">
+              <tr className="admin-table-head">
                 <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Service</th>
                 <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Name</th>
                 <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">
@@ -646,7 +646,7 @@ function ConfigRow({
 }) {
   return (
     <tr
-      className={`border-b border-border last:border-0 transition-colors ${cfg.is_active ? 'bg-green-50/40 dark:bg-green-950/20' : 'hover:bg-accent/30'}`}
+      className={`admin-table-row ${cfg.is_active ? 'bg-success/10' : 'hover:bg-accent/30'} transition-colors`}
     >
       <td className="px-4 py-2.5 font-mono text-xs">{cfg.service}</td>
       <td className="px-4 py-2.5 font-medium">{cfg.name}</td>
@@ -675,32 +675,30 @@ function ConfigRow({
       </td>
       <td className="px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onEdit}
-            className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          >
+          <Button type="button" size="xs" variant="ghost" onClick={onEdit}>
             編輯
-          </button>
+          </Button>
           {!cfg.is_active && (
-            <button
+            <Button
               type="button"
+              size="xs"
+              variant="secondary"
               onClick={onActivate}
               disabled={isActivating}
-              className="rounded px-2 py-1 text-xs bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
             >
               {isActivating ? '啟用中…' : '啟用'}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
+            size="xs"
+            variant="destructive"
             onClick={cfg.is_active ? undefined : onDelete}
             disabled={cfg.is_active || isDeleting}
             title={cfg.is_active ? '無法刪除已啟用的設定' : '刪除'}
-            className="rounded px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isDeleting ? '刪除中…' : '刪除'}
-          </button>
+          </Button>
         </div>
       </td>
     </tr>

@@ -5,7 +5,6 @@ import { ProtectedRoute } from '@/auth/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
 
 // Existing pages (eager load)
-import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 
@@ -120,6 +119,17 @@ const AIAssistantPage = lazy(() =>
 )
 const EventsPage = lazy(() => import('@/pages/EventsPage').then((m) => ({ default: m.EventsPage })))
 
+// Wishpool pages
+const WishInboxPage = lazy(() =>
+  import('@/pages/WishInboxPage').then((m) => ({ default: m.WishInboxPage })),
+)
+const RoadmapItemsPage = lazy(() =>
+  import('@/pages/RoadmapItemsPage').then((m) => ({ default: m.RoadmapItemsPage })),
+)
+const RoadmapReportsPage = lazy(() =>
+  import('@/pages/RoadmapReportsPage').then((m) => ({ default: m.RoadmapReportsPage })),
+)
+
 function PageLoader() {
   return (
     <div className="flex items-center justify-center py-20">
@@ -141,7 +151,6 @@ export function App() {
         path="/login"
         element={isLoading ? null : isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
       />
-      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           {/* Dashboard (eager) */}
@@ -406,7 +415,7 @@ export function App() {
             }
           />
 
-          {/* 遊戲化 */}
+          {/* 遲戲化 */}
           <Route
             path="/badges"
             element={
@@ -464,6 +473,32 @@ export function App() {
             element={
               <LazyPage>
                 <EventsPage />
+              </LazyPage>
+            }
+          />
+
+          {/* 許願池 */}
+          <Route
+            path="/wishes"
+            element={
+              <LazyPage>
+                <WishInboxPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/roadmap-items"
+            element={
+              <LazyPage>
+                <RoadmapItemsPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/roadmap-reports"
+            element={
+              <LazyPage>
+                <RoadmapReportsPage />
               </LazyPage>
             }
           />

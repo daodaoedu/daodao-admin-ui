@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { useState } from 'react'
-import { listQueryLogs } from '@/api/admin'
+import { listQueryLogs } from '@/api/admin-ai'
 import type { AIQueryLog, QueryLogFilters } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
 import { Badge } from '@/components/ui/badge'
@@ -83,10 +83,10 @@ export function QueryLogsPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto admin-panel-card">
+        <table className="admin-table-shell text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted text-muted-foreground">
+            <tr className="admin-table-head">
               {[
                 'ID',
                 'Backend',
@@ -122,7 +122,7 @@ export function QueryLogsPage() {
               logs.map((log) => (
                 <tr
                   key={log.id}
-                  className="border-b border-border hover:bg-accent cursor-pointer transition-colors"
+                  className="admin-table-row cursor-pointer transition-colors"
                   onClick={() => setSelected(selected?.id === log.id ? null : log)}
                 >
                   <td className="px-4 py-2 font-mono text-xs">{log.id}</td>
@@ -162,7 +162,7 @@ export function QueryLogsPage() {
 
       {/* Detail panel */}
       {selected && (
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="admin-panel-card p-5">
           <h3 className="mb-3 font-semibold">Log #{selected.id} 詳情</h3>
           <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
             {JSON.stringify(selected, null, 2)}

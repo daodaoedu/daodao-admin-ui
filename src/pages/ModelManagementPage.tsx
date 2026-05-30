@@ -7,13 +7,14 @@ import {
   listLLMModels,
   syncProviderModels,
   updateLLMModel,
-} from '@/api/admin'
+} from '@/api/admin-ai'
 import type { LLMModel, LLMModelCreate, ModelSyncResult } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input, Textarea } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
 const PROVIDERS = [
   'groq',
@@ -278,11 +279,11 @@ export function ModelManagementPage() {
   ] as const
 
   return (
-    <div className="flex gap-6 h-full">
+    <div className="grid gap-6 lg:grid-cols-[20rem_1fr]">
       {/* 左側列表 */}
-      <div className="w-80 shrink-0 space-y-3 overflow-y-auto">
+      <div className="admin-panel-card p-4 space-y-3 overflow-y-auto">
         <div className="flex items-center justify-between">
-          <h1 className="heading-lg">LLM Models</h1>
+          <h1 className="heading-sm">LLM Models</h1>
           <Button
             type="button"
             onClick={() => setShowCreateModal(true)}
@@ -322,17 +323,19 @@ export function ModelManagementPage() {
             return (
               <div key={provider} className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="xs"
                     onClick={() => toggleCollapse(provider)}
-                    className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                    className="h-auto px-0 py-0 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
                   >
                     <span>{collapsed ? '▶' : '▼'}</span>
                     <span>{provider}</span>
                     <span className="normal-case font-normal text-muted-foreground/70">
                       ({activeCount} / {totalCount} active)
                     </span>
-                  </button>
+                  </Button>
                   <div className="flex items-center gap-1">
                     {syncResults[provider] && !syncResults[provider].loading && (
                       <span className="text-xs text-muted-foreground">
@@ -341,60 +344,65 @@ export function ModelManagementPage() {
                           : '同步失敗'}
                       </span>
                     )}
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="xs"
+                      className="h-7 px-0 py-0 text-xs disabled:opacity-50"
                       onClick={() => handleSync(provider)}
                       disabled={syncResults[provider]?.loading}
-                      className="text-xs text-primary hover:underline disabled:opacity-50"
                     >
                       {syncResults[provider]?.loading ? '同步中…' : '同步'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 {!collapsed &&
                   models.map((m) => (
-                    <button
+                    <Button
                       type="button"
                       key={m.id}
-                      onClick={() => {
-                        setSelected(m)
-                        setIsEditing(false)
-                        setDeleteConfirm(false)
-                      }}
+                      variant="ghost"
                       className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
                         selected?.id === m.id
                           ? 'border-primary bg-primary/5'
                           : 'border-border hover:bg-accent'
                       }`}
+                      onClick={() => {
+                        setSelected(m)
+                        setIsEditing(false)
+                        setDeleteConfirm(false)
+                      }}
                     >
                       <div className="flex items-center justify-between gap-1">
                         <span className="font-medium truncate">
                           {m.display_name ?? m.model_name}
                         </span>
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="xs"
                           aria-label={m.is_active ? '停用此模型' : '啟用此模型'}
                           disabled={toggleActiveMutation.isPending}
                           onClick={(e) => {
                             e.stopPropagation()
                             toggleActiveMutation.mutate({ id: m.id, is_active: !m.is_active })
                           }}
-                          className="ml-1 shrink-0"
+                          className={cn(
+                            'ml-1 shrink-0 h-auto px-2 py-0 text-xs font-medium',
+                            m.is_active
+                              ? 'border-success/20 bg-success/15 text-success hover:bg-success/20'
+                              : 'border-muted bg-muted/40 text-muted-foreground hover:bg-muted',
+                          )}
                         >
-                          <Badge
-                            variant={m.is_active ? 'success' : 'default'}
-                            className="px-1.5 cursor-pointer hover:opacity-70 transition-opacity"
-                          >
-                            {m.is_active ? 'active' : 'inactive'}
-                          </Badge>
-                        </button>
+                          {m.is_active ? 'active' : 'inactive'}
+                        </Button>
                       </div>
                       {m.display_name && (
                         <div className="mt-0.5 text-xs text-muted-foreground truncate">
                           {m.model_name}
                         </div>
                       )}
-                    </button>
+                    </Button>
                   ))}
               </div>
             )
@@ -404,9 +412,9 @@ export function ModelManagementPage() {
 
       {/* 右側詳情 */}
       {selected && (
-        <div className="flex-1 space-y-4 overflow-y-auto">
+        <div className="space-y-4 overflow-y-auto">
           {isEditing ? (
-            <div className="rounded-lg border border-border bg-card p-4">
+            <div className="admin-panel-card p-5">
               <h2 className="heading-sm mb-4">編輯模型</h2>
               <ModelForm
                 initial={{
@@ -482,7 +490,7 @@ export function ModelManagementPage() {
                 </div>
               )}
 
-              <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <section className="admin-card-soft p-4 space-y-3">
                 <h3 className="text-sm font-medium text-muted-foreground">基本資訊</h3>
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                   <div>
@@ -504,7 +512,7 @@ export function ModelManagementPage() {
                 </dl>
               </section>
 
-              <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <section className="admin-card-soft p-4 space-y-3">
                 <h3 className="text-sm font-medium text-muted-foreground">
                   費率（USD per 1M tokens）
                 </h3>
@@ -518,7 +526,7 @@ export function ModelManagementPage() {
                 </dl>
               </section>
 
-              <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <section className="admin-card-soft p-4 space-y-3">
                 <h3 className="text-sm font-medium text-muted-foreground">其他</h3>
                 <dl className="space-y-3 text-sm">
                   <div>
@@ -548,11 +556,17 @@ export function ModelManagementPage() {
         </div>
       )}
 
+      {!selected && (
+        <div className="admin-panel-card p-5 text-sm text-muted-foreground">
+          請從左側選取模型，或點擊「新增模型」建立新項目。
+        </div>
+      )}
+
       {/* 新增 Modal */}
       {showCreateModal &&
         createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-background rounded-lg border border-border p-6 w-full max-w-md space-y-4 overflow-y-auto max-h-[90vh]">
+          <div className="admin-modal-overlay">
+            <div className="admin-modal-panel overflow-y-auto max-h-[90vh] p-6">
               <h2 className="heading-sm">新增模型</h2>
               <ModelForm
                 isLoading={createMutation.isPending}
