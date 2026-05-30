@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { getAdminActivityStats, getAdminLoginHistory, getAdminUserDetail } from '@/api/admin-users'
+import {
+  getActivityTimeline,
+  getAdminActivityStats,
+  getAdminLoginHistory,
+  getAdminUserDetail,
+} from '@/api/admin-users'
 
 export function useAdminUserDetail(userId: string) {
   return useQuery({
@@ -21,6 +26,14 @@ export function useAdminActivityStats(userId: string) {
   return useQuery({
     queryKey: ['admin', 'user', userId, 'activity-stats'],
     queryFn: () => getAdminActivityStats(userId).then((r) => r.data.data),
+    enabled: !!userId,
+  })
+}
+
+export function useActivityTimeline(userId: string) {
+  return useQuery({
+    queryKey: ['admin', 'user', userId, 'activity-timeline'],
+    queryFn: () => getActivityTimeline(userId).then((r) => r.data.data),
     enabled: !!userId,
   })
 }

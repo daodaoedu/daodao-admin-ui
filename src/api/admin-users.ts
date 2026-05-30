@@ -2,11 +2,15 @@ import apiClient from './client'
 import type {
   ActiveUsersFunnelResponse,
   ActiveUsersTrendResponse,
+  ActivityTimelineEvent,
   AdminActivityStats,
   AdminLoginHistoryItem,
   AdminUserDetail,
   ApiResponse,
+  PaginatedApiResponse,
+  PracticeEntity,
   PracticeStats,
+  PracticeStatus,
   UserCohortResponse,
 } from './types'
 
@@ -34,6 +38,12 @@ export const getAdminActivityStats = (userId: string) =>
     `/daodao-server/api/v1/admin/users/${userId}/activity-stats`,
   )
 
+export const getActivityTimeline = (userId: string, params?: { limit?: number }) =>
+  apiClient.get<ApiResponse<ActivityTimelineEvent[]>>(
+    `/daodao-server/api/v1/admin/users/${userId}/activity-timeline`,
+    { params },
+  )
+
 export const updateAdminUserStatus = (userId: string, data: { isActive: boolean }) =>
   apiClient.put<ApiResponse<{ success: boolean }>>(
     `/daodao-server/api/v1/admin/users/${userId}/status`,
@@ -45,17 +55,23 @@ export interface TagItem {
   id: number
   name: string
   color: string
-  colorClass: string
+  description: string | null
+  type: 'manual' | 'auto'
   userCount: number
   createdAt: string
+  updatedAt: string | null
 }
 
 export interface TagRule {
   id: number
-  name: string
-  condition: string
-  matchedUsers: number
-  enabled: boolean
+  tagId: number
+  conditionType: string
+  conditionOperator: string
+  conditionValue: string
+  logicOperator: 'AND' | 'OR'
+  isEnabled: boolean
+  createdAt: string
+  updatedAt: string | null
 }
 
 export const listTags = () =>
@@ -112,3 +128,37 @@ export const getPracticeStats = (params?: { startDate?: string; endDate?: string
   apiClient.get<ApiResponse<PracticeStats>>('/daodao-server/api/v1/admin/practices/stats', {
     params,
   })
+
+export const listPractices = (params?: {
+  page?: number
+  limit?: number
+  query?: string
+  status?: PracticeStatus | 'all'
+  privacyStatus?: string
+  startDate?: string
+  endDate?: string
+  sort?: 'createdAt' | 'updatedAt' | 'likeCount'
+  order?: 'asc' | 'desc'
+}) =>
+  apiClient.get<PaginatedApiResponse<PracticeEntity>>('/daodao-server/api/v1/practices', {
+    params,
+  })
+
+export const updatePracticeStatus = (id: string, status: PracticeStatus) =>
+  apiClient.patch<ApiResponse<PracticeEntity>>(
+    `/daodao-server/api/v1/admin/practices/${id}/status`,
+    { status },
+  )
+
+export const getUserPractices = (
+  userId: string,
+  params?: {
+    limit?: number
+    sort?: 'createdAt' | 'updatedAt' | 'likeCount'
+    order?: 'asc' | 'desc'
+  },
+) =>
+  apiClient.get<PaginatedApiResponse<PracticeEntity>>(
+    `/daodao-server/api/v1/admin/users/${userId}/practices`,
+    { params },
+  )

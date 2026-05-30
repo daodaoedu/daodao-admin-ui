@@ -26,7 +26,9 @@ export function QueryLogsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">AI 查詢日誌</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          AI 查詢日誌
+        </h1>
         <ExportButton
           data={logs as unknown as Record<string, unknown>[]}
           fileName="query-logs"
@@ -83,10 +85,10 @@ export function QueryLogsPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto admin-panel-card">
-        <table className="admin-table-shell text-sm">
+      <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="admin-table-head">
+            <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
               {[
                 'ID',
                 'Backend',
@@ -122,7 +124,7 @@ export function QueryLogsPage() {
               logs.map((log) => (
                 <tr
                   key={log.id}
-                  className="admin-table-row cursor-pointer transition-colors"
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors cursor-pointer transition-colors"
                   onClick={() => setSelected(selected?.id === log.id ? null : log)}
                 >
                   <td className="px-4 py-2 font-mono text-xs">{log.id}</td>
@@ -162,7 +164,7 @@ export function QueryLogsPage() {
 
       {/* Detail panel */}
       {selected && (
-        <div className="admin-panel-card p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
           <h3 className="mb-3 font-semibold">Log #{selected.id} 詳情</h3>
           <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
             {JSON.stringify(selected, null, 2)}

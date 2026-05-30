@@ -77,19 +77,21 @@ export function FeedbackPage() {
     <div className="space-y-6">
       {/* Header + Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="heading-lg">意見回饋</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          意見回饋
+        </h1>
         <div className="flex gap-2">
           <Select
             value={statusFilter}
             onValueChange={(value) => setStatusFilter(value as '全部' | FeedbackStatus)}
             options={STATUS_SELECT_OPTIONS}
-            triggerClassName="admin-select"
+            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           />
           <Select
             value={categoryFilter}
             onValueChange={(value) => setCategoryFilter(value as '全部' | FeedbackCategory)}
             options={CATEGORY_SELECT_OPTIONS}
-            triggerClassName="admin-select"
+            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           />
         </div>
       </div>
@@ -124,7 +126,10 @@ export function FeedbackPage() {
         {filtered.map((item) => {
           const isExpanded = expandedId === item.id
           return (
-            <div key={item.id} className="admin-panel-card transition-shadow hover:shadow-md">
+            <div
+              key={item.id}
+              className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm transition-shadow hover:shadow-md"
+            >
               {/* Summary row */}
               <Button
                 type="button"
@@ -214,7 +219,7 @@ export function FeedbackPage() {
                           options={statusOptions
                             .filter((s) => s !== '全部')
                             .map((status) => ({ value: status, label: status }))}
-                          triggerClassName="admin-select"
+                          triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                           className="min-w-32"
                         />
                         <Button
@@ -236,7 +241,7 @@ export function FeedbackPage() {
         })}
 
         {filtered.length === 0 && (
-          <div className="admin-panel-card p-10 text-center shadow-sm">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-10 text-center shadow-sm">
             <p className="text-muted-foreground">沒有符合條件的回饋</p>
           </div>
         )}

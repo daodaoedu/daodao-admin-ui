@@ -1,10 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  getEmailHealth,
-  getEmailHistory,
-  getEmailStats,
-  sendCustomEmail,
-} from '@/api/admin-system'
+import { getEmailHealth, getEmailHistory, getEmailStats, sendCustomEmail } from '@/api/admin-system'
 
 export function useEmailStats() {
   return useQuery({

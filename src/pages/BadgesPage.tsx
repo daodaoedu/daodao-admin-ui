@@ -14,7 +14,9 @@ export function BadgesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">徽章管理</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          徽章管理
+        </h1>
         <Button type="button">
           <Plus className="h-4 w-4" />
           建立徽章
@@ -29,7 +31,10 @@ export function BadgesPage() {
               ? (badge.icon as LucideIcon)
               : Target
           return (
-            <div key={badge.id} className="admin-panel-card p-5">
+            <div
+              key={badge.id}
+              className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5"
+            >
               <div className="flex items-start gap-3">
                 <div className="rounded-lg bg-primary/10 p-2.5">
                   <Icon className="h-5 w-5 text-primary" />
@@ -61,12 +66,14 @@ export function BadgesPage() {
       </div>
 
       {/* Recent Awards Table */}
-      <div className="admin-panel-card p-5">
-        <h2 className="mb-4 heading-sm">最近頒發</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          最近頒發
+        </h2>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 font-medium text-muted-foreground">用戶</th>
                 <th className="pb-3 font-medium text-muted-foreground">徽章</th>
                 <th className="pb-3 font-medium text-muted-foreground">頒發方式</th>
@@ -75,7 +82,10 @@ export function BadgesPage() {
             </thead>
             <tbody>
               {recentAwards.map((row) => (
-                <tr key={row.id} className="admin-table-row last:border-0">
+                <tr
+                  key={row.id}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 text-foreground">{row.user}</td>
                   <td className="py-3 text-foreground">{row.badge}</td>
                   <td className="py-3">

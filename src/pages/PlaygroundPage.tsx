@@ -77,7 +77,7 @@ function InsightResultCard({
   const isSaved = card.savedOverride || card.data.saved
 
   return (
-    <div className="admin-card-soft">
+    <div className="rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm">
       {/* header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div>
@@ -373,7 +373,7 @@ function InsightTab() {
   return (
     <div className="flex flex-1 min-h-0 relative">
       {/* 左側設定欄 */}
-      <aside className="w-72 shrink-0 admin-nav-group border-r border-border flex flex-col gap-4 p-4 overflow-y-auto">
+      <aside className="w-72 shrink-0 rounded-lg border border-[var(--admin-panel-border)] bg-background/70 p-2.5 shadow-sm border-r border-border flex flex-col gap-4 p-4 overflow-y-auto">
         <h2 className="font-semibold text-sm">Insight 設定</h2>
 
         {/* 使用者 */}
@@ -459,7 +459,7 @@ function InsightTab() {
               placeholder="預設 2000"
               value={insightMaxTokens ?? ''}
               onChange={(e) => setInsightMaxTokens(e.target.value ? Number(e.target.value) : null)}
-              className="admin-control tabular-nums"
+              className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 tabular-nums"
             />
           </div>
           <div className="space-y-1">
@@ -474,7 +474,7 @@ function InsightTab() {
               step={0.1}
               value={insightTemperature ?? 1}
               onChange={(e) => setInsightTemperature(Number(e.target.value))}
-              className="admin-range"
+              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-primary [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-primary"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>0</span>
@@ -502,7 +502,7 @@ function InsightTab() {
               step={0.05}
               value={insightTopP ?? 1}
               onChange={(e) => setInsightTopP(Number(e.target.value))}
-              className="admin-range"
+              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-primary [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-primary"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>0</span>
@@ -530,7 +530,7 @@ function InsightTab() {
               placeholder="預設"
               value={insightTopK ?? ''}
               onChange={(e) => setInsightTopK(e.target.value ? Number(e.target.value) : null)}
-              className="admin-control tabular-nums"
+              className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 tabular-nums"
             />
           </div>
         </div>
@@ -779,7 +779,7 @@ function InsightTab() {
 
           {/* textarea */}
           <Textarea
-            className="flex-1 admin-card-soft resize-none px-5 py-4 text-sm font-mono leading-relaxed focus:outline-none"
+            className="flex-1 rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm resize-none px-5 py-4 text-sm font-mono leading-relaxed focus:outline-none"
             value={editingPrompt}
             onChange={(e) => setEditingPrompt(e.target.value)}
             placeholder="在這裡撰寫 System Prompt…"
@@ -1011,15 +1011,15 @@ export function PlaygroundPage() {
   return (
     <div className="flex min-h-0 flex-col">
       {/* Tab bar */}
-      <div className="admin-segmented">
+      <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
         {(['chat', 'insight'] as const).map((tab) => (
           <Button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`admin-segmented-item flex-1 justify-center ${
+            className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground flex-1 justify-center ${
               activeTab === tab
-                ? 'admin-segmented-item-active'
+                ? 'bg-background/70 text-foreground shadow-sm hover:bg-background/70'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -1032,7 +1032,7 @@ export function PlaygroundPage() {
       {activeTab === 'chat' ? (
         <div className="flex flex-1 min-h-0 flex-col xl:flex-row gap-4 xl:gap-0">
           {/* ── 左側設定欄 ── */}
-          <aside className="w-full xl:w-64 xl:shrink-0 admin-nav-group border-b xl:border-b-0 xl:border-r border-border flex flex-col gap-4 p-4">
+          <aside className="w-full xl:w-64 xl:shrink-0 rounded-lg border border-[var(--admin-panel-border)] bg-background/70 p-2.5 shadow-sm border-b xl:border-b-0 xl:border-r border-border flex flex-col gap-4 p-4">
             <h2 className="font-semibold text-sm text-foreground">設定</h2>
 
             {/* Model 選擇 */}
@@ -1088,7 +1088,7 @@ export function PlaygroundPage() {
                   placeholder="預設"
                   value={chatMaxTokens ?? ''}
                   onChange={(e) => setChatMaxTokens(e.target.value ? Number(e.target.value) : null)}
-                  className="admin-control tabular-nums"
+                  className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 tabular-nums"
                 />
               </div>
               <div className="space-y-1">
@@ -1103,7 +1103,7 @@ export function PlaygroundPage() {
                   step={0.1}
                   value={chatTemperature ?? 1}
                   onChange={(e) => setChatTemperature(Number(e.target.value))}
-                  className="admin-range"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-primary [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-primary"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>0</span>
@@ -1131,7 +1131,7 @@ export function PlaygroundPage() {
                   step={0.05}
                   value={chatTopP ?? 1}
                   onChange={(e) => setChatTopP(Number(e.target.value))}
-                  className="admin-range"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-primary [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-primary"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>0</span>
@@ -1159,7 +1159,7 @@ export function PlaygroundPage() {
                   placeholder="預設"
                   value={chatTopK ?? ''}
                   onChange={(e) => setChatTopK(e.target.value ? Number(e.target.value) : null)}
-                  className="admin-control tabular-nums"
+                  className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 tabular-nums"
                 />
               </div>
             </div>
@@ -1302,7 +1302,7 @@ export function PlaygroundPage() {
           </div>
 
           {/* ── 右側統計欄 ── */}
-          <aside className="w-full xl:w-52 xl:shrink-0 admin-nav-group border-t xl:border-t-0 xl:border-l border-border p-4 space-y-4">
+          <aside className="w-full xl:w-52 xl:shrink-0 rounded-lg border border-[var(--admin-panel-border)] bg-background/70 p-2.5 shadow-sm border-t xl:border-t-0 xl:border-l border-border p-4 space-y-4">
             <h2 className="font-semibold text-sm text-foreground">最後一次統計</h2>
             {lastStats ? (
               <dl className="space-y-3 text-sm">

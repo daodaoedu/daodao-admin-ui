@@ -157,24 +157,28 @@ export function AutoModPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="heading-lg">AutoMod 自動審核</h1>
+      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+        AutoMod 自動審核
+      </h1>
 
       {/* Two-column grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left column */}
         <div className="space-y-6">
           {/* Keyword rules */}
-          <div className="admin-panel-card p-5">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="heading-sm">關鍵字規則</h2>
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                關鍵字規則
+              </h2>
               <Button type="button" size="sm" onClick={() => alert('新增規則')}>
                 新增規則
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="admin-table-shell text-sm">
+              <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="admin-table-head">
+                  <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                     {['規則名稱', '模式', '動作', '狀態'].map((h) => (
                       <th key={h} className="px-4 py-3 text-left font-medium">
                         {h}
@@ -184,7 +188,10 @@ export function AutoModPage() {
                 </thead>
                 <tbody>
                   {keywordRules.map((rule) => (
-                    <tr key={rule.id} className="admin-table-row transition-colors">
+                    <tr
+                      key={rule.id}
+                      className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                    >
                       <td className="px-4 py-2 font-medium">{rule.name}</td>
                       <td className="px-4 py-2">{patternBadge(rule.pattern)}</td>
                       <td className="px-4 py-2">{actionBadge(rule.action)}</td>
@@ -214,8 +221,10 @@ export function AutoModPage() {
           </div>
 
           {/* Sensitive word libraries */}
-          <div className="admin-panel-card p-5">
-            <h2 className="heading-sm mb-4">預設敏感詞庫</h2>
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+              預設敏感詞庫
+            </h2>
             <div className="space-y-3">
               {sensitiveLibs.map((lib) => (
                 <div key={lib.name} className="flex items-center justify-between">
@@ -250,11 +259,13 @@ export function AutoModPage() {
         {/* Right column */}
         <div className="space-y-6">
           {/* ML spam detection */}
-          <div className="admin-panel-card p-5">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="h-5 w-5 text-muted-foreground" />
-                <h2 className="heading-sm">ML 垃圾偵測</h2>
+                <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                  ML 垃圾偵測
+                </h2>
               </div>
               <Button
                 type="button"
@@ -283,8 +294,10 @@ export function AutoModPage() {
           </div>
 
           {/* Username blacklist */}
-          <div className="admin-panel-card p-5">
-            <h2 className="heading-sm mb-4">用戶名黑名單</h2>
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+              用戶名黑名單
+            </h2>
             <div className="mb-3 flex flex-wrap gap-2">
               {blacklist.map((word) => (
                 <span
@@ -320,10 +333,12 @@ export function AutoModPage() {
           </div>
 
           {/* Community self-governance */}
-          <div className="admin-panel-card p-5">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
             <div className="flex items-center gap-2 mb-3">
               <ShieldAlert className="h-5 w-5 text-muted-foreground" />
-              <h2 className="heading-sm">社群自治設定</h2>
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                社群自治設定
+              </h2>
             </div>
             <div className="space-y-2">
               <label htmlFor="threshold" className="block text-sm font-medium">
@@ -351,12 +366,14 @@ export function AutoModPage() {
       </div>
 
       {/* Audit log - full width */}
-      <div className="admin-panel-card p-5">
-        <h2 className="heading-sm mb-4">審核動作紀錄</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          審核動作紀錄
+        </h2>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['時間', '內容摘要', '觸發規則', '執行動作', '用戶'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -366,7 +383,10 @@ export function AutoModPage() {
             </thead>
             <tbody>
               {auditLogItems.map((row) => (
-                <tr key={`${row.time}-${row.user}`} className="admin-table-row transition-colors">
+                <tr
+                  key={`${row.time}-${row.user}`}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                >
                   <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
                     {row.time}
                   </td>
@@ -384,12 +404,14 @@ export function AutoModPage() {
       </div>
 
       {/* Report queue - full width */}
-      <div className="admin-panel-card p-5">
-        <h2 className="heading-sm mb-4">檢舉佇列</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          檢舉佇列
+        </h2>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['內容', '檢舉人數', '優先度', '檢舉原因', '操作'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -406,7 +428,10 @@ export function AutoModPage() {
                 </tr>
               ) : (
                 reportQueue.map((row) => (
-                  <tr key={row.id} className="admin-table-row transition-colors">
+                  <tr
+                    key={row.id}
+                    className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                  >
                     <td className="px-4 py-2 max-w-[200px] truncate">{row.content}</td>
                     <td className="px-4 py-2 font-medium">{row.reporters}</td>
                     <td className="px-4 py-2">{priorityBadge(row.priority)}</td>

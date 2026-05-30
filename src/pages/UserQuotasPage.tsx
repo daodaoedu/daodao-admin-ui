@@ -55,7 +55,9 @@ export function UserQuotasPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">User Token Quotas</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          User Token Quotas
+        </h1>
         <ExportButton
           data={users as unknown as Record<string, unknown>[]}
           fileName="user-quotas"
@@ -81,10 +83,10 @@ export function UserQuotasPage() {
         />
       </div>
 
-      <div className="overflow-x-auto admin-panel-card">
-        <table className="admin-table-shell text-sm">
+      <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="admin-table-head">
+            <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
               {[
                 'ID',
                 'Nickname',
@@ -116,7 +118,10 @@ export function UserQuotasPage() {
               </tr>
             ) : (
               users.map((u) => (
-                <tr key={u.id} className="admin-table-row transition-colors">
+                <tr
+                  key={u.id}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                >
                   <td className="px-4 py-2 font-mono text-xs">{u.id}</td>
                   <td className="px-4 py-2 font-medium">{u.nickname ?? '-'}</td>
                   <td className="px-4 py-2 font-mono text-xs truncate max-w-[120px]">
@@ -190,8 +195,8 @@ export function UserQuotasPage() {
 
       {/* Edit modal */}
       {editing && (
-        <div className="admin-modal-overlay">
-          <div className="admin-modal-panel w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-lg w-full max-w-md p-6">
             <h3 className="mb-4 font-semibold">
               設定 Quota — {editing.nickname ?? editing.mongo_id ?? `User #${editing.id}`}
             </h3>

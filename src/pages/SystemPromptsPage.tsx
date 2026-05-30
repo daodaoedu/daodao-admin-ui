@@ -65,9 +65,11 @@ export function SystemPromptsPage() {
   return (
     <div className="grid gap-6 lg:grid-cols-[20rem_1fr]">
       {/* List */}
-      <div className="admin-panel-card p-4 space-y-3">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h1 className="heading-sm">System Prompts</h1>
+          <h1 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            System Prompts
+          </h1>
           <Button type="button" size="xs" onClick={openNew} className="px-3">
             + 新增
           </Button>
@@ -104,8 +106,10 @@ export function SystemPromptsPage() {
 
       {/* Editor */}
       {(isNew || selected) && (
-        <div className="admin-panel-card p-5 space-y-4">
-          <h2 className="heading-sm">{isNew ? '新增 Prompt' : `編輯：${selected?.name}`}</h2>
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5 space-y-4">
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            {isNew ? '新增 Prompt' : `編輯：${selected?.name}`}
+          </h2>
           <div className="grid grid-cols-2 gap-3">
             {['name'].map((field) => (
               <div key={field}>
@@ -190,7 +194,7 @@ export function SystemPromptsPage() {
       )}
 
       {!isNew && !selected && (
-        <div className="admin-panel-card p-5 text-sm text-muted-foreground">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5 text-sm text-muted-foreground">
           請從左側選擇一筆提示詞，或點擊「新增」建立新項目。
         </div>
       )}

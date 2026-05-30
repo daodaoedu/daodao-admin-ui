@@ -215,7 +215,19 @@ export const deletePermission = (id: number) =>
   )
 
 // ── User Management (daodao-server) ──────────────────────
-export const listAdminUsers = (params?: { search?: string; page?: number; limit?: number }) =>
+export const listAdminUsers = (params?: {
+  search?: string
+  page?: number
+  limit?: number
+  roleId?: number
+  isActive?: boolean
+  isVerified?: boolean
+  personaType?: 'L' | 'C' | 'A' | 'D' | 'O'
+  badgeGranted?: boolean
+  userSource?: 'S1' | 'S2' | 'S3'
+  sortBy?: 'createdAt' | 'lastLoginAt' | 'name' | 'email'
+  sortOrder?: 'asc' | 'desc'
+}) =>
   apiClient.get<ApiResponse<AdminUserListItem[]>>('/daodao-server/api/v1/admin/users', { params })
 
 export const getUserRole = (userId: number) =>

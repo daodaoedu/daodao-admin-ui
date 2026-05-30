@@ -55,10 +55,12 @@ export function MemberDirectoryPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ──────────────────────────────────────── */}
-      <h1 className="heading-lg">會員名錄管理</h1>
+      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+        會員名錄管理
+      </h1>
 
       {/* ── Feature toggle ──────────────────────────────── */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-primary/10 p-2">
@@ -101,18 +103,20 @@ export function MemberDirectoryPage() {
       </div>
 
       {/* ── 自訂 Profile 欄位 ──────────────────────────── */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="heading-sm">自訂 Profile 欄位</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            自訂 Profile 欄位
+          </h2>
           <Button type="button">
             <Plus className="h-4 w-4" />
             新增欄位
           </Button>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="w-8 pb-3" />
                 <th className="pb-3 font-medium text-muted-foreground">欄位名稱</th>
                 <th className="pb-3 font-medium text-muted-foreground">類型</th>
@@ -127,7 +131,10 @@ export function MemberDirectoryPage() {
                 const VisIcon =
                   VISIBILITY_ICONS[field.visibility as keyof typeof VISIBILITY_ICONS] ?? Eye
                 return (
-                  <tr key={field.id} className="admin-table-row last:border-0">
+                  <tr
+                    key={field.id}
+                    className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                  >
                     <td className="py-3">
                       <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground/50" />
                     </td>
@@ -194,8 +201,10 @@ export function MemberDirectoryPage() {
       </div>
 
       {/* ── 使用分析 ────────────────────────────────────── */}
-      <div className="admin-panel-card p-5">
-        <h2 className="mb-4 heading-sm">使用分析</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          使用分析
+        </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard
             title="目錄搜尋次數"
@@ -218,12 +227,14 @@ export function MemberDirectoryPage() {
       </div>
 
       {/* ── 待審核 Profile ──────────────────────────────── */}
-      <div className="admin-panel-card p-5">
-        <h2 className="mb-4 heading-sm">待審核 Profile</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          待審核 Profile
+        </h2>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 font-medium text-muted-foreground">用戶</th>
                 <th className="pb-3 font-medium text-muted-foreground">問題欄位</th>
                 <th className="pb-3 font-medium text-muted-foreground">原因</th>
@@ -232,7 +243,10 @@ export function MemberDirectoryPage() {
             </thead>
             <tbody>
               {FALLBACK_PENDING_PROFILES.map((row) => (
-                <tr key={row.id} className="admin-table-row last:border-0">
+                <tr
+                  key={row.id}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 font-medium text-foreground">{row.user}</td>
                   <td className="py-3 text-foreground">{row.field}</td>
                   <td className="py-3 text-muted-foreground">{row.reason}</td>

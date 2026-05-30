@@ -49,13 +49,15 @@ export function LeaderboardsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <h1 className="heading-lg">排行榜</h1>
+      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">排行榜</h1>
 
       {/* Weight Config */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <Settings className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">活動權重設定</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            活動權重設定
+          </h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {WEIGHT_CONFIG.map((item) => (
@@ -89,16 +91,16 @@ export function LeaderboardsPage() {
       </div>
 
       {/* Period Tabs */}
-      <div className="admin-segmented">
+      <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
         {PERIODS.map((p) => (
           <Button
             key={p}
             type="button"
             onClick={() => setPeriod(p)}
             className={cn(
-              'admin-segmented-item flex-1',
+              'inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground flex-1',
               period === p
-                ? 'admin-segmented-item-active'
+                ? 'bg-background/70 text-foreground shadow-sm hover:bg-background/70'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -108,11 +110,11 @@ export function LeaderboardsPage() {
       </div>
 
       {/* Leaderboard Table */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 font-medium text-muted-foreground">排名</th>
                 <th className="pb-3 font-medium text-muted-foreground">用戶</th>
                 <th className="pb-3 text-right font-medium text-muted-foreground">分數</th>

@@ -21,7 +21,9 @@ export function TriggeredEmailsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">觸發式郵件</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          觸發式郵件
+        </h1>
         <button
           type="button"
           onClick={() => alert('功能開發中')}
@@ -55,7 +57,9 @@ export function TriggeredEmailsPage() {
 
       {/* Rules Table */}
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="heading-sm mb-4">郵件規則</h2>
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          郵件規則
+        </h2>
         {rulesLoading ? (
           <div className="flex items-center justify-center py-12 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -122,7 +126,9 @@ export function TriggeredEmailsPage() {
 
       {/* Execution Log */}
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="heading-sm mb-4">最近執行紀錄</h2>
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          最近執行紀錄
+        </h2>
         {logsLoading ? (
           <div className="flex items-center justify-center py-12 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />

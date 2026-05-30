@@ -63,7 +63,9 @@ export function FAQManagementPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">FAQ 管理</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          FAQ 管理
+        </h1>
         <Button type="button" onClick={() => setShowForm((v) => !v)}>
           <Plus className="h-4 w-4" />
           新增 FAQ
@@ -71,15 +73,15 @@ export function FAQManagementPage() {
       </div>
 
       {categories.length > 0 && (
-        <div className="admin-segmented">
+        <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
           {categories.map((cat) => (
             <Button
               key={cat.id}
               type="button"
               className={cn(
-                'admin-segmented-item flex-1 justify-center',
+                'inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground flex-1 justify-center',
                 (activeCategoryId ?? categories[0]?.id) === cat.id
-                  ? 'admin-segmented-item-active'
+                  ? 'bg-background/70 text-foreground shadow-sm hover:bg-background/70'
                   : 'text-muted-foreground hover:text-foreground',
               )}
               onClick={() => {
@@ -95,8 +97,10 @@ export function FAQManagementPage() {
       )}
 
       {showForm && (
-        <div className="admin-panel-card p-4 space-y-3">
-          <h2 className="heading-sm">新增 FAQ</h2>
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-4 space-y-3">
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            新增 FAQ
+          </h2>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="faq-question">
               問題
@@ -134,7 +138,7 @@ export function FAQManagementPage() {
       {faqLoading ? (
         <div className="text-sm text-muted-foreground">載入中...</div>
       ) : faqs.length === 0 ? (
-        <div className="admin-panel-card p-6 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-6 text-center text-sm text-muted-foreground">
           此分類尚無 FAQ 項目
         </div>
       ) : (
@@ -142,7 +146,10 @@ export function FAQManagementPage() {
           {faqs.map((item) => {
             const isExpanded = expandedId === item.id
             return (
-              <div key={item.id} className="admin-panel-card">
+              <div
+                key={item.id}
+                className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm"
+              >
                 <div className="flex items-center gap-3 p-4">
                   <GripVertical className="h-5 w-5 shrink-0 cursor-grab text-muted-foreground/50" />
                   <Button

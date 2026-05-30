@@ -1,5 +1,14 @@
 import apiClient from './client'
-import type { ApiResponse } from './types'
+import type {
+  ApiResponse,
+  EmailOnboardingStats,
+  EngagementStats,
+  OnboardingStats,
+  PersonaStats,
+  PersonaUserProfile,
+  QuizStats,
+  UserOnboardingDetail,
+} from './types'
 
 // ── Member Directory ──────────────────────────────────────
 
@@ -81,39 +90,46 @@ export const getMemberDirectoryAnalytics = () =>
 export interface OnboardingFlow {
   id: number
   name: string
-  isActive: boolean
+  isEnabled: boolean
   steps: OnboardingStep[]
-  completionRate?: number
-  avgDurationMinutes?: number
-  newUsersThisMonth?: number
+  completionRate: number
+  createdAt: string
 }
 
 export interface OnboardingStep {
   id: number
-  question: string
-  type: string
-  topAnswer?: string
-  topPercent?: number
-  completionRate?: number
+  questionText: string
+  questionType: 'single' | 'multi' | 'text'
+  options?: string[]
+  completionRate: number
 }
 
 export interface OnboardingFlowCreate {
   name: string
-  steps?: Omit<OnboardingStep, 'id'>[]
+  isEnabled?: boolean
+  steps?: Array<{
+    questionText: string
+    questionType: 'single' | 'multi' | 'text'
+    options?: string[]
+  }>
 }
 
 export interface OnboardingFlowUpdate {
   name?: string
-  isActive?: boolean
-  steps?: Omit<OnboardingStep, 'id'>[]
+  isEnabled?: boolean
+  steps?: Array<{
+    questionText: string
+    questionType: 'single' | 'multi' | 'text'
+    options?: string[]
+  }>
 }
 
 export interface OnboardingFlowAnalytics {
-  completionRate: number
-  avgDurationMinutes: number
-  newUsersThisMonth: number
-  funnelSteps: Array<{ label: string; value: number }>
-  [key: string]: unknown
+  flowId: number
+  totalStarted: number
+  totalCompleted: number
+  averageTimeMinutes: number
+  dropOffSteps: Array<{ stepId: number; dropRate: number }>
 }
 
 export const listOnboardingFlows = () =>
@@ -136,4 +152,33 @@ export const deleteOnboardingFlow = (id: number) =>
 export const getOnboardingFlowAnalytics = (id: number) =>
   apiClient.get<ApiResponse<OnboardingFlowAnalytics>>(
     `/daodao-server/api/v1/admin/onboarding/flows/${id}/analytics`,
+  )
+
+// ── Onboarding Analytics ──────────────────────────────────────────────────────
+
+export const getOnboardingStats = () =>
+  apiClient.get<ApiResponse<OnboardingStats>>('/daodao-server/api/v1/admin/onboarding/stats')
+
+export const getUserOnboardingDetail = (userId: string) =>
+  apiClient.get<ApiResponse<UserOnboardingDetail>>(
+    `/daodao-server/api/v1/admin/users/${userId}/onboarding`,
+  )
+
+export const getQuizStats = () =>
+  apiClient.get<ApiResponse<QuizStats>>('/daodao-server/api/v1/admin/quiz/stats')
+
+export const getPersonaStats = () =>
+  apiClient.get<ApiResponse<PersonaStats>>('/daodao-server/api/v1/admin/persona/stats')
+
+export const getEmailOnboardingStats = () =>
+  apiClient.get<ApiResponse<EmailOnboardingStats>>(
+    '/daodao-server/api/v1/admin/email/onboarding-stats',
+  )
+
+export const getEngagementStats = () =>
+  apiClient.get<ApiResponse<EngagementStats>>('/daodao-server/api/v1/admin/engagement/stats')
+
+export const getUserPersonaProfile = (userUuid: string) =>
+  apiClient.get<ApiResponse<PersonaUserProfile>>(
+    `/daodao-server/api/v1/persona/profile/${userUuid}`,
   )

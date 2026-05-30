@@ -281,9 +281,11 @@ export function ModelManagementPage() {
   return (
     <div className="grid gap-6 lg:grid-cols-[20rem_1fr]">
       {/* 左側列表 */}
-      <div className="admin-panel-card p-4 space-y-3 overflow-y-auto">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-4 space-y-3 overflow-y-auto">
         <div className="flex items-center justify-between">
-          <h1 className="heading-sm">LLM Models</h1>
+          <h1 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            LLM Models
+          </h1>
           <Button
             type="button"
             onClick={() => setShowCreateModal(true)}
@@ -414,8 +416,10 @@ export function ModelManagementPage() {
       {selected && (
         <div className="space-y-4 overflow-y-auto">
           {isEditing ? (
-            <div className="admin-panel-card p-5">
-              <h2 className="heading-sm mb-4">編輯模型</h2>
+            <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+                編輯模型
+              </h2>
               <ModelForm
                 initial={{
                   provider: selected.provider,
@@ -447,7 +451,9 @@ export function ModelManagementPage() {
           ) : (
             <>
               <div className="flex items-center gap-3">
-                <h2 className="heading-sm">{selected.display_name ?? selected.model_name}</h2>
+                <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                  {selected.display_name ?? selected.model_name}
+                </h2>
                 <Badge variant={selected.is_active ? 'success' : 'default'}>
                   {selected.is_active ? 'active' : 'inactive'}
                 </Badge>
@@ -490,7 +496,7 @@ export function ModelManagementPage() {
                 </div>
               )}
 
-              <section className="admin-card-soft p-4 space-y-3">
+              <section className="rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm p-4 space-y-3">
                 <h3 className="text-sm font-medium text-muted-foreground">基本資訊</h3>
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                   <div>
@@ -512,7 +518,7 @@ export function ModelManagementPage() {
                 </dl>
               </section>
 
-              <section className="admin-card-soft p-4 space-y-3">
+              <section className="rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm p-4 space-y-3">
                 <h3 className="text-sm font-medium text-muted-foreground">
                   費率（USD per 1M tokens）
                 </h3>
@@ -526,7 +532,7 @@ export function ModelManagementPage() {
                 </dl>
               </section>
 
-              <section className="admin-card-soft p-4 space-y-3">
+              <section className="rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm p-4 space-y-3">
                 <h3 className="text-sm font-medium text-muted-foreground">其他</h3>
                 <dl className="space-y-3 text-sm">
                   <div>
@@ -557,7 +563,7 @@ export function ModelManagementPage() {
       )}
 
       {!selected && (
-        <div className="admin-panel-card p-5 text-sm text-muted-foreground">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5 text-sm text-muted-foreground">
           請從左側選取模型，或點擊「新增模型」建立新項目。
         </div>
       )}
@@ -565,9 +571,11 @@ export function ModelManagementPage() {
       {/* 新增 Modal */}
       {showCreateModal &&
         createPortal(
-          <div className="admin-modal-overlay">
-            <div className="admin-modal-panel overflow-y-auto max-h-[90vh] p-6">
-              <h2 className="heading-sm">新增模型</h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+            <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-lg overflow-y-auto max-h-[90vh] p-6">
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                新增模型
+              </h2>
               <ModelForm
                 isLoading={createMutation.isPending}
                 onCancel={() => setShowCreateModal(false)}

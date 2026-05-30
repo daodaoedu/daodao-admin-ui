@@ -36,7 +36,9 @@ export function TrustLevelsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="heading-lg">信任等級</h1>
+      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+        信任等級
+      </h1>
 
       {/* Stats row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -53,12 +55,14 @@ export function TrustLevelsPage() {
       </div>
 
       {/* Trust level config */}
-      <div className="admin-panel-card p-5">
-        <h2 className="heading-sm mb-4">等級設定</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          等級設定
+        </h2>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['等級', '名稱', '升級條件', '解鎖能力', '操作'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -68,7 +72,10 @@ export function TrustLevelsPage() {
             </thead>
             <tbody>
               {trustLevelConfig.map((row) => (
-                <tr key={row.level} className="admin-table-row transition-colors">
+                <tr
+                  key={row.level}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                >
                   <td className="px-4 py-2">
                     <Badge variant="primary">{row.level}</Badge>
                   </td>
@@ -93,12 +100,14 @@ export function TrustLevelsPage() {
       </div>
 
       {/* Recent promotions/demotions */}
-      <div className="admin-panel-card p-5">
-        <h2 className="heading-sm mb-4">近期升降級</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          近期升降級
+        </h2>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['用戶', '變更', '原因', '時間'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -108,7 +117,10 @@ export function TrustLevelsPage() {
             </thead>
             <tbody>
               {recentChanges.map((row) => (
-                <tr key={`${row.user}-${row.time}`} className="admin-table-row transition-colors">
+                <tr
+                  key={`${row.user}-${row.time}`}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                >
                   <td className="px-4 py-2 font-medium">{row.user}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-1">
@@ -128,17 +140,19 @@ export function TrustLevelsPage() {
       </div>
 
       {/* Groups */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="heading-sm">群組管理</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            群組管理
+          </h2>
           <Button type="button" size="sm" onClick={() => alert('新增群組')}>
             新增群組
           </Button>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['群組名稱', '成員數', '權限覆寫', '操作'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -161,7 +175,10 @@ export function TrustLevelsPage() {
                 </tr>
               ) : (
                 groups.map((g) => (
-                  <tr key={g.id} className="admin-table-row transition-colors">
+                  <tr
+                    key={g.id}
+                    className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                  >
                     <td className="px-4 py-2">
                       <Badge variant="primary">{g.name}</Badge>
                     </td>

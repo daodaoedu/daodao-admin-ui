@@ -42,7 +42,9 @@ export function ContentPerformancePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">內容績效</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          內容績效
+        </h1>
         <ExportButton
           data={sorted as unknown as Record<string, unknown>[]}
           columns={exportColumns}
@@ -57,7 +59,7 @@ export function ContentPerformancePage() {
         <StatCard title="零互動內容" value={zeroInteractionCount} icon={Star} />
       </div>
 
-      <div className="admin-panel-card">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
         {isLoading && (
           <div className="border-b border-border px-4 py-8 text-center text-sm text-muted-foreground">
             載入中...
@@ -70,9 +72,9 @@ export function ContentPerformancePage() {
         )}
         {!isLoading && (
           <div className="overflow-x-auto">
-            <table className="admin-table-shell text-sm">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="admin-table-head">
+                <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                   <th className="px-4 py-3 font-medium text-muted-foreground">標題</th>
                   {[
                     { key: 'views' as SortField, label: '瀏覽數' },
@@ -143,14 +145,19 @@ export function ContentPerformancePage() {
         )}
       </div>
 
-      <div className="admin-panel-card p-5">
-        <h2 className="mb-4 heading-sm">策展集合</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          策展集合
+        </h2>
         {collections.length === 0 && (
           <p className="mb-4 text-sm text-muted-foreground">目前尚無內容策展集合</p>
         )}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {collections.map((col) => (
-            <div key={col.id} className="admin-card-soft flex items-center justify-between">
+            <div
+              key={col.id}
+              className="rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm flex items-center justify-between"
+            >
               <div>
                 <p className="font-medium">{col.name}</p>
                 <p className="text-sm text-muted-foreground">{col.count} 篇內容</p>

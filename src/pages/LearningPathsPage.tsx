@@ -12,7 +12,9 @@ export function LearningPathsPage() {
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">學習路徑</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          學習路徑
+        </h1>
         <Button type="button">
           <Plus className="h-4 w-4" />
           建立路徑
@@ -21,7 +23,10 @@ export function LearningPathsPage() {
 
       {/* ── Path cards ─────────────────────────────────── */}
       {paths.map((path) => (
-        <div key={path.name} className="admin-panel-card p-5">
+        <div
+          key={path.name}
+          className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5"
+        >
           {/* Path header */}
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3">
@@ -29,7 +34,9 @@ export function LearningPathsPage() {
                 <GraduationCap className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="heading-sm">{path.name}</h2>
+                <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                  {path.name}
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">{path.description}</p>
               </div>
             </div>
@@ -49,7 +56,9 @@ export function LearningPathsPage() {
           <div className="mb-4 flex flex-wrap items-center gap-2">
             {path.courses.map((course, i) => (
               <div key={course} className="flex items-center gap-2">
-                <span className="admin-chip">{course}</span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                  {course}
+                </span>
                 {i < path.courses.length - 1 && (
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 )}

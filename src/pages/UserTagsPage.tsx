@@ -14,13 +14,13 @@ export function UserTagsPage() {
 
   const autoRules = apiRules.map((r) => ({
     ...r,
-    enabled: localToggles[r.id] ?? r.enabled,
+    isEnabled: localToggles[r.id] ?? r.isEnabled,
   }))
 
   const toggleRule = (id: number) => {
     setLocalToggles((prev) => ({
       ...prev,
-      [id]: !(prev[id] ?? apiRules.find((r) => r.id === id)?.enabled ?? false),
+      [id]: !(prev[id] ?? apiRules.find((r) => r.id === id)?.isEnabled ?? false),
     }))
   }
 
@@ -53,7 +53,9 @@ export function UserTagsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">用戶標籤管理</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          用戶標籤管理
+        </h1>
         <Button type="button" onClick={() => alert('功能開發中')}>
           <Plus className="mr-1.5 h-4 w-4" />
           新增標籤
@@ -62,17 +64,19 @@ export function UserTagsPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Manual Tags */}
-        <div className="admin-panel-card p-5">
-          <h2 className="heading-sm mb-4">手動標籤</h2>
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+            手動標籤
+          </h2>
           {tagsLoading ? (
             <p className="text-sm text-muted-foreground">載入中…</p>
           ) : tags.length === 0 ? (
             <p className="text-sm text-muted-foreground">尚無標籤</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="admin-table-shell text-sm">
+              <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="admin-table-head">
+                  <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                     {['標籤名稱', '用戶數', '建立日期', '操作'].map((h) => (
                       <th key={h} className="px-4 py-3 text-left font-medium">
                         {h}
@@ -82,10 +86,16 @@ export function UserTagsPage() {
                 </thead>
                 <tbody>
                   {tags.map((tag) => (
-                    <tr key={tag.id} className="admin-table-row transition-colors">
+                    <tr
+                      key={tag.id}
+                      className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                    >
                       <td className="px-4 py-2">
                         <span className="inline-flex items-center gap-2">
-                          <span className={`inline-block h-2.5 w-2.5 rounded-full ${tag.color}`} />
+                          <span
+                            className="inline-block h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: tag.color }}
+                          />
                           <span className="font-medium">{tag.name}</span>
                         </span>
                       </td>
@@ -121,18 +131,20 @@ export function UserTagsPage() {
         </div>
 
         {/* Auto Tag Rules */}
-        <div className="admin-panel-card p-5">
-          <h2 className="heading-sm mb-4">自動標籤規則</h2>
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+            自動標籤規則
+          </h2>
           {rulesLoading ? (
             <p className="text-sm text-muted-foreground">載入中…</p>
           ) : autoRules.length === 0 ? (
             <p className="text-sm text-muted-foreground">尚無自動標籤規則</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="admin-table-shell text-sm">
+              <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="admin-table-head">
-                    {['標籤名稱', '條件描述', '符合用戶數', '狀態', '操作'].map((h) => (
+                  <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+                    {['標籤 ID', '條件類型', '運算子', '條件值', '狀態', '操作'].map((h) => (
                       <th key={h} className="px-4 py-3 text-left font-medium">
                         {h}
                       </th>
@@ -141,23 +153,27 @@ export function UserTagsPage() {
                 </thead>
                 <tbody>
                   {autoRules.map((rule) => (
-                    <tr key={rule.id} className="admin-table-row transition-colors">
-                      <td className="px-4 py-2 font-medium">{rule.name}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{rule.condition}</td>
-                      <td className="px-4 py-2 font-mono">{rule.matchedUsers.toLocaleString()}</td>
+                    <tr
+                      key={rule.id}
+                      className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                    >
+                      <td className="px-4 py-2 font-mono text-xs">{rule.tagId}</td>
+                      <td className="px-4 py-2 text-xs">{rule.conditionType}</td>
+                      <td className="px-4 py-2 text-xs">{rule.conditionOperator}</td>
+                      <td className="px-4 py-2 font-mono text-xs">{rule.conditionValue}</td>
                       <td className="px-4 py-2">
                         <Button
                           type="button"
                           role="switch"
-                          aria-checked={rule.enabled}
+                          aria-checked={rule.isEnabled}
                           onClick={() => toggleRule(rule.id)}
                           className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-                            rule.enabled ? 'bg-primary' : 'bg-muted-foreground/30'
+                            rule.isEnabled ? 'bg-primary' : 'bg-muted-foreground/30'
                           }`}
                         >
                           <span
                             className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow-sm transition-transform ${
-                              rule.enabled ? 'translate-x-4' : 'translate-x-0'
+                              rule.isEnabled ? 'translate-x-4' : 'translate-x-0'
                             }`}
                           />
                         </Button>

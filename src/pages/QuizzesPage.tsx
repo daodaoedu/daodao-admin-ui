@@ -14,7 +14,9 @@ export function QuizzesPage() {
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">測驗管理</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          測驗管理
+        </h1>
         <Button type="button">
           <Plus className="h-4 w-4" />
           建立測驗
@@ -29,12 +31,14 @@ export function QuizzesPage() {
       </div>
 
       {/* ── Quiz table ─────────────────────────────────── */}
-      <div className="admin-panel-card p-5">
-        <h2 className="mb-4 heading-sm">測驗列表</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          測驗列表
+        </h2>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">測驗名稱</th>
                 <th className="pb-3 pr-4 font-medium">附加課程</th>
                 <th className="pb-3 pr-4 font-medium">題目數</th>
@@ -46,7 +50,10 @@ export function QuizzesPage() {
             </thead>
             <tbody>
               {quizzes.map((quiz) => (
-                <tr key={quiz.name} className="admin-table-row last:border-0">
+                <tr
+                  key={quiz.name}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground">{quiz.name}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{quiz.course}</td>
                   <td className="py-3 pr-4 text-foreground">{quiz.questions}</td>
@@ -97,18 +104,20 @@ export function QuizzesPage() {
       </div>
 
       {/* ── Per-question stats ─────────────────────────── */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <FileQuestion className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">題目分析</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            題目分析
+          </h2>
           <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
             前端基礎測驗
           </span>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">題目</th>
                 <th className="pb-3 pr-4 font-medium">類型</th>
                 <th className="pb-3 pr-4 font-medium">正確率</th>
@@ -117,7 +126,10 @@ export function QuizzesPage() {
             </thead>
             <tbody>
               {quizQuestions.map((q) => (
-                <tr key={q.question} className="admin-table-row last:border-0">
+                <tr
+                  key={q.question}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground max-w-xs truncate">
                     {q.question}
                   </td>

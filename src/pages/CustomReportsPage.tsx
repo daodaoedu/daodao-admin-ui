@@ -62,14 +62,18 @@ export function CustomReportsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">自訂報表</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          自訂報表
+        </h1>
         <ExportButton data={exportData} columns={exportColumns} fileName="custom-report" />
       </div>
 
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <FileText className="h-5 w-5 text-muted-foreground" />
-          <h2 className="heading-sm">報表產生器</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            報表產生器
+          </h2>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <div>
@@ -136,17 +140,19 @@ export function CustomReportsPage() {
         </div>
       </div>
 
-      <div className="admin-panel-card p-5">
-        <h2 className="heading-sm mb-4">查詢結果</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          查詢結果
+        </h2>
         {selectedFields.length === 0 ? (
           <p className="text-sm text-muted-foreground">請先選擇欄位後再查詢</p>
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">尚未查詢到資料</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="admin-table-shell text-sm">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="admin-table-head">
+                <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                   {selectedFields.map((field) => (
                     <th key={field} className="pb-3 pr-4 font-medium">
                       {field}
@@ -156,7 +162,10 @@ export function CustomReportsPage() {
               </thead>
               <tbody>
                 {rows.map((row, index) => (
-                  <tr key={row.id ?? index} className="admin-table-row last:border-0">
+                  <tr
+                    key={row.id ?? index}
+                    className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                  >
                     {selectedFields.map((field) => (
                       <td key={field} className="py-3 pr-4 text-foreground">
                         {row[field]}
@@ -170,10 +179,12 @@ export function CustomReportsPage() {
         )}
       </div>
 
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <Upload className="h-5 w-5 text-muted-foreground" />
-          <h2 className="heading-sm">已儲存的報表</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            已儲存的報表
+          </h2>
         </div>
         <div className="space-y-3">
           {savedReports.length === 0 ? (
@@ -182,7 +193,7 @@ export function CustomReportsPage() {
             savedReports.map((report) => (
               <div
                 key={report.id ?? report.name}
-                className="admin-card-soft flex items-center justify-between"
+                className="rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm flex items-center justify-between"
               >
                 <div>
                   <p className="text-sm font-medium text-foreground">{report.name}</p>

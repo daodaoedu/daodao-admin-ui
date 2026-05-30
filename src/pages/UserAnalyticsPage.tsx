@@ -1,5 +1,14 @@
 import { format, parseISO, subDays } from 'date-fns'
-import { Activity, CalendarDays, TrendingUp, Users } from 'lucide-react'
+import {
+  Activity,
+  Award,
+  BookOpen,
+  CalendarDays,
+  Flame,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
   CartesianGrid,
@@ -10,6 +19,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import type { LearningStyleType } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
 import { Input } from '@/components/ui/input'
@@ -18,9 +28,24 @@ import {
   useActiveUsersTrend,
   useUserCohortRetention,
 } from '@/hooks/useActiveUsersTrend'
+import {
+  useEngagementStats,
+  useOnboardingStats,
+  useQuizAnalyticsStats,
+} from '@/hooks/useOnboardingAnalytics'
 import { cn } from '@/lib/utils'
 
 const COHORT_COLUMNS = ['Day 1', 'Day 7', 'Day 14', 'Day 30', 'Day 60', 'Day 90']
+
+const ROLE_ORDER: LearningStyleType[] = ['D', 'A', 'O', 'L', 'C']
+
+const ROLE_META: Record<LearningStyleType, { label: string; color: string }> = {
+  D: { label: '探究者（探探島）', color: 'var(--chart-1)' },
+  A: { label: '行動者（動動島）', color: 'var(--chart-2)' },
+  O: { label: '結構者（構構島）', color: 'var(--chart-3)' },
+  L: { label: '流動者（跨跨島）', color: 'var(--chart-4)' },
+  C: { label: '連結者（連連島）', color: 'var(--chart-5)' },
+}
 
 function formatTrendDate(value: string) {
   const date = parseISO(value)
@@ -75,6 +100,10 @@ export function UserAnalyticsPage() {
     isError: isCohortError,
   } = useUserCohortRetention(trendQuery)
 
+  const { data: onboardingStats } = useOnboardingStats()
+  const { data: quizStats } = useQuizAnalyticsStats()
+  const { data: engagementStats } = useEngagementStats()
+
   const summary = trendData?.summary
 
   const trendRows = useMemo(
@@ -97,12 +126,13 @@ export function UserAnalyticsPage() {
 
   const cohortRows = useMemo(() => {
     if (!cohortData?.rows?.length) return []
-
     return cohortData.rows.map((row) => ({
       period: row.label || '未知週期',
       values: [row.day1, row.day7, row.day14, row.day30, row.day60, row.day90],
     }))
   }, [cohortData])
+
+  const retentionRows = useMemo(() => engagementStats?.retentionByDay ?? [], [engagementStats])
 
   const exportColumns = [
     { key: 'date', header: '日期' },
@@ -115,7 +145,9 @@ export function UserAnalyticsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="heading-lg">用戶分析</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          用戶分析
+        </h1>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-sm">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -166,9 +198,35 @@ export function UserAnalyticsPage() {
         />
       </div>
 
-      {/* Section 2: Active trend chart */}
-      <div className="admin-panel-card p-5">
-        <h2 className="mb-4 heading-sm">每日活躍趨勢（DAU / WAU / MAU）</h2>
+      {/* Section 2: Onboarding & engagement KPIs */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard
+          title="Badge 完成率"
+          value={`${onboardingStats?.badgeGrantedRate ?? 0}%`}
+          icon={Award}
+        />
+        <StatCard
+          title="測驗完成率"
+          value={`${quizStats?.quizCompletedRate ?? 0}%`}
+          icon={BookOpen}
+        />
+        <StatCard
+          title="實踐放棄率"
+          value={`${engagementStats?.practiceStats.abandonmentRate ?? 0}%`}
+          icon={TrendingDown}
+        />
+        <StatCard
+          title="Streak 7天+ 人數"
+          value={formatNumber(engagementStats?.checkinStats.usersWithStreak7Plus)}
+          icon={Flame}
+        />
+      </div>
+
+      {/* Section 3: Active trend chart */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          每日活躍趨勢（DAU / WAU / MAU）
+        </h2>
         {isTrendLoading ? (
           <p className="text-sm text-muted-foreground">載入中...</p>
         ) : trendRows.length === 0 ? (
@@ -223,9 +281,56 @@ export function UserAnalyticsPage() {
         )}
       </div>
 
-      {/* Section 3: Funnel visualization */}
-      <div className="admin-panel-card p-5">
-        <h2 className="mb-4 heading-sm">轉換漏斗</h2>
+      {/* Section 4: Learning style distribution */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            學習風格分布
+          </h2>
+          {quizStats && (
+            <span className="text-sm text-muted-foreground">
+              測驗完成率 {quizStats.quizCompletedRate}%（
+              {quizStats.quizCompletedCount.toLocaleString()} /{' '}
+              {quizStats.totalUsers.toLocaleString()} 人）
+            </span>
+          )}
+        </div>
+        {!quizStats ? (
+          <p className="text-sm text-muted-foreground">載入中...</p>
+        ) : (
+          <div className="space-y-3">
+            {ROLE_ORDER.map((code) => {
+              const meta = ROLE_META[code]
+              const roleData = quizStats.byRole[code]
+              const count = roleData?.count ?? 0
+              const rate = roleData?.rate ?? 0
+              return (
+                <div key={code} className="flex items-center gap-4">
+                  <span className="w-36 shrink-0 text-right text-sm font-medium text-foreground">
+                    {code} {meta.label}
+                  </span>
+                  <div className="flex-1">
+                    <div
+                      className="flex h-8 items-center rounded-md px-3 text-xs font-semibold text-white transition-all"
+                      style={{ width: `${Math.max(rate, 4)}%`, backgroundColor: meta.color }}
+                    >
+                      <span className="whitespace-nowrap">
+                        {count.toLocaleString()} ({rate}%)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Section 5: Funnel visualization */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          轉換漏斗
+        </h2>
         {isFunnelLoading ? (
           <p className="text-sm text-muted-foreground">載入中...</p>
         ) : isFunnelError ? (
@@ -238,6 +343,8 @@ export function UserAnalyticsPage() {
           <div className="space-y-3">
             {funnelStages.map((stage) => {
               const pct = (stage.value / funnelBase) * 100
+              const barClass =
+                pct >= 90 ? 'bg-primary' : pct >= 70 ? 'bg-primary/85' : 'bg-primary/65'
               return (
                 <div key={stage.label} className="flex items-center gap-4">
                   <span className="w-20 shrink-0 text-right text-sm font-medium text-foreground">
@@ -247,7 +354,7 @@ export function UserAnalyticsPage() {
                     <div
                       className={cn(
                         'flex h-9 items-center rounded-md px-3 text-sm font-medium text-primary-foreground transition-all',
-                        pct >= 90 ? 'bg-primary' : pct >= 70 ? 'bg-primary/85' : 'bg-primary/65',
+                        barClass,
                       )}
                       style={{ width: `${Math.max(pct, 8)}%` }}
                     >
@@ -263,9 +370,64 @@ export function UserAnalyticsPage() {
         )}
       </div>
 
-      {/* Section 4: Cohort retention heatmap */}
-      <div className="admin-panel-card p-5">
-        <h2 className="mb-4 heading-sm">Cohort 留存率</h2>
+      {/* Section 6: Checkin retention by day */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            打卡留存率（30天）
+          </h2>
+          {engagementStats && (
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              <span>平均最長 streak：{engagementStats.checkinStats.avgMaxStreak} 天</span>
+              <span>
+                30天+ streak：{engagementStats.checkinStats.usersWithStreak30Plus.toLocaleString()}{' '}
+                人
+              </span>
+            </div>
+          )}
+        </div>
+        {retentionRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {engagementStats ? '目前沒有打卡留存資料' : '載入中...'}
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={retentionRows}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 11 }}
+                label={{ value: '第幾天', position: 'insideBottomRight', offset: -8, fontSize: 11 }}
+              />
+              <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  fontSize: 13,
+                }}
+                formatter={(value: number) => [`${value}%`, '留存率']}
+                labelFormatter={(label) => `第 ${label} 天`}
+              />
+              <Line
+                type="monotone"
+                dataKey="retentionRate"
+                stroke="var(--chart-1)"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Section 7: Cohort retention heatmap */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          Cohort 留存率
+        </h2>
         {isCohortLoading ? (
           <p className="text-sm text-muted-foreground">載入中...</p>
         ) : isCohortError ? (
@@ -276,7 +438,7 @@ export function UserAnalyticsPage() {
           <p className="text-sm text-muted-foreground">目前沒有可顯示的留存資料</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="admin-table-shell text-sm">
+            <table className="w-full border-collapse text-sm">
               <thead>
                 <tr>
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">月份</th>

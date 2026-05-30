@@ -13,7 +13,7 @@ export function StatCard({ title, value, change, changeLabel, icon: Icon }: Stat
   const isPositive = change !== undefined && change >= 0
 
   return (
-    <div className="admin-kpi-card">
+    <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{title}</p>
         {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}

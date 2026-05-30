@@ -53,9 +53,7 @@ export function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const initials = adminInfo?.nickname
-    ? adminInfo.nickname.slice(0, 2).toUpperCase()
-    : 'AD'
+  const initials = adminInfo?.nickname ? adminInfo.nickname.slice(0, 2).toUpperCase() : 'AD'
 
   const pageTitle = (() => {
     if (location.pathname.startsWith('/users/')) return ROUTE_TITLES['/users/:userId']
@@ -71,7 +69,7 @@ export function Header() {
           <Input
             type="search"
             placeholder="搜尋..."
-            className="admin-control h-9 w-full pl-9 pr-12"
+            className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 h-9 w-full pl-9 pr-12"
           />
 
           <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 select-none rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-block">

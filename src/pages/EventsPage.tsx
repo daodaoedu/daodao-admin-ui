@@ -61,7 +61,9 @@ export function EventsPage() {
     <div className="space-y-6">
       {/* ── Header ──────────────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">活動管理</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          活動管理
+        </h1>
         <Button type="button">
           <Plus className="h-4 w-4" />
           建立活動
@@ -69,16 +71,16 @@ export function EventsPage() {
       </div>
 
       {/* ── Filter tabs ─────────────────────────────────── */}
-      <div className="admin-segmented">
+      <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
         {TABS.map((tab) => (
           <Button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'admin-segmented-item inline-flex items-center gap-1.5 flex-1',
+              'inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground inline-flex items-center gap-1.5 flex-1',
               activeTab === tab.key
-                ? 'admin-segmented-item-active'
+                ? 'bg-background/70 text-foreground shadow-sm hover:bg-background/70'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -104,7 +106,7 @@ export function EventsPage() {
             <div
               key={event.id}
               className={cn(
-                'admin-panel-card transition-colors',
+                'rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm transition-colors',
                 selectedEventId === event.id ? 'border-primary' : 'border-border',
               )}
             >
@@ -159,25 +161,27 @@ export function EventsPage() {
       )}
 
       {activeTab === 'past' && (
-        <div className="admin-panel-card p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
           <p className="text-muted-foreground">已結束活動列表（{displayPastEvents.length} 筆）</p>
         </div>
       )}
 
       {activeTab === 'recurring' && (
-        <div className="admin-panel-card p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
           <p className="text-muted-foreground">週期性活動列表（{displayTemplates.length} 筆）</p>
         </div>
       )}
 
       {/* ── RSVP summary card ──────────────────────────── */}
       {activeTab === 'upcoming' && selectedEvent && (
-        <div className="admin-panel-card p-5">
-          <h2 className="mb-4 heading-sm">RSVP 詳情 — {selectedEvent.name}</h2>
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+          <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+            RSVP 詳情 — {selectedEvent.name}
+          </h2>
           <div className="overflow-x-auto">
-            <table className="admin-table-shell text-sm">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="admin-table-head">
+                <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                   <th className="pb-3 font-medium text-muted-foreground">用戶</th>
                   <th className="pb-3 font-medium text-muted-foreground">報名狀態</th>
                   <th className="pb-3 font-medium text-muted-foreground">報名時間</th>
@@ -185,7 +189,10 @@ export function EventsPage() {
               </thead>
               <tbody>
                 {displayRsvps.map((row) => (
-                  <tr key={row.id} className="admin-table-row last:border-0">
+                  <tr
+                    key={row.id}
+                    className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                  >
                     <td className="py-3 text-foreground">{row.user}</td>
                     <td className="py-3">
                       <span
@@ -207,15 +214,17 @@ export function EventsPage() {
       )}
 
       {/* ── 週期性模板 card ─────────────────────────────── */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <RefreshCw className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">週期性模板</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            週期性模板
+          </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 font-medium text-muted-foreground">模板名稱</th>
                 <th className="pb-3 font-medium text-muted-foreground">頻率</th>
                 <th className="pb-3 font-medium text-muted-foreground">下次場次</th>
@@ -224,7 +233,10 @@ export function EventsPage() {
             </thead>
             <tbody>
               {displayTemplates.map((tpl) => (
-                <tr key={tpl.id} className="admin-table-row last:border-0">
+                <tr
+                  key={tpl.id}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 font-medium text-foreground">{tpl.name}</td>
                   <td className="py-3 text-muted-foreground">{tpl.frequency}</td>
                   <td className="py-3 text-foreground">{tpl.nextSession}</td>

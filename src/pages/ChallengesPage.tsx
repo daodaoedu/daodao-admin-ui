@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { Challenge, StreakDistributionItem } from '@/api/admin-gamification'
 import { Button } from '@/components/ui/button'
 import { useChallenges, useStreakDistribution } from '@/hooks/useChallenges'
+import { clampPercent, safeNumber } from '@/lib/number'
 import { cn } from '@/lib/utils'
 
 type Tab = '進行中' | '即將開始' | '已結束'
@@ -25,13 +26,15 @@ export function ChallengesPage() {
   const filteredChallenges = allChallenges.filter((c) => c.status === activeTab)
 
   // Compute max for streak bars
-  const streakMax = streakRows.reduce((acc, r) => Math.max(acc, r.value), 0) || 1
+  const streakMax = streakRows.reduce((acc, r) => Math.max(acc, safeNumber(r.value)), 0) || 1
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">挑戰活動</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          挑戰活動
+        </h1>
         <Button type="button">
           <Plus className="h-4 w-4" />
           建立挑戰
@@ -39,16 +42,16 @@ export function ChallengesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="admin-segmented">
+      <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
         {TABS.map((tab) => (
           <Button
             key={tab.label}
             type="button"
             onClick={() => setActiveTab(tab.label)}
             className={cn(
-              'admin-segmented-item flex-1',
+              'inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground flex-1',
               activeTab === tab.label
-                ? 'admin-segmented-item-active'
+                ? 'bg-background/70 text-foreground shadow-sm hover:bg-background/70'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -70,12 +73,17 @@ export function ChallengesPage() {
       {/* Challenge Cards */}
       <div className="grid gap-4 lg:grid-cols-2">
         {filteredChallenges.map((challenge) => {
+          const currentDay = safeNumber(challenge.currentDay)
+          const totalDays = safeNumber(challenge.totalDays)
+          const participants = safeNumber(challenge.participants)
+          const completionRate = clampPercent(challenge.completionRate)
           const progress =
-            challenge.totalDays > 0
-              ? Math.round((challenge.currentDay / challenge.totalDays) * 100)
-              : 0
+            totalDays > 0 ? clampPercent(Math.round((currentDay / totalDays) * 100)) : 0
           return (
-            <div key={challenge.id} className="admin-panel-card p-5">
+            <div
+              key={challenge.id}
+              className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5"
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-medium text-foreground">{challenge.name}</h3>
@@ -88,7 +96,7 @@ export function ChallengesPage() {
               <div className="mt-4">
                 <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
                   <span>
-                    Day {challenge.currentDay} / {challenge.totalDays}
+                    Day {currentDay} / {totalDays || '-'}
                   </span>
                   <span>{progress}%</span>
                 </div>
@@ -104,11 +112,11 @@ export function ChallengesPage() {
               <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <Users className="h-3.5 w-3.5" />
-                  {challenge.participants} 參與者
+                  {participants.toLocaleString()} 參與者
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <CalendarDays className="h-3.5 w-3.5" />
-                  完成率 {challenge.completionRate}%
+                  完成率 {completionRate}%
                 </span>
               </div>
             </div>
@@ -120,11 +128,15 @@ export function ChallengesPage() {
       </div>
 
       {/* Streak Distribution */}
-      <div className="admin-panel-card p-5">
-        <h2 className="mb-4 heading-sm">連續打卡分布</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          連續打卡分布
+        </h2>
         <div className="space-y-3">
           {streakRows.map((row) => {
-            const pct = Math.round((row.value / (row.max ?? streakMax)) * 100)
+            const value = safeNumber(row.value)
+            const max = safeNumber(row.max, streakMax) || streakMax
+            const pct = clampPercent(Math.round((value / max) * 100))
             return (
               <div key={row.label} className="flex items-center gap-3">
                 <span className="w-20 shrink-0 text-sm text-muted-foreground">{row.label}</span>
@@ -134,7 +146,7 @@ export function ChallengesPage() {
                     style={{ width: `${pct}%` }}
                   />
                   <span className="absolute inset-y-0 left-2 flex items-center text-xs font-medium text-foreground">
-                    {row.value.toLocaleString()}
+                    {value.toLocaleString()}
                   </span>
                 </div>
               </div>

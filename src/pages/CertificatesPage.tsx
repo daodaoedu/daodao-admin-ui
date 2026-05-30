@@ -14,7 +14,9 @@ export function CertificatesPage() {
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">證書管理</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          證書管理
+        </h1>
         <Button type="button">
           <Plus className="h-4 w-4" />
           建立模板
@@ -22,10 +24,12 @@ export function CertificatesPage() {
       </div>
 
       {/* ── Certificate templates ──────────────────────── */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <FileText className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">證書模板</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            證書模板
+          </h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {templates.map((tpl) => (
@@ -59,15 +63,17 @@ export function CertificatesPage() {
       </div>
 
       {/* ── Issued certificates ────────────────────────── */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <Award className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">已發放證書</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            已發放證書
+          </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">證書</th>
                 <th className="pb-3 pr-4 font-medium">用戶</th>
                 <th className="pb-3 pr-4 font-medium">發放日期</th>
@@ -77,7 +83,10 @@ export function CertificatesPage() {
             </thead>
             <tbody>
               {issued.map((row) => (
-                <tr key={row.link} className="admin-table-row last:border-0">
+                <tr
+                  key={row.link}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground">{row.cert}</td>
                   <td className="py-3 pr-4 text-foreground">{row.user}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{row.date}</td>

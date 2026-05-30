@@ -32,7 +32,9 @@ export function LoginPage() {
         <p className="mb-2 text-center text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Admin Console
         </p>
-        <h1 className="mb-8 text-center heading-lg text-foreground">島島 Admin</h1>
+        <h1 className="mb-8 text-center text-2xl leading-none font-semibold tracking-tight text-foreground text-foreground">
+          島島 Admin
+        </h1>
 
         <Button
           type="button"

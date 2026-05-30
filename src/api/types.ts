@@ -346,6 +346,9 @@ export interface AdminUserListItem {
   permissions: string[]
   createdAt: string
   lastLoginAt: string | null
+  personaType: 'L' | 'C' | 'A' | 'D' | 'O' | null
+  badgeGranted: boolean | null
+  userSource: string | null
 }
 
 // ── Admin User Detail ─────────────────────────────────────────────────
@@ -377,11 +380,21 @@ export interface AdminLoginHistoryItem {
 }
 
 export interface AdminActivityStats {
+  lastLoginAt: string | null
+  lastActiveAt: string | null
+  loginCount: number
+  recentLoginCount: number
+  totalPractices: number
   totalCheckins: number
   totalPosts: number
-  totalComments: number
   totalReactions: number
-  lastActivityAt: string | null
+}
+
+export interface ActivityTimelineEvent {
+  id: string
+  type: 'login' | 'checkin' | 'post'
+  description: string
+  timestamp: string
 }
 
 export interface PracticeStats {
@@ -389,7 +402,75 @@ export interface PracticeStats {
   active: number
   completed: number
   totalCheckIns: number
-  avgCheckInsPerPractice: number
+  avgCheckInsPerPractice?: number
+  averageCompletionRate?: number
+  practicesByCategory?: Array<{
+    category: string
+    count: number
+  }>
+  practicesByStatus?: Array<{
+    status: string
+    count: number
+  }>
+}
+
+export interface PagePagination {
+  currentPage: number
+  totalPages: number
+  totalItems: number
+  itemsPerPage: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+export interface PaginatedApiResponse<T> {
+  success: boolean
+  data: T[]
+  pagination: PagePagination
+  timestamp: string
+  meta?: Record<string, unknown>
+}
+
+export type PracticeStatus = 'draft' | 'not_started' | 'active' | 'completed' | 'archived'
+
+export interface PracticeUserInfo {
+  id: string
+  name: string
+  photoURL: string | null
+  roleList: string[]
+}
+
+export interface PracticeEntity {
+  id: string
+  title: string
+  practiceAction?: string
+  startDate?: string
+  endDate?: string
+  durationDays?: number
+  frequencyMinDays?: number
+  frequencyMaxDays?: number
+  sessionDurationMinutes?: number
+  practiceTimePeriods: string[]
+  otherContext?: string
+  status: PracticeStatus
+  hasResources: boolean
+  progressPercentage?: number
+  firstCheckinAt?: string
+  lastCheckinAt?: string
+  checkInCount: number
+  themeColor?: string
+  createdAt: string
+  updatedAt?: string
+  user: PracticeUserInfo
+  tags: string[]
+  privacyStatus: string
+  stats: {
+    likeCount: number
+    viewCount: number
+    favoriteCount: number
+    shareCount: number
+    commentCount: number
+  }
 }
 
 export interface ActiveUsersTrendPoint {
@@ -437,6 +518,7 @@ export interface UserCohortResponse {
 export interface EmailHistoryItem {
   id: number
   recipient: string
+  recipientName: string | null
   subject: string
   status: string
   sentAt: string
@@ -570,4 +652,270 @@ export interface RoadmapReport {
     pendingCount: number
     oldestPendingWaitingHours: number | null
   }
+}
+
+// ── Survey (問卷) ─────────────────────────────────────────────────
+export type SurveyStatus = 'draft' | 'active' | 'closed' | 'archived'
+
+export interface AdminSurveyListItem {
+  id: number
+  external_id: string
+  title: string
+  status: SurveyStatus
+  is_anonymous: boolean
+  tags: string[]
+  view_count: number
+  created_at: string
+  response_count: number
+  creator: {
+    id: number | null
+    email: string | null
+    nickname: string | null
+  }
+}
+
+export interface AdminSurveyDetail extends AdminSurveyListItem {
+  description: string | null
+  max_responses: number | null
+  cover_url: string | null
+  updated_at: string
+  questions: Array<{
+    id: number
+    question_text: string
+    question_type: string
+    is_required: boolean
+    position: number
+    options: Array<{ id: number; option_text: string; position: number }>
+  }>
+}
+
+export interface AdminSurveyResponse {
+  id: number
+  user_id: number | null
+  completed_at: string
+  answer_count: number
+}
+
+export interface AdminSurveyQuestionForm {
+  question_text: string
+  question_type: string
+  is_required: boolean
+  position: number
+  options: Array<{ option_text: string; position: number }>
+}
+
+export interface AdminSurveyCreatePayload {
+  title: string
+  description?: string
+  is_anonymous?: boolean
+  tags?: string[]
+  max_responses?: number | null
+  start_time?: string | null
+  end_time?: string | null
+  questions?: AdminSurveyQuestionForm[]
+}
+
+export type AdminSurveyUpdatePayload = Partial<AdminSurveyCreatePayload>
+
+export interface AdminSurveyAnswerItem {
+  question_id: number
+  question_text: string
+  question_type: string
+  answer_text: string | null
+  selected_option_ids: number[]
+  selected_options: string[]
+  rating_value: number | null
+  boolean_value: boolean | null
+}
+
+export interface AdminSurveyResponseDetail {
+  id: number
+  user_id: number | null
+  completed_at: string
+  answers: AdminSurveyAnswerItem[]
+}
+
+export interface AdminSurveyQuestionStats {
+  avg?: number | null
+  min?: number | null
+  max?: number | null
+  true?: number
+  false?: number
+  option_counts?: Array<{ option_id: number; option_text: string; count: number }>
+  sample_answers?: Array<string | null>
+}
+
+export interface AdminSurveyPerQuestion {
+  question_id: number
+  question_text: string
+  question_type: string
+  answer_count: number
+  stats: AdminSurveyQuestionStats
+}
+
+export interface AdminSurveyAnalytics {
+  survey_id: number
+  response_count: number
+  view_count: number
+  avg_duration_seconds: number | null
+  drop_off: Array<{ last_position: number; count: number }>
+  per_question: AdminSurveyPerQuestion[]
+}
+
+// ── Email Templates ──────────────────────────────────────────────────────────
+export interface EmailTemplate {
+  id: number
+  name: string
+  slug: string | null
+  subject: string
+  preheader: string | null
+  body: string
+  variables: string[]
+  dataSource: 'user' | 'practice' | 'event' | 'none'
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface EmailTemplateCreate {
+  name: string
+  subject: string
+  preheader?: string
+  body: string
+  variables?: string[]
+  dataSource?: 'user' | 'practice' | 'event' | 'none'
+  isActive?: boolean
+  slug?: string
+}
+
+export interface EmailTemplateUpdate {
+  name?: string
+  subject?: string
+  preheader?: string
+  body?: string
+  variables?: string[]
+  dataSource?: 'user' | 'practice' | 'event' | 'none'
+  isActive?: boolean
+}
+
+// ── Onboarding Analytics ────────────────────────────────────────────────────
+export type LearningStyleType = 'L' | 'C' | 'A' | 'D' | 'O'
+export type RegistrationFlow = 'landing_page' | 'quiz' | 'action_maker'
+export type CreationMethod = 'self_created' | 'copied' | 'action_generator'
+export type OnboardingEmailType = 'L0' | 'A' | 'B' | 'C' | 'D' | 'E'
+
+export interface OnboardingStats {
+  totalUsers: number
+  badgeGrantedCount: number
+  badgeGrantedRate: number
+  avgDaysToComplete: number
+  byRegistrationFlow: Record<RegistrationFlow, { total: number; badgeGranted: number }>
+  byCreationMethod: Record<CreationMethod, number>
+  completionByDay: Array<{ days: number; count: number }>
+}
+
+export interface UserOnboardingDetail {
+  userId: string
+  registrationFlow: RegistrationFlow | null
+  userSource: 'S1' | 'S2' | 'S3'
+  creationMethod: CreationMethod | null
+  taskStates: Record<string, 'done' | 'pending'>
+  taskCompletedAt: Record<string, string>
+  badgeGranted: boolean
+  badgeGrantedAt: string | null
+  daysToComplete: number | null
+  completedAt: string | null
+  learningStyle: {
+    resultType: LearningStyleType | null
+    completedAt: string | null
+    attemptCount: number
+  } | null
+  persona: {
+    answerCount: number
+    isUnlocked: boolean
+    lastAnsweredAt: string | null
+  } | null
+  emailSequence: Array<{
+    emailType: OnboardingEmailType
+    status: 'sent' | 'failed' | 'not_sent'
+    sentAt: string | null
+    openedAt: string | null
+    openCount: number
+  }>
+  engagement: {
+    practiceCount: number
+    activePracticeCount: number
+    maxCheckinStreak: number
+    lastActiveAt: string | null
+  }
+}
+
+export interface QuizStats {
+  totalUsers: number
+  quizCompletedCount: number
+  quizCompletedRate: number
+  byRole: Record<LearningStyleType, { count: number; rate: number }>
+  byRoleAndBadge: Record<LearningStyleType, { badgeGranted: number; total: number }>
+  byRoleAndRegistrationFlow: Record<LearningStyleType, Record<RegistrationFlow, number>>
+}
+
+export interface PersonaStats {
+  totalUsers: number
+  anyAnswerCount: number
+  anyAnswerRate: number
+  unlockedCount: number
+  unlockedRate: number
+  avgAnswerCount: number
+  answerCountDistribution: Array<{ answerCount: number; userCount: number }>
+  topQuestions: Array<{ questionId: number; prompt: string; answerCount: number }>
+}
+
+export interface EmailOnboardingStats {
+  byEmailType: Record<
+    OnboardingEmailType,
+    { sentCount: number; openedCount: number; openRate: number; failedCount: number }
+  >
+  byUserSource: Record<
+    'S1' | 'S2' | 'S3',
+    { sentCount: number; openedCount: number; openRate: number }
+  >
+}
+
+export interface EngagementStats {
+  practiceStats: {
+    avgPracticeCount: number
+    avgActivePracticeCount: number
+    abandonmentRate: number
+  }
+  checkinStats: {
+    avgMaxStreak: number
+    usersWithStreak7Plus: number
+    usersWithStreak30Plus: number
+  }
+  retentionByDay: Array<{ day: number; retentionRate: number }>
+}
+
+export interface PersonaProfileAnswer {
+  id: number
+  selectedValue: string | null
+  textAnswer: string | null
+  resonanceCount: number
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface PersonaProfileQuestion {
+  id: number
+  prompt: string
+  questionType: 'choice' | 'sentence_completion' | 'scenario'
+  options: string[] | null
+  isNewUserPriority: boolean
+  isPlaceholder: boolean
+  answer: PersonaProfileAnswer | null
+}
+
+export interface PersonaUserProfile {
+  questions: PersonaProfileQuestion[]
+  viewerIsLocked?: boolean
+  answersNeeded?: number
 }

@@ -130,6 +130,13 @@ const RoadmapItemsPage = lazy(() =>
 const RoadmapReportsPage = lazy(() =>
   import('@/pages/RoadmapReportsPage').then((m) => ({ default: m.RoadmapReportsPage })),
 )
+const SurveyManagementPage = lazy(() =>
+  import('@/pages/SurveyManagementPage').then((m) => ({ default: m.SurveyManagementPage })),
+)
+const EmailTemplatesPage = lazy(() =>
+  import('@/pages/EmailTemplatesPage').then((m) => ({ default: m.EmailTemplatesPage })),
+)
+const EmailTemplateEditorPage = lazy(() => import('@/pages/EmailTemplateEditorPage'))
 
 function PageLoader() {
   return (
@@ -349,6 +356,22 @@ export function App() {
             }
           />
           <Route
+            path="/email-templates"
+            element={
+              <LazyPage>
+                <EmailTemplatesPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/email-templates/:id/edit"
+            element={
+              <LazyPage>
+                <EmailTemplateEditorPage />
+              </LazyPage>
+            }
+          />
+          <Route
             path="/audit-log"
             element={
               <LazyPage>
@@ -501,6 +524,16 @@ export function App() {
             element={
               <LazyPage>
                 <RoadmapReportsPage />
+              </LazyPage>
+            }
+          />
+
+          {/* 問卷 */}
+          <Route
+            path="/surveys"
+            element={
+              <LazyPage>
+                <SurveyManagementPage />
               </LazyPage>
             }
           />

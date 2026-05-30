@@ -28,7 +28,6 @@ const PAGE_SIZE = 20
 export function EmailHistoryTable() {
   const queryClient = useQueryClient()
   const [filters, setFilters] = useState<EmailHistoryParams>({
-    status: 'failed',
     page: 1,
     limit: PAGE_SIZE,
     sortBy: 'sentAt',
@@ -81,7 +80,9 @@ export function EmailHistoryTable() {
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm">
       <div className="border-b border-border p-5">
-        <h2 className="heading-sm mb-4">郵件發送紀錄</h2>
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          郵件發送紀錄
+        </h2>
 
         {/* Filters */}
         <div className="flex flex-wrap items-end gap-3">
@@ -197,7 +198,16 @@ export function EmailHistoryTable() {
                   key={item.id}
                   className="border-b border-border last:border-0 hover:bg-muted/50"
                 >
-                  <td className="px-5 py-3 font-mono text-xs">{item.recipient}</td>
+                  <td className="px-5 py-3">
+                    <div className="text-sm font-medium">
+                      {item.recipientName ?? item.recipient}
+                    </div>
+                    {item.recipientName && (
+                      <div className="font-mono text-xs text-muted-foreground">
+                        {item.recipient}
+                      </div>
+                    )}
+                  </td>
                   <td className="max-w-[200px] truncate px-5 py-3">{item.subject}</td>
                   <td className="px-5 py-3 text-xs">{item.type}</td>
                   <td className="px-5 py-3">
