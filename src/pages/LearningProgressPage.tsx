@@ -1,18 +1,14 @@
 import { AlertTriangle, BookOpen, Eye, Percent } from 'lucide-react'
-import { useState } from 'react'
+import type { StalledUser } from '@/api/admin-learning'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
-import { useLearningCourses, useStalledUsers } from '@/hooks/useLearningCourses'
+import { useLearningCourses } from '@/hooks/useLearningCourses'
 import { cn } from '@/lib/utils'
 
 export function LearningProgressPage() {
   const { data: coursesData } = useLearningCourses()
   const courses = coursesData ?? []
-
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
-  const { data: stalledUsers = [] } = useStalledUsers(selectedCourseId)
-
-  const selectedCourse = courses.find((c) => c.id === selectedCourseId)
+  const stalledUsers: StalledUser[] = []
 
   return (
     <div className="space-y-6">
@@ -90,7 +86,6 @@ export function LearningProgressPage() {
                       variant="ghost"
                       size="xs"
                       className="h-auto px-0 py-0 text-primary"
-                      onClick={() => setSelectedCourseId(course.id)}
                     >
                       <Eye className="h-3.5 w-3.5" />
                       查看詳情
@@ -107,60 +102,53 @@ export function LearningProgressPage() {
       <div className="admin-panel-card p-5">
         <div className="mb-4 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-warning" />
-          <h2 className="heading-sm">
-            停滯用戶{selectedCourse ? `：${selectedCourse.name}` : ''}
-          </h2>
+          <h2 className="heading-sm">停滯用戶</h2>
         </div>
-        {!selectedCourseId && (
-          <p className="text-sm text-muted-foreground">請先從上方課程表選擇一門課</p>
-        )}
-        {selectedCourseId && (
-          <div className="overflow-x-auto">
-            <table className="admin-table-shell text-sm">
-              <thead>
-                <tr className="admin-table-head">
-                  <th className="pb-3 pr-4 font-medium">用戶</th>
-                  <th className="pb-3 pr-4 font-medium">課程</th>
-                  <th className="pb-3 pr-4 font-medium">進度</th>
-                  <th className="pb-3 font-medium">停滯天數</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stalledUsers.map((row) => (
-                  <tr key={`${row.user}-${row.course}`} className="admin-table-row last:border-0">
-                    <td className="py-3 pr-4 font-medium text-foreground">{row.user}</td>
-                    <td className="py-3 pr-4 text-foreground">{row.course}</td>
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-20 rounded-full bg-muted">
-                          <div
-                            className="h-2 rounded-full bg-warning"
-                            style={{ width: `${row.progress}%` }}
-                          />
-                        </div>
-                        <span className="text-foreground">{row.progress}%</span>
+        <div className="overflow-x-auto">
+          <table className="admin-table-shell text-sm">
+            <thead>
+              <tr className="admin-table-head">
+                <th className="pb-3 pr-4 font-medium">用戶</th>
+                <th className="pb-3 pr-4 font-medium">課程</th>
+                <th className="pb-3 pr-4 font-medium">進度</th>
+                <th className="pb-3 font-medium">停滯天數</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stalledUsers.map((row) => (
+                <tr key={`${row.user}-${row.course}`} className="admin-table-row last:border-0">
+                  <td className="py-3 pr-4 font-medium text-foreground">{row.user}</td>
+                  <td className="py-3 pr-4 text-foreground">{row.course}</td>
+                  <td className="py-3 pr-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-20 rounded-full bg-muted">
+                        <div
+                          className="h-2 rounded-full bg-warning"
+                          style={{ width: `${row.progress}%` }}
+                        />
                       </div>
-                    </td>
-                    <td className="py-3">
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                          row.stalledDays >= 21
-                            ? 'bg-destructive/15 text-destructive'
-                            : row.stalledDays >= 14
-                              ? 'bg-warning/15 text-warning'
-                              : 'bg-muted text-muted-foreground',
-                        )}
-                      >
-                        {row.stalledDays} 天
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                      <span className="text-foreground">{row.progress}%</span>
+                    </div>
+                  </td>
+                  <td className="py-3">
+                    <span
+                      className={cn(
+                        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                        row.stalledDays >= 21
+                          ? 'bg-destructive/15 text-destructive'
+                          : row.stalledDays >= 14
+                            ? 'bg-warning/15 text-warning'
+                            : 'bg-muted text-muted-foreground',
+                      )}
+                    >
+                      {row.stalledDays} 天
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

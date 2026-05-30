@@ -11,9 +11,13 @@ import {
   useTrustLevelConfig,
   useTrustLevelDistribution,
   useTrustLevelHistory,
-  useUserGroups,
-  useDeleteUserGroup,
 } from '@/hooks/useTrustLevels'
+
+const groups = [
+  { name: 'content_team', members: 12, override: '編輯所有內容' },
+  { name: 'beta_testers', members: 45, override: '存取測試功能' },
+  { name: 'mentors', members: 8, override: '管理社群空間' },
+]
 
 const levelIcons = [Users, Star, Shield, UserPlus]
 const levelNames = ['Lv0 新手', 'Lv1 基本', 'Lv2 成員', 'Lv3 常客']
@@ -22,18 +26,10 @@ export function TrustLevelsPage() {
   const { data: configData } = useTrustLevelConfig()
   const { data: distributionData } = useTrustLevelDistribution()
   const { data: historyData } = useTrustLevelHistory()
-  const { data: groups = [], isLoading: groupsLoading } = useUserGroups()
-  const deleteGroupMut = useDeleteUserGroup()
 
   const trustLevelConfig: TrustLevelConfigItem[] = configData?.levels ?? []
   const distribution: TrustLevelDistributionItem[] = distributionData?.items ?? []
   const recentChanges: TrustLevelHistoryItem[] = historyData?.items ?? []
-
-  function handleDeleteGroup(id: number, name: string) {
-    if (!confirm(`確定刪除群組 ${name}？`)) return
-    deleteGroupMut.mutate(id)
-  }
-
   return (
     <div className="space-y-6">
       <h1 className="heading-lg">信任等級</h1>
@@ -147,50 +143,35 @@ export function TrustLevelsPage() {
               </tr>
             </thead>
             <tbody>
-              {groupsLoading ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                    載入中...
+              {groups.map((g) => (
+                <tr key={g.name} className="admin-table-row transition-colors">
+                  <td className="px-4 py-2">
+                    <Badge variant="primary">{g.name}</Badge>
+                  </td>
+                  <td className="px-4 py-2 font-medium">{g.members}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{g.override}</td>
+                  <td className="px-4 py-2">
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => alert(`編輯群組 ${g.name}`)}
+                      >
+                        編輯
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="xs"
+                        onClick={() => alert(`刪除群組 ${g.name}`)}
+                      >
+                        刪除
+                      </Button>
+                    </div>
                   </td>
                 </tr>
-              ) : groups.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                    尚無群組
-                  </td>
-                </tr>
-              ) : (
-                groups.map((g) => (
-                  <tr key={g.id} className="admin-table-row transition-colors">
-                    <td className="px-4 py-2">
-                      <Badge variant="primary">{g.name}</Badge>
-                    </td>
-                    <td className="px-4 py-2 font-medium">{g.members}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{g.override}</td>
-                    <td className="px-4 py-2">
-                      <div className="flex gap-1">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="xs"
-                          onClick={() => alert(`編輯群組 ${g.name}`)}
-                        >
-                          編輯
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="xs"
-                          onClick={() => handleDeleteGroup(g.id, g.name)}
-                          disabled={deleteGroupMut.isPending}
-                        >
-                          刪除
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>

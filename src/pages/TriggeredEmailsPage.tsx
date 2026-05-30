@@ -1,25 +1,14 @@
 import { Mail, MailCheck, Percent, Plus, Zap } from 'lucide-react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import type { EmailTriggerRule } from '@/api/admin-communication'
-import { updateEmailTrigger } from '@/api/admin-communication'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { useEmailTriggers } from '@/hooks/useEmailTriggers'
 import { cn } from '@/lib/utils'
 
 export function TriggeredEmailsPage() {
-  const queryClient = useQueryClient()
   const { data: apiRules } = useEmailTriggers()
   const rules = (apiRules ?? []) as EmailTriggerRule[]
-
-  // Compute stats from real data
-  const activeRulesCount = rules.filter((r) => r.enabled).length
-  const totalSent = rules.reduce((sum, r) => sum + (r.sent || 0), 0)
-  const avgOpenRate =
-    rules.length > 0
-      ? (rules.reduce((sum, r) => sum + (r.openRate || 0), 0) / rules.length).toFixed(1)
-      : '0'
-
   const executionLogs: {
     id: string
     rule: string
@@ -28,16 +17,19 @@ export function TriggeredEmailsPage() {
     status: string
   }[] = []
 
-  const toggleMutation = useMutation({
-    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
-      updateEmailTrigger(id, { enabled }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'email-triggers'] })
-    },
-  })
+  const [localToggles, setLocalToggles] = useState<Record<string, boolean>>({})
 
-  function toggleRule(rule: EmailTriggerRule) {
-    toggleMutation.mutate({ id: rule.id, enabled: !rule.enabled })
+  function toggleRule(index: number) {
+    const rule = rules[index]
+    if (!rule) return
+    setLocalToggles((prev) => ({
+      ...prev,
+      [rule.id]: !(localToggles[rule.id] ?? rule.enabled),
+    }))
+  }
+
+  function isEnabled(rule: (typeof rules)[number]) {
+    return localToggles[rule.id] ?? rule.enabled
   }
 
   return (
@@ -53,9 +45,15 @@ export function TriggeredEmailsPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="活躍規則數" value={activeRulesCount} icon={Zap} />
-        <StatCard title="本月發送" value={totalSent} icon={Mail} />
-        <StatCard title="平均開信率" value={`${avgOpenRate}%`} icon={Percent} />
+        <StatCard title="活躍規則數" value={5} icon={Zap} />
+        <StatCard title="本月發送" value={234} icon={Mail} change={15.2} changeLabel="較上月" />
+        <StatCard
+          title="平均開信率"
+          value="45.2%"
+          icon={Percent}
+          change={2.8}
+          changeLabel="較上月"
+        />
       </div>
 
       {/* Rules Table */}
@@ -74,7 +72,7 @@ export function TriggeredEmailsPage() {
               </tr>
             </thead>
             <tbody>
-              {rules.map((rule) => (
+              {rules.map((rule, index) => (
                 <tr key={rule.id ?? rule.name} className="admin-table-row last:border-0">
                   <td className="py-3 pr-4 font-medium">
                     <div className="flex items-center gap-2">
@@ -90,33 +88,25 @@ export function TriggeredEmailsPage() {
                     <Button
                       type="button"
                       variant="ghost"
-                      onClick={() => toggleRule(rule)}
-                      disabled={toggleMutation.isPending}
+                      onClick={() => toggleRule(index)}
                       className={cn(
                         'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                        rule.enabled ? 'bg-primary' : 'bg-muted',
+                        isEnabled(rule) ? 'bg-primary' : 'bg-muted',
                       )}
                       role="switch"
-                      aria-checked={rule.enabled}
-                      aria-label={`${rule.name} ${rule.enabled ? '啟用' : '停用'}`}
+                      aria-checked={isEnabled(rule)}
+                      aria-label={`${rule.name} ${isEnabled(rule) ? '啟用' : '停用'}`}
                     >
                       <span
                         className={cn(
                           'pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow-sm ring-0 transition-transform',
-                          rule.enabled ? 'translate-x-4' : 'translate-x-0',
+                          isEnabled(rule) ? 'translate-x-4' : 'translate-x-0',
                         )}
                       />
                     </Button>
                   </td>
                 </tr>
               ))}
-              {rules.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-6 text-center text-sm text-muted-foreground">
-                    尚無郵件規則
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -125,42 +115,38 @@ export function TriggeredEmailsPage() {
       {/* Execution Log */}
       <div className="admin-panel-card p-5">
         <h2 className="heading-sm mb-4">最近執行紀錄</h2>
-        {executionLogs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">每筆規則的執行記錄可個別查詢</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="admin-table-shell text-sm">
-              <thead>
-                <tr className="admin-table-head">
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">規則</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">收件人</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">發送時間</th>
-                  <th className="pb-3 font-medium text-muted-foreground">狀態</th>
-                </tr>
-              </thead>
-              <tbody>
-                {executionLogs.map((log) => (
-                  <tr
-                    key={log.id ?? `${log.rule}-${log.sentAt}`}
-                    className="admin-table-row last:border-0"
+        <div className="overflow-x-auto">
+          <table className="admin-table-shell text-sm">
+            <thead>
+              <tr className="admin-table-head">
+                <th className="pb-3 pr-4 font-medium text-muted-foreground">規則</th>
+                <th className="pb-3 pr-4 font-medium text-muted-foreground">收件人</th>
+                <th className="pb-3 pr-4 font-medium text-muted-foreground">發送時間</th>
+                <th className="pb-3 font-medium text-muted-foreground">狀態</th>
+              </tr>
+            </thead>
+            <tbody>
+              {executionLogs.map((log) => (
+                <tr
+                  key={log.id ?? `${log.rule}-${log.sentAt}`}
+                  className="admin-table-row last:border-0"
+                >
+                  <td className="py-3 pr-4 font-medium">{log.rule}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{log.recipient}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{log.sentAt}</td>
+                  <td
+                    className={cn(
+                      'py-3 text-sm font-medium',
+                      log.status === '成功' ? 'text-success' : 'text-destructive',
+                    )}
                   >
-                    <td className="py-3 pr-4 font-medium">{log.rule}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">{log.recipient}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">{log.sentAt}</td>
-                    <td
-                      className={cn(
-                        'py-3 text-sm font-medium',
-                        log.status === '成功' ? 'text-success' : 'text-destructive',
-                      )}
-                    >
-                      {log.status}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                    {log.status}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
