@@ -100,8 +100,6 @@ interface SelectProps {
   disabled?: boolean
   className?: string
   triggerClassName?: string
-  /** 對應 <label htmlFor> 的 id，套用於 trigger button */
-  id?: string
 }
 
 export function Select({
@@ -113,7 +111,6 @@ export function Select({
   disabled,
   className,
   triggerClassName,
-  id,
 }: SelectProps) {
   return (
     <SelectRoot value={value || undefined} onValueChange={onValueChange} disabled={disabled}>
