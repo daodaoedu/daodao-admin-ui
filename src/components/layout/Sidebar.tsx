@@ -236,8 +236,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     })
   }, [])
 
-  const initials = adminInfo?.adminNickname
-    ? adminInfo.adminNickname.slice(0, 2).toUpperCase()
+  const initials = adminInfo?.nickname
+    ? adminInfo.nickname.slice(0, 2).toUpperCase()
     : 'AD'
 
   return (
@@ -274,7 +274,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground">
-              {adminInfo?.adminNickname ?? 'Admin'}
+              {adminInfo?.nickname ?? 'Admin'}
             </p>
             <p className="truncate text-xs text-muted-foreground">管理員</p>
           </div>

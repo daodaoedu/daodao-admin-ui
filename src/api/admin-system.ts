@@ -26,13 +26,12 @@ export interface RedisInfo {
 }
 
 export const getSystemMonitor = () =>
-  apiClient.get<ApiResponse<SystemMonitorData>>('/daodao-server/api/v1/admin/system/monitor')
+  apiClient.get<ApiResponse<SystemMonitorData>>('/api/v1/admin/system/monitor')
 
-export const getDbInfo = () =>
-  apiClient.get<ApiResponse<DbInfo>>('/daodao-server/api/v1/admin/system/db-info')
+export const getDbInfo = () => apiClient.get<ApiResponse<DbInfo>>('/api/v1/admin/system/db')
 
 export const getRedisInfo = () =>
-  apiClient.get<ApiResponse<RedisInfo>>('/daodao-server/api/v1/admin/system/redis-info')
+  apiClient.get<ApiResponse<RedisInfo>>('/api/v1/admin/system/redis')
 
 // ── Email ────────────────────────────────────────────────
 export interface EmailStats {
@@ -52,21 +51,43 @@ export interface EmailHealth {
 }
 
 export const getEmailHistory = (params?: { limit?: number; offset?: number; status?: string }) =>
-  apiClient.get<ApiResponse<EmailHistoryResponse>>('/daodao-server/api/v1/admin/email/history', {
-    params,
-  })
+  apiClient.get<ApiResponse<EmailHistoryResponse>>('/api/v1/admin/email/history', { params })
 
-export const getEmailStats = () =>
-  apiClient.get<ApiResponse<EmailStats>>('/daodao-server/api/v1/admin/email/stats')
+export const getEmailStats = () => apiClient.get<ApiResponse<EmailStats>>('/api/v1/email/stats')
 
-export const getEmailHealth = () =>
-  apiClient.get<ApiResponse<EmailHealth>>('/daodao-server/api/v1/admin/email/health')
+export const getEmailHealth = () => apiClient.get<ApiResponse<EmailHealth>>('/api/v1/email/health')
 
-export const sendEmail = (data: { to: string; subject: string; body: string }) =>
-  apiClient.post<ApiResponse<{ success: boolean }>>('/daodao-server/api/v1/admin/email/send', data)
+export interface SendCustomEmailPayload {
+  to: string
+  subject: string
+  htmlContent: string
+}
 
-export const bulkSendEmail = (data: { recipients: string[]; subject: string; body: string }) =>
-  apiClient.post<ApiResponse<{ success: boolean }>>(
-    '/daodao-server/api/v1/admin/email/bulk-send',
-    data,
-  )
+export const sendCustomEmail = (data: SendCustomEmailPayload) =>
+  apiClient.post<ApiResponse<{ messageId: string }>>('/api/v1/email/custom', data)
+
+export interface RetryFailedEmailsResult {
+  retried: number
+  failed: number
+}
+
+export const retryFailedEmails = (limit?: number) =>
+  apiClient.post<ApiResponse<RetryFailedEmailsResult>>('/api/v1/email/retry-failed', { limit })
+
+export const retrySingleEmail = (logId: number) =>
+  apiClient.post<ApiResponse<{ retried: boolean }>>(`/api/v1/email/retry/${logId}`)
+
+export interface EmailHistoryParams {
+  status?: string
+  emailType?: string
+  recipient?: string
+  startDate?: string
+  endDate?: string
+  page?: number
+  limit?: number
+  sortBy?: 'sentAt' | 'createdAt'
+  sortOrder?: 'asc' | 'desc'
+}
+
+export const getEmailHistoryFiltered = (params: EmailHistoryParams) =>
+  apiClient.get<ApiResponse<EmailHistoryResponse>>('/api/v1/admin/email/history', { params })

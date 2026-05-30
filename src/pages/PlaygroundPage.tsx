@@ -913,7 +913,7 @@ export function PlaygroundPage() {
   })
 
   // 使用者 quota（有 userId 才查）
-  const adminIdNum = adminInfo?.adminId ? Number(adminInfo.adminId) : null
+  const adminIdNum = adminInfo?.userId ? Number(adminInfo.userId) : null
   const { data: quotaData, refetch: refetchQuota } = useQuery({
     queryKey: ['admin-quota', adminIdNum],
     queryFn: () => getUserQuota(adminIdNum as number).then((r) => r.data.data),
@@ -1185,9 +1185,9 @@ export function PlaygroundPage() {
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">目前使用者</p>
                   <p className="text-sm font-medium text-foreground truncate">
-                    {adminInfo.adminNickname ?? `Admin #${adminInfo.adminId}`}
+                    {adminInfo.nickname ?? `Admin #${adminInfo.userId}`}
                   </p>
-                  <p className="text-xs text-muted-foreground">ID: {adminInfo.adminId}</p>
+                  <p className="text-xs text-muted-foreground">ID: {adminInfo.userId}</p>
                 </div>
 
                 {quotaData ? (

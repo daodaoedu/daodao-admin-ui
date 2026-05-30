@@ -1,110 +1,128 @@
-import { Bell, Clock, Eye, Megaphone, Plus } from 'lucide-react'
+import { Bell, Clock, Eye, Loader2, Megaphone, Plus } from 'lucide-react'
 import { StatCard } from '@/components/StatCard'
-import { Button } from '@/components/ui/button'
-import { useNotifications } from '@/hooks/useNotifications'
+import { useAdminNotificationStats, useAdminNotifications } from '@/hooks/useNotifications'
 import { cn } from '@/lib/utils'
 
 const typeBadgeClass: Record<string, string> = {
-  公告: 'bg-info/15 text-info',
-  提醒: 'bg-warning/15 text-warning',
-  系統通知: 'bg-muted text-muted-foreground',
+  公告: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  提醒: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  系統通知: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
 }
 
 const statusClass: Record<string, string> = {
-  已發送: 'text-success',
-  排程中: 'text-info',
-  草稿: 'text-muted-foreground',
+  sent: 'text-green-600 dark:text-green-400',
+  scheduled: 'text-blue-600 dark:text-blue-400',
+  draft: 'text-muted-foreground',
+}
+
+const statusLabel: Record<string, string> = {
+  sent: '已發送',
+  scheduled: '排程中',
+  draft: '草稿',
 }
 
 export function NotificationsPage() {
-  const { data: apiData } = useNotifications()
+  const { data: listData, isLoading: listLoading } = useAdminNotifications()
+  const { data: stats, isLoading: statsLoading } = useAdminNotificationStats()
 
-  const notifications = apiData?.items ?? []
-  const stats = apiData?.stats ?? {
-    totalSent: 0,
-    avgReadRate: 0,
-    scheduled: 0,
-    sentChange: 0,
-    readRateChange: 0,
-  }
+  const notifications = listData?.items ?? []
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="heading-lg">站內通知</h1>
-        <Button type="button" onClick={() => alert('功能開發中')}>
+        <button
+          type="button"
+          onClick={() => alert('功能開發中')}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
           <Plus className="h-4 w-4" />
           建立通知
-        </Button>
+        </button>
       </div>
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="總發送"
-          value={stats.totalSent}
+          value={statsLoading ? '—' : (stats?.totalSent ?? '—')}
           icon={Megaphone}
-          change={stats.sentChange}
-          changeLabel="較上月"
         />
         <StatCard
           title="平均已讀率"
-          value={`${stats.avgReadRate}%`}
+          value={statsLoading ? '—' : stats ? `${stats.avgReadRate}%` : '—'}
           icon={Eye}
-          change={stats.readRateChange}
-          changeLabel="較上月"
         />
-        <StatCard title="排程中" value={stats.scheduled} icon={Clock} />
+        <StatCard
+          title="排程中"
+          value={statsLoading ? '—' : (stats?.scheduled ?? '—')}
+          icon={Clock}
+        />
       </div>
 
       {/* Notification History Table */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <h2 className="heading-sm mb-4">通知紀錄</h2>
-        <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
-            <thead>
-              <tr className="admin-table-head">
-                <th className="pb-3 pr-4 font-medium text-muted-foreground">標題</th>
-                <th className="pb-3 pr-4 font-medium text-muted-foreground">類型</th>
-                <th className="pb-3 pr-4 font-medium text-muted-foreground">目標</th>
-                <th className="pb-3 pr-4 font-medium text-muted-foreground">發送時間</th>
-                <th className="pb-3 pr-4 font-medium text-muted-foreground">已讀率</th>
-                <th className="pb-3 font-medium text-muted-foreground">狀態</th>
-              </tr>
-            </thead>
-            <tbody>
-              {notifications.map((n) => (
-                <tr key={n.title} className="admin-table-row last:border-0">
-                  <td className="py-3 pr-4 font-medium">
-                    <div className="flex items-center gap-2">
-                      <Bell className="h-4 w-4 text-muted-foreground" />
-                      {n.title}
-                    </div>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <span
-                      className={cn(
-                        'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium',
-                        typeBadgeClass[n.type],
-                      )}
-                    >
-                      {n.type}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-muted-foreground">{n.target}</td>
-                  <td className="py-3 pr-4 text-muted-foreground">{n.sentAt || '-'}</td>
-                  <td className="py-3 pr-4 text-muted-foreground">
-                    {n.status === '已發送' ? `${n.readRate}%` : '-'}
-                  </td>
-                  <td className={cn('py-3 text-sm font-medium', statusClass[n.status])}>
-                    {n.status}
-                  </td>
+        {listLoading ? (
+          <div className="flex items-center justify-center py-12 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="ml-2 text-sm">載入中…</span>
+          </div>
+        ) : notifications.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">尚無通知紀錄</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="pb-3 pr-4 font-medium text-muted-foreground">標題</th>
+                  <th className="pb-3 pr-4 font-medium text-muted-foreground">類型</th>
+                  <th className="pb-3 pr-4 font-medium text-muted-foreground">目標</th>
+                  <th className="pb-3 pr-4 font-medium text-muted-foreground">發送時間</th>
+                  <th className="pb-3 pr-4 font-medium text-muted-foreground">已讀率</th>
+                  <th className="pb-3 font-medium text-muted-foreground">狀態</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {notifications.map((n) => {
+                  const readRate =
+                    n.total_sent > 0 ? Math.round((n.read_count / n.total_sent) * 100 * 10) / 10 : 0
+
+                  return (
+                    <tr key={n.id} className="border-b border-border last:border-0">
+                      <td className="py-3 pr-4 font-medium">
+                        <div className="flex items-center gap-2">
+                          <Bell className="h-4 w-4 text-muted-foreground" />
+                          {n.title}
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span
+                          className={cn(
+                            'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium',
+                            typeBadgeClass[n.type] ??
+                              'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                          )}
+                        >
+                          {n.type}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-muted-foreground">{n.target}</td>
+                      <td className="py-3 pr-4 text-muted-foreground">{n.sent_at ?? '-'}</td>
+                      <td className="py-3 pr-4 text-muted-foreground">
+                        {n.status === 'sent' ? `${readRate}%` : '-'}
+                      </td>
+                      <td className={cn('py-3 text-sm font-medium', statusClass[n.status])}>
+                        {statusLabel[n.status] ?? n.status}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

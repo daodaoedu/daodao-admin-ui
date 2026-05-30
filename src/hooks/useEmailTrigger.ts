@@ -1,53 +1,51 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  createEmailTrigger,
-  deleteEmailTrigger,
-  type EmailTriggerCreate,
-  type EmailTriggerRule,
-  type EmailTriggerUpdate,
-  getEmailTriggerLog,
+  type CreateEmailTriggerRulePayload,
+  createEmailTriggerRule,
+  deleteEmailTriggerRule,
   getEmailTriggerStats,
-  listEmailTriggers,
-  updateEmailTrigger,
+  listEmailTriggerLogs,
+  listEmailTriggerRules,
+  toggleEmailTriggerRule,
+  updateEmailTriggerRule,
 } from '@/api/admin-communication'
-import type { ApiResponse } from '@/api/types'
 
-export function useEmailTriggerRules() {
+export function useEmailTriggerRules(params?: {
+  limit?: number
+  offset?: number
+  enabled?: boolean
+}) {
   return useQuery({
-    queryKey: ['admin', 'email-trigger-rules'],
-    queryFn: () =>
-      listEmailTriggers().then((r: { data: ApiResponse<EmailTriggerRule[]> }) => r.data.data),
+    queryKey: ['admin', 'email-trigger-rules', params],
+    queryFn: () => listEmailTriggerRules(params).then((r) => r.data.data),
   })
 }
 
-export function useEmailTriggerStats(id: string) {
+export function useEmailTriggerStats() {
   return useQuery({
-    queryKey: ['admin', 'email-trigger-stats', id],
-    queryFn: () => getEmailTriggerStats(id).then((r) => r.data.data),
-    enabled: !!id,
+    queryKey: ['admin', 'email-trigger-stats'],
+    queryFn: () => getEmailTriggerStats().then((r) => r.data.data),
   })
 }
 
-export function useEmailTriggerLogs(
-  id: string,
-  params?: {
-    limit?: number
-    offset?: number
-  },
-) {
+export function useEmailTriggerLogs(params?: {
+  limit?: number
+  offset?: number
+  rule_id?: number
+}) {
   return useQuery({
-    queryKey: ['admin', 'email-trigger-logs', id, params],
-    queryFn: () => getEmailTriggerLog(id, params).then((r) => r.data.data),
-    enabled: !!id,
+    queryKey: ['admin', 'email-trigger-logs', params],
+    queryFn: () => listEmailTriggerLogs(params).then((r) => r.data.data),
   })
 }
 
 export function useCreateEmailTriggerRule() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: EmailTriggerCreate) => createEmailTrigger(data),
+    mutationFn: (data: CreateEmailTriggerRulePayload) => createEmailTriggerRule(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'email-trigger-rules'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'email-trigger-stats'] })
     },
   })
 }
@@ -55,8 +53,8 @@ export function useCreateEmailTriggerRule() {
 export function useUpdateEmailTriggerRule() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: EmailTriggerUpdate }) =>
-      updateEmailTrigger(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<CreateEmailTriggerRulePayload> }) =>
+      updateEmailTriggerRule(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'email-trigger-rules'] })
     },
@@ -66,10 +64,11 @@ export function useUpdateEmailTriggerRule() {
 export function useToggleEmailTriggerRule() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
-      updateEmailTrigger(id, { enabled }),
+    mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) =>
+      toggleEmailTriggerRule(id, enabled),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'email-trigger-rules'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'email-trigger-stats'] })
     },
   })
 }
@@ -77,9 +76,10 @@ export function useToggleEmailTriggerRule() {
 export function useDeleteEmailTriggerRule() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => deleteEmailTrigger(id),
+    mutationFn: (id: number) => deleteEmailTriggerRule(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'email-trigger-rules'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'email-trigger-stats'] })
     },
   })
 }

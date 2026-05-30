@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getEmailHealth, getEmailHistory, getEmailStats, sendEmail } from '@/api/admin-system'
+import {
+  getEmailHealth,
+  getEmailHistory,
+  getEmailStats,
+  sendCustomEmail,
+} from '@/api/admin-system'
 
 export function useEmailStats() {
   return useQuery({
@@ -25,7 +30,8 @@ export function useEmailHistory(params?: { limit?: number; offset?: number; stat
 export function useSendEmail() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: { to: string; subject: string; body: string }) => sendEmail(data),
+    mutationFn: (data: { to: string; subject: string; body: string }) =>
+      sendCustomEmail({ to: data.to, subject: data.subject, htmlContent: data.body }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'email-stats'] })
       queryClient.invalidateQueries({ queryKey: ['admin', 'email-history'] })

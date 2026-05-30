@@ -9,6 +9,7 @@ import type {
   AIServiceConfigCreate,
   AIServiceConfigUpdate,
   ApiResponse,
+  AuthMeData,
   CursorResponse,
   DashboardStats,
   InsightPractice,
@@ -37,8 +38,17 @@ import type {
   WishStatus,
 } from './types'
 
-// ── Auth ──────────────────────────────────────────────────
+// ── Auth (admin-backend) ─────────────────────────────────
 export const ping = () => apiClient.get<ApiResponse<AdminPingData>>('/api/v1/admin/ping')
+
+// ── Auth (daodao-server) ─────────────────────────────────
+export const getAuthMe = () =>
+  apiClient.get<ApiResponse<AuthMeData>>('/daodao-server/api/v1/auth/me')
+
+export const authLogout = () => apiClient.post('/daodao-server/api/v1/auth/logout')
+
+export const authRefresh = () =>
+  apiClient.post<ApiResponse<{ token: string }>>('/daodao-server/api/v1/auth/refresh')
 
 // ── Dashboard ─────────────────────────────────────────────
 export const getDashboardStats = (dateFrom?: string, dateTo?: string) =>

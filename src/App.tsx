@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/auth/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
 
 // Existing pages (eager load)
+import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 
@@ -151,6 +152,7 @@ export function App() {
         path="/login"
         element={isLoading ? null : isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
       />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           {/* Dashboard (eager) */}
@@ -415,7 +417,7 @@ export function App() {
             }
           />
 
-          {/* 遲戲化 */}
+          {/* 遊戲化 */}
           <Route
             path="/badges"
             element={

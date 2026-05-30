@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ping } from '@/api/admin-ai'
+import { getAuthMe } from '@/api/admin'
 import { TOKEN_KEY } from '@/api/client'
-import type { AdminPingData, ApiResponse } from '@/api/types'
 
 export function AuthCallbackPage() {
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    ping()
-      .then((res: { data: ApiResponse<AdminPingData> }) => {
-        const d = res.data.data
-        if (!d.admin_id) {
+    getAuthMe()
+      .then((res) => {
+        const { user, isTemporary } = res.data.data
+        const isAdmin = user.roles.some((r) =>
+          ['admin', 'superadmin', 'Admin', 'SuperAdmin'].includes(r),
+        )
+        if (isTemporary || !isAdmin) {
           setError('此帳號沒有管理員權限')
           localStorage.removeItem(TOKEN_KEY)
           return
