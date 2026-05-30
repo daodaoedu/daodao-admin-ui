@@ -25,6 +25,24 @@ export interface AdminPingData {
   nickname: string | null
 }
 
+export interface AuthMeUser {
+  id: string
+  nickname?: string
+  email: string | null
+  name: string | null
+  photo_url: string | null
+  is_active: boolean
+  email_verified: boolean
+  email_verified_at: string | null
+  roles: string[]
+  permissions: string[]
+}
+
+export interface AuthMeData {
+  user: AuthMeUser
+  isTemporary: boolean
+}
+
 // ── Dashboard ─────────────────────────────────────────────
 export interface BackendStat {
   backend: string

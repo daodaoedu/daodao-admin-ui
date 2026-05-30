@@ -892,11 +892,12 @@ export function PlaygroundPage() {
     queryFn: () => listSystemPrompts({ is_active: true }).then((r) => r.data.data),
   })
 
-  // 使用者 quota（有 adminId 才查）
+  // 使用者 quota（有 userId 才查）
+  const adminIdNum = adminInfo?.userId ? Number(adminInfo.userId) : null
   const { data: quotaData, refetch: refetchQuota } = useQuery({
-    queryKey: ['admin-quota', adminInfo?.adminId],
-    queryFn: () => getUserQuota(adminInfo?.adminId as number).then((r) => r.data.data),
-    enabled: !!adminInfo?.adminId,
+    queryKey: ['admin-quota', adminIdNum],
+    queryFn: () => getUserQuota(adminIdNum as number).then((r) => r.data.data),
+    enabled: !!adminIdNum,
     staleTime: 30_000, // 30 秒內不重新查
   })
 
@@ -1160,9 +1161,9 @@ export function PlaygroundPage() {
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">目前使用者</p>
                   <p className="text-sm font-medium text-foreground truncate">
-                    {adminInfo.adminNickname ?? `Admin #${adminInfo.adminId}`}
+                    {adminInfo.nickname ?? `Admin #${adminInfo.userId}`}
                   </p>
-                  <p className="text-xs text-muted-foreground">ID: {adminInfo.adminId}</p>
+                  <p className="text-xs text-muted-foreground">ID: {adminInfo.userId}</p>
                 </div>
 
                 {quotaData ? (

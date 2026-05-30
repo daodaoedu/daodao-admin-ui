@@ -53,8 +53,41 @@ export interface EmailHealth {
 export const getEmailHistory = (params?: { limit?: number; offset?: number; status?: string }) =>
   apiClient.get<ApiResponse<EmailHistoryResponse>>('/api/v1/admin/email/history', { params })
 
-export const getEmailStats = () =>
-  apiClient.get<ApiResponse<EmailStats>>('/api/v1/admin/email/stats')
+export const getEmailStats = () => apiClient.get<ApiResponse<EmailStats>>('/api/v1/email/stats')
 
-export const getEmailHealth = () =>
-  apiClient.get<ApiResponse<EmailHealth>>('/api/v1/admin/email/health')
+export const getEmailHealth = () => apiClient.get<ApiResponse<EmailHealth>>('/api/v1/email/health')
+
+export interface SendCustomEmailPayload {
+  to: string
+  subject: string
+  htmlContent: string
+}
+
+export const sendCustomEmail = (data: SendCustomEmailPayload) =>
+  apiClient.post<ApiResponse<{ messageId: string }>>('/api/v1/email/custom', data)
+
+export interface RetryFailedEmailsResult {
+  retried: number
+  failed: number
+}
+
+export const retryFailedEmails = (limit?: number) =>
+  apiClient.post<ApiResponse<RetryFailedEmailsResult>>('/api/v1/email/retry-failed', { limit })
+
+export const retrySingleEmail = (logId: number) =>
+  apiClient.post<ApiResponse<{ retried: boolean }>>(`/api/v1/email/retry/${logId}`)
+
+export interface EmailHistoryParams {
+  status?: string
+  emailType?: string
+  recipient?: string
+  startDate?: string
+  endDate?: string
+  page?: number
+  limit?: number
+  sortBy?: 'sentAt' | 'createdAt'
+  sortOrder?: 'asc' | 'desc'
+}
+
+export const getEmailHistoryFiltered = (params: EmailHistoryParams) =>
+  apiClient.get<ApiResponse<EmailHistoryResponse>>('/api/v1/admin/email/history', { params })
