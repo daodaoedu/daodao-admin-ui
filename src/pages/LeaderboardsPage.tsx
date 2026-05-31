@@ -41,7 +41,9 @@ export function LeaderboardsPage() {
   const { data: configData } = useLeaderboardConfig()
   const { data: leaderboardData } = useLeaderboard(period)
 
-  const defaultWeights = Object.fromEntries(WEIGHT_CONFIG.map((w) => [w.key, w.value])) as unknown as LeaderboardWeightConfig
+  const defaultWeights = Object.fromEntries(
+    WEIGHT_CONFIG.map((w) => [w.key, w.value]),
+  ) as unknown as LeaderboardWeightConfig
   const [weights, setWeights] = useState<LeaderboardWeightConfig>(defaultWeights)
 
   useEffect(() => {
