@@ -1,82 +1,38 @@
 import { Award, CheckCircle, ExternalLink, FileText, Plus, XCircle } from 'lucide-react'
+import type { CertificateTemplate, IssuedCertificate } from '@/api/admin-learning'
+import { Button } from '@/components/ui/button'
+import { useCertificateTemplates, useIssuedCertificates } from '@/hooks/useCertificates'
 import { cn } from '@/lib/utils'
 
-const MOCK_TEMPLATES = [
-  {
-    name: '基礎課程結業證書',
-    criteria: '完成所有課時 + 測驗 >= 70%',
-    issued: 156,
-    color: 'from-primary/20 to-primary/5',
-  },
-  {
-    name: '進階學習認證',
-    criteria: '完成 3 門課程 + 專案',
-    issued: 23,
-    color: 'from-warning/20 to-warning/5',
-  },
-]
-
-const MOCK_ISSUED = [
-  {
-    cert: '基礎課程結業證書',
-    user: '王小明',
-    date: '2024-03-15',
-    link: 'https://cert.daodao.co/v/abc123',
-    status: 'active' as const,
-  },
-  {
-    cert: '基礎課程結業證書',
-    user: '李美華',
-    date: '2024-03-12',
-    link: 'https://cert.daodao.co/v/def456',
-    status: 'active' as const,
-  },
-  {
-    cert: '進階學習認證',
-    user: '張志遠',
-    date: '2024-03-10',
-    link: 'https://cert.daodao.co/v/ghi789',
-    status: 'active' as const,
-  },
-  {
-    cert: '基礎課程結業證書',
-    user: '陳佳琳',
-    date: '2024-02-28',
-    link: 'https://cert.daodao.co/v/jkl012',
-    status: 'revoked' as const,
-  },
-  {
-    cert: '進階學習認證',
-    user: '林大偉',
-    date: '2024-02-20',
-    link: 'https://cert.daodao.co/v/mno345',
-    status: 'active' as const,
-  },
-]
-
 export function CertificatesPage() {
+  const { data: templatesData } = useCertificateTemplates()
+  const { data: issuedData } = useIssuedCertificates()
+  const templates = templatesData ?? ([] as CertificateTemplate[])
+  const issued = issuedData ?? ([] as IssuedCertificate[])
+
   return (
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">證書管理</h1>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          證書管理
+        </h1>
+        <Button type="button">
           <Plus className="h-4 w-4" />
           建立模板
-        </button>
+        </Button>
       </div>
 
       {/* ── Certificate templates ──────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <FileText className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">證書模板</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            證書模板
+          </h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          {MOCK_TEMPLATES.map((tpl) => (
+          {templates.map((tpl) => (
             <div
               key={tpl.name}
               className={cn('rounded-lg border border-border bg-gradient-to-br p-5', tpl.color)}
@@ -94,18 +50,12 @@ export function CertificatesPage() {
                 已發放 <span className="font-medium text-foreground">{tpl.issued}</span> 張
               </p>
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                >
+                <Button type="button" variant="outline" size="sm">
                   編輯
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
+                </Button>
+                <Button type="button" size="sm">
                   發放
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -113,15 +63,17 @@ export function CertificatesPage() {
       </div>
 
       {/* ── Issued certificates ────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <Award className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">已發放證書</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            已發放證書
+          </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">證書</th>
                 <th className="pb-3 pr-4 font-medium">用戶</th>
                 <th className="pb-3 pr-4 font-medium">發放日期</th>
@@ -130,8 +82,11 @@ export function CertificatesPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_ISSUED.map((row) => (
-                <tr key={row.link} className="border-b border-border last:border-0">
+              {issued.map((row) => (
+                <tr
+                  key={row.link}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground">{row.cert}</td>
                   <td className="py-3 pr-4 text-foreground">{row.user}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{row.date}</td>
@@ -140,7 +95,7 @@ export function CertificatesPage() {
                       href={row.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                      className="inline-flex items-center gap-1 text-primary hover:text-primary/80"
                     >
                       <ExternalLink className="h-3 w-3" />
                       驗證

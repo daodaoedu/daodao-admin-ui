@@ -1,109 +1,34 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bot, ShieldAlert, X } from 'lucide-react'
 import { useState } from 'react'
+import type {
+  AutoModFlagQueueItem,
+  AutoModLogItem,
+  AutoModRule,
+  AutoModWordList,
+} from '@/api/admin-trust'
+import {
+  actionAutoModFlagQueue,
+  addAutoModUsernameBlocklist,
+  deleteAutoModUsernameBlocklist,
+  toggleAutoModWordList,
+  updateAutoModCommunityModConfig,
+  updateAutoModRule,
+  updateAutoModSpamDetection,
+} from '@/api/admin-trust'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  useAutoModCommunityModConfig,
+  useAutoModFlagQueue,
+  useAutoModLog,
+  useAutoModRules,
+  useAutoModSpamDetection,
+  useAutoModUsernameBlocklist,
+  useAutoModWordLists,
+} from '@/hooks/useAutoMod'
 import { cn } from '@/lib/utils'
-
-/* ---------- Mock data ---------- */
-
-const initialKeywordRules = [
-  { id: 1, name: '廣告連結', pattern: 'wildcard' as const, action: '刪除' as const, enabled: true },
-  {
-    id: 2,
-    name: '仇恨言論',
-    pattern: 'contains' as const,
-    action: '禁言 30min' as const,
-    enabled: true,
-  },
-  { id: 3, name: '個資外洩', pattern: 'contains' as const, action: '刪除' as const, enabled: true },
-  { id: 4, name: '釣魚網址', pattern: 'exact' as const, action: '刪除' as const, enabled: false },
-  { id: 5, name: '政治敏感', pattern: 'contains' as const, action: '警告' as const, enabled: true },
-]
-
-const initialSensitiveLibs = [
-  { name: '不雅用語', enabled: true },
-  { name: '色情內容', enabled: true },
-  { name: '垃圾訊息', enabled: false },
-]
-
-const auditLog = [
-  {
-    time: '2025-05-27 14:32',
-    summary: '「快來加入 Lin...」',
-    rule: '廣告連結',
-    action: '刪除',
-    user: '匿名123',
-  },
-  {
-    time: '2025-05-27 13:10',
-    summary: '「你這個 XX...」',
-    rule: '不雅用語',
-    action: '警告',
-    user: 'user_456',
-  },
-  {
-    time: '2025-05-27 11:45',
-    summary: '「我的電話是 09...」',
-    rule: '個資外洩',
-    action: '刪除',
-    user: '王小明',
-  },
-  {
-    time: '2025-05-26 22:30',
-    summary: '「免費領取 BTC...」',
-    rule: 'ML 垃圾偵測',
-    action: '刪除',
-    user: 'spammer99',
-  },
-  {
-    time: '2025-05-26 18:05',
-    summary: '「政府的陰謀是...」',
-    rule: '政治敏感',
-    action: '警告',
-    user: '李大偉',
-  },
-  {
-    time: '2025-05-26 15:20',
-    summary: '「http://phish...」',
-    rule: '釣魚網址',
-    action: '刪除',
-    user: '陳怡君',
-  },
-]
-
-const initialReportQueue = [
-  {
-    id: 1,
-    content: '「這個社群真的很爛...」',
-    reporters: 5,
-    priority: '高' as const,
-    reason: '仇恨言論',
-  },
-  {
-    id: 2,
-    content: '「加我 Line 免費送...」',
-    reporters: 3,
-    priority: '中' as const,
-    reason: '垃圾訊息',
-  },
-  {
-    id: 3,
-    content: '「大家不要相信管理...」',
-    reporters: 2,
-    priority: '低' as const,
-    reason: '不實資訊',
-  },
-  {
-    id: 4,
-    content: '「私訊我拿折扣碼...」',
-    reporters: 4,
-    priority: '高' as const,
-    reason: '廣告',
-  },
-]
-
-const initialBlacklist = ['admin', 'moderator', 'official', 'system']
 
 /* ---------- Helpers ---------- */
 
@@ -140,61 +65,120 @@ const priorityBadge = (priority: string) => {
 /* ---------- Component ---------- */
 
 export function AutoModPage() {
-  const [keywordRules, setKeywordRules] = useState(initialKeywordRules)
-  const [sensitiveLibs, setSensitiveLibs] = useState(initialSensitiveLibs)
-  const [mlEnabled, setMlEnabled] = useState(false)
-  const [blacklist, setBlacklist] = useState(initialBlacklist)
+  const queryClient = useQueryClient()
+
+  const { data: rulesData } = useAutoModRules()
+  const { data: wordListsData } = useAutoModWordLists()
+  const { data: logData } = useAutoModLog()
+  const { data: spamData } = useAutoModSpamDetection()
+  const { data: blocklistData } = useAutoModUsernameBlocklist()
+  const { data: flagQueueData } = useAutoModFlagQueue()
+  const { data: communityConfigData } = useAutoModCommunityModConfig()
+
+  const keywordRules: AutoModRule[] = rulesData?.items ?? []
+  const sensitiveLibs: AutoModWordList[] = wordListsData?.items ?? []
+  const auditLogItems: AutoModLogItem[] = logData?.items ?? []
+  const blacklist: string[] = blocklistData?.items ?? []
+  const reportQueue: AutoModFlagQueueItem[] = flagQueueData?.items ?? []
+
+  const [mlEnabled, setMlEnabled] = useState(spamData?.enabled ?? false)
   const [newBlacklistWord, setNewBlacklistWord] = useState('')
-  const [threshold, setThreshold] = useState(3)
-  const [reportQueue, setReportQueue] = useState(initialReportQueue)
+  const [threshold, setThreshold] = useState(communityConfigData?.threshold ?? 3)
+
+  const toggleRuleMutation = useMutation({
+    mutationFn: (rule: { id: number; enabled: boolean }) =>
+      updateAutoModRule(rule.id, { enabled: !rule.enabled }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'automod', 'rules'] }),
+  })
+
+  const toggleLibMutation = useMutation({
+    mutationFn: (id: number) => toggleAutoModWordList(id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'automod', 'word-lists'] }),
+  })
+
+  const addBlocklistMutation = useMutation({
+    mutationFn: (username: string) => addAutoModUsernameBlocklist(username),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'automod', 'username-blocklist'] })
+      setNewBlacklistWord('')
+    },
+  })
+
+  const removeBlocklistMutation = useMutation({
+    mutationFn: (username: string) => deleteAutoModUsernameBlocklist(username),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'automod', 'username-blocklist'] }),
+  })
+
+  const flagActionMutation = useMutation({
+    mutationFn: ({ id, action }: { id: number; action: 'approve' | 'reject' }) =>
+      actionAutoModFlagQueue(id, action),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'automod', 'flag-queue'] }),
+  })
+
+  const spamToggleMutation = useMutation({
+    mutationFn: (enabled: boolean) => updateAutoModSpamDetection({ ...(spamData ?? {}), enabled }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'automod', 'spam-detection'] }),
+  })
+
+  const communityConfigMutation = useMutation({
+    mutationFn: (newThreshold: number) =>
+      updateAutoModCommunityModConfig({ ...(communityConfigData ?? {}), threshold: newThreshold }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'automod', 'community-mod-config'] }),
+  })
 
   const toggleRule = (id: number) => {
-    setKeywordRules((prev) => prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)))
+    const rule = keywordRules.find((r) => r.id === id)
+    if (rule) toggleRuleMutation.mutate({ id, enabled: rule.enabled })
   }
 
-  const toggleLib = (name: string) => {
-    setSensitiveLibs((prev) =>
-      prev.map((l) => (l.name === name ? { ...l, enabled: !l.enabled } : l)),
-    )
+  const toggleLib = (id: number) => {
+    toggleLibMutation.mutate(id)
   }
 
   const addBlacklistWord = () => {
     const word = newBlacklistWord.trim()
     if (word && !blacklist.includes(word)) {
-      setBlacklist((prev) => [...prev, word])
-      setNewBlacklistWord('')
+      addBlocklistMutation.mutate(word)
     }
   }
 
   const removeBlacklistWord = (word: string) => {
-    setBlacklist((prev) => prev.filter((w) => w !== word))
+    removeBlocklistMutation.mutate(word)
   }
 
   const handleReport = (id: number, action: 'approve' | 'reject') => {
-    alert(`${action === 'approve' ? '同意' : '駁回'}檢舉 #${id}`)
-    setReportQueue((prev) => prev.filter((r) => r.id !== id))
+    flagActionMutation.mutate({ id, action })
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="heading-lg">AutoMod 自動審核</h1>
+      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+        AutoMod 自動審核
+      </h1>
 
       {/* Two-column grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left column */}
         <div className="space-y-6">
           {/* Keyword rules */}
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="heading-sm">關鍵字規則</h2>
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                關鍵字規則
+              </h2>
               <Button type="button" size="sm" onClick={() => alert('新增規則')}>
                 新增規則
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted text-muted-foreground">
+                  <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                     {['規則名稱', '模式', '動作', '狀態'].map((h) => (
                       <th key={h} className="px-4 py-3 text-left font-medium">
                         {h}
@@ -206,14 +190,15 @@ export function AutoModPage() {
                   {keywordRules.map((rule) => (
                     <tr
                       key={rule.id}
-                      className="border-b border-border hover:bg-accent transition-colors"
+                      className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
                     >
                       <td className="px-4 py-2 font-medium">{rule.name}</td>
                       <td className="px-4 py-2">{patternBadge(rule.pattern)}</td>
                       <td className="px-4 py-2">{actionBadge(rule.action)}</td>
                       <td className="px-4 py-2">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
                           onClick={() => toggleRule(rule.id)}
                           className={cn(
                             'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
@@ -222,11 +207,11 @@ export function AutoModPage() {
                         >
                           <span
                             className={cn(
-                              'inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform',
+                              'inline-block h-3.5 w-3.5 rounded-full bg-background transition-transform',
                               rule.enabled ? 'translate-x-4' : 'translate-x-1',
                             )}
                           />
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -236,8 +221,10 @@ export function AutoModPage() {
           </div>
 
           {/* Sensitive word libraries */}
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="heading-sm mb-4">預設敏感詞庫</h2>
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+              預設敏感詞庫
+            </h2>
             <div className="space-y-3">
               {sensitiveLibs.map((lib) => (
                 <div key={lib.name} className="flex items-center justify-between">
@@ -246,9 +233,10 @@ export function AutoModPage() {
                     <span className="text-xs text-muted-foreground">
                       {lib.enabled ? '啟用' : '停用'}
                     </span>
-                    <button
+                    <Button
                       type="button"
-                      onClick={() => toggleLib(lib.name)}
+                      variant="ghost"
+                      onClick={() => toggleLib(lib.id)}
                       className={cn(
                         'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
                         lib.enabled ? 'bg-primary' : 'bg-muted',
@@ -256,11 +244,11 @@ export function AutoModPage() {
                     >
                       <span
                         className={cn(
-                          'inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform',
+                          'inline-block h-3.5 w-3.5 rounded-full bg-background transition-transform',
                           lib.enabled ? 'translate-x-4' : 'translate-x-1',
                         )}
                       />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -271,15 +259,22 @@ export function AutoModPage() {
         {/* Right column */}
         <div className="space-y-6">
           {/* ML spam detection */}
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="h-5 w-5 text-muted-foreground" />
-                <h2 className="heading-sm">ML 垃圾偵測</h2>
+                <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                  ML 垃圾偵測
+                </h2>
               </div>
-              <button
+              <Button
                 type="button"
-                onClick={() => setMlEnabled(!mlEnabled)}
+                variant="ghost"
+                onClick={() => {
+                  const next = !mlEnabled
+                  setMlEnabled(next)
+                  spamToggleMutation.mutate(next)
+                }}
                 className={cn(
                   'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
                   mlEnabled ? 'bg-primary' : 'bg-muted',
@@ -287,11 +282,11 @@ export function AutoModPage() {
               >
                 <span
                   className={cn(
-                    'inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform',
+                    'inline-block h-3.5 w-3.5 rounded-full bg-background transition-transform',
                     mlEnabled ? 'translate-x-4' : 'translate-x-1',
                   )}
                 />
-              </button>
+              </Button>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
               使用機器學習模型自動偵測垃圾訊息（實驗功能）
@@ -299,22 +294,26 @@ export function AutoModPage() {
           </div>
 
           {/* Username blacklist */}
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="heading-sm mb-4">用戶名黑名單</h2>
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+              用戶名黑名單
+            </h2>
             <div className="mb-3 flex flex-wrap gap-2">
               {blacklist.map((word) => (
                 <span
                   key={word}
-                  className="inline-flex items-center gap-1 rounded bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
+                  className="inline-flex items-center gap-1 rounded bg-destructive/15 px-2 py-1 text-xs font-medium text-destructive"
                 >
                   {word}
-                  <button
+                  <Button
                     type="button"
                     onClick={() => removeBlacklistWord(word)}
-                    className="text-red-400 hover:text-red-700"
+                    variant="ghost"
+                    size="xs"
+                    className="h-5 w-5 p-0 text-destructive hover:text-destructive"
                   >
                     <X className="h-3 w-3" />
-                  </button>
+                  </Button>
                 </span>
               ))}
             </div>
@@ -334,10 +333,12 @@ export function AutoModPage() {
           </div>
 
           {/* Community self-governance */}
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
             <div className="flex items-center gap-2 mb-3">
               <ShieldAlert className="h-5 w-5 text-muted-foreground" />
-              <h2 className="heading-sm">社群自治設定</h2>
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                社群自治設定
+              </h2>
             </div>
             <div className="space-y-2">
               <label htmlFor="threshold" className="block text-sm font-medium">
@@ -349,7 +350,11 @@ export function AutoModPage() {
                 min={1}
                 max={20}
                 value={threshold}
-                onChange={(e) => setThreshold(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value)
+                  setThreshold(val)
+                  communityConfigMutation.mutate(val)
+                }}
                 className="w-24"
               />
               <p className="text-xs text-muted-foreground">
@@ -361,12 +366,14 @@ export function AutoModPage() {
       </div>
 
       {/* Audit log - full width */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="heading-sm mb-4">審核動作紀錄</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          審核動作紀錄
+        </h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-muted-foreground">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['時間', '內容摘要', '觸發規則', '執行動作', '用戶'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -375,10 +382,10 @@ export function AutoModPage() {
               </tr>
             </thead>
             <tbody>
-              {auditLog.map((row) => (
+              {auditLogItems.map((row) => (
                 <tr
                   key={`${row.time}-${row.user}`}
-                  className="border-b border-border hover:bg-accent transition-colors"
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
                 >
                   <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
                     {row.time}
@@ -397,12 +404,14 @@ export function AutoModPage() {
       </div>
 
       {/* Report queue - full width */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="heading-sm mb-4">檢舉佇列</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          檢舉佇列
+        </h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted text-muted-foreground">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['內容', '檢舉人數', '優先度', '檢舉原因', '操作'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -421,7 +430,7 @@ export function AutoModPage() {
                 reportQueue.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-b border-border hover:bg-accent transition-colors"
+                    className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
                   >
                     <td className="px-4 py-2 max-w-[200px] truncate">{row.content}</td>
                     <td className="px-4 py-2 font-medium">{row.reporters}</td>

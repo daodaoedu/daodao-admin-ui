@@ -1,12 +1,16 @@
 import apiClient, { slowApiClient } from './client'
 import type {
   AdminPingData,
+  AdminRoadmapItem,
   AdminUserListItem,
+  AdminWishItem,
   AIQueryLog,
   AIServiceConfig,
   AIServiceConfigCreate,
   AIServiceConfigUpdate,
   ApiResponse,
+  AuthMeData,
+  CursorResponse,
   DashboardStats,
   InsightPractice,
   InsightUser,
@@ -20,6 +24,8 @@ import type {
   PlaygroundInsightRequest,
   PlaygroundInsightResponse,
   QueryLogFilters,
+  RoadmapReport,
+  RoadmapStatus,
   Role,
   RoleWithPermissions,
   SystemPrompt,
@@ -28,10 +34,21 @@ import type {
   UserQuota,
   UserRoleInfo,
   UserWithQuota,
+  WishCategory,
+  WishStatus,
 } from './types'
 
-// ── Auth ──────────────────────────────────────────────────
+// ── Auth (admin-backend) ─────────────────────────────────
 export const ping = () => apiClient.get<ApiResponse<AdminPingData>>('/api/v1/admin/ping')
+
+// ── Auth (daodao-server) ─────────────────────────────────
+export const getAuthMe = () =>
+  apiClient.get<ApiResponse<AuthMeData>>('/daodao-server/api/v1/auth/me')
+
+export const authLogout = () => apiClient.post('/daodao-server/api/v1/auth/logout')
+
+export const authRefresh = () =>
+  apiClient.post<ApiResponse<{ token: string }>>('/daodao-server/api/v1/auth/refresh')
 
 // ── Dashboard ─────────────────────────────────────────────
 export const getDashboardStats = (dateFrom?: string, dateTo?: string) =>
@@ -198,7 +215,19 @@ export const deletePermission = (id: number) =>
   )
 
 // ── User Management (daodao-server) ──────────────────────
-export const listAdminUsers = (params?: { search?: string; page?: number; limit?: number }) =>
+export const listAdminUsers = (params?: {
+  search?: string
+  page?: number
+  limit?: number
+  roleId?: number
+  isActive?: boolean
+  isVerified?: boolean
+  personaType?: 'L' | 'C' | 'A' | 'D' | 'O'
+  badgeGranted?: boolean
+  userSource?: 'S1' | 'S2' | 'S3'
+  sortBy?: 'createdAt' | 'lastLoginAt' | 'name' | 'email'
+  sortOrder?: 'asc' | 'desc'
+}) =>
   apiClient.get<ApiResponse<AdminUserListItem[]>>('/daodao-server/api/v1/admin/users', { params })
 
 export const getUserRole = (userId: number) =>
@@ -215,3 +244,85 @@ export const updateUserStatus = (userId: number, isActive: boolean) =>
     `/daodao-server/api/v1/admin/users/${userId}/status`,
     { isActive },
   )
+
+// ── Wishpool / Roadmap (daodao-server) ───────────────────
+export const listWishes = (params?: {
+  status?: WishStatus
+  category?: WishCategory
+  q?: string
+  cursor?: string
+  limit?: number
+}) => apiClient.get<CursorResponse<AdminWishItem>>('/daodao-server/api/v1/admin/wishes', { params })
+
+export const linkWish = (
+  id: number,
+  data: { roadmap_item_id: number; internal_module_tag?: string },
+) =>
+  apiClient.post<ApiResponse<{ id: number; linked_roadmap_item_id: number }>>(
+    `/daodao-server/api/v1/admin/wishes/${id}/link`,
+    data,
+  )
+
+export const promoteWish = (
+  id: number,
+  data: {
+    title: string
+    description: string
+    category: WishCategory
+    status?: RoadmapStatus
+    internal_module_tag?: string
+  },
+) =>
+  apiClient.post<ApiResponse<{ id: number; linked_roadmap_item_id: number; external_id: string }>>(
+    `/daodao-server/api/v1/admin/wishes/${id}/promote`,
+    data,
+  )
+
+export const archiveWish = (id: number) =>
+  apiClient.post<ApiResponse<{ id: number }>>(`/daodao-server/api/v1/admin/wishes/${id}/archive`)
+
+export const listRoadmapItems = (params?: {
+  status?: RoadmapStatus
+  category?: WishCategory
+  cursor?: string
+  limit?: number
+}) =>
+  apiClient.get<CursorResponse<AdminRoadmapItem>>('/daodao-server/api/v1/admin/roadmap/items', {
+    params,
+  })
+
+export const createRoadmapItem = (data: {
+  title: string
+  description: string
+  category: WishCategory
+  status?: RoadmapStatus
+  is_public?: boolean
+  pinned?: boolean
+  sort_order?: number
+}) =>
+  apiClient.post<ApiResponse<AdminRoadmapItem>>('/daodao-server/api/v1/admin/roadmap/items', data)
+
+export const updateRoadmapItem = (
+  id: number,
+  data: Partial<{
+    title: string
+    description: string
+    category: WishCategory
+    status: RoadmapStatus
+    is_public: boolean
+    pinned: boolean
+    sort_order: number
+  }>,
+) =>
+  apiClient.patch<ApiResponse<AdminRoadmapItem>>(
+    `/daodao-server/api/v1/admin/roadmap/items/${id}`,
+    data,
+  )
+
+export const getRoadmapReport = (params?: {
+  range?: 'week' | 'month' | 'quarter' | 'year'
+  status?: RoadmapStatus
+}) =>
+  apiClient.get<ApiResponse<RoadmapReport>>('/daodao-server/api/v1/admin/roadmap/reports', {
+    params,
+  })

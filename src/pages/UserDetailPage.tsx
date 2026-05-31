@@ -1,45 +1,43 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
+  BookOpen,
   Brain,
   ChevronDown,
   Clock,
-  DollarSign,
   FileText,
-  Hash,
+  Heart,
   Loader2,
   LogIn,
   MapPin,
   Monitor,
-  Search,
   Shield,
+  Star,
   UserCheck,
-  Zap,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { updateAdminUserStatus } from '@/api/admin-users'
+import { getUserOnboardingDetail, getUserPersonaProfile } from '@/api/admin-community'
+import { getUserPractices, updateAdminUserStatus, updatePracticeStatus } from '@/api/admin-users'
+import type {
+  AdminActivityStats,
+  AdminLoginHistoryItem,
+  LearningStyleType,
+  OnboardingEmailType,
+  PracticeEntity,
+  PracticeStatus,
+} from '@/api/types'
 import { StatCard } from '@/components/StatCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/select'
 import {
+  useActivityTimeline,
   useAdminActivityStats,
   useAdminLoginHistory,
   useAdminUserDetail,
 } from '@/hooks/useAdminUserDetail'
 import { cn } from '@/lib/utils'
-
-// ── Mock Data ──────────────────────────────────────────────
-
-const mockUser = {
-  id: 1,
-  name: '王小明',
-  email: 'test@example.com',
-  avatar: null,
-  registeredAt: '2024-01-15',
-  lastLoginAt: '2024-06-01 14:30',
-  status: 'active' as const,
-  role: 'member',
-}
 
 type EventType = '登入' | '打卡' | '發文' | 'AI 查詢' | '角色變更'
 
@@ -51,94 +49,58 @@ interface TimelineEvent {
 }
 
 const eventTypeConfig: Record<EventType, { color: string; icon: typeof LogIn }> = {
-  登入: { color: 'border-blue-400', icon: LogIn },
-  打卡: { color: 'border-green-400', icon: MapPin },
-  發文: { color: 'border-purple-400', icon: FileText },
-  'AI 查詢': { color: 'border-amber-400', icon: Brain },
-  角色變更: { color: 'border-red-400', icon: Shield },
+  登入: { color: 'border-info', icon: LogIn },
+  打卡: { color: 'border-success', icon: MapPin },
+  發文: { color: 'border-info', icon: FileText },
+  'AI 查詢': { color: 'border-warning', icon: Brain },
+  角色變更: { color: 'border-destructive', icon: Shield },
 }
 
-const mockEvents: TimelineEvent[] = [
-  { id: 1, type: '登入', description: '從 Chrome 瀏覽器登入', timestamp: '2024-06-01 14:30' },
-  {
-    id: 2,
-    type: 'AI 查詢',
-    description: '查詢「如何提升團隊效率」',
-    timestamp: '2024-06-01 13:15',
-  },
-  { id: 3, type: '發文', description: '在「產品討論」發布新文章', timestamp: '2024-05-31 16:42' },
-  { id: 4, type: '打卡', description: '完成每日打卡任務', timestamp: '2024-05-31 09:00' },
-  { id: 5, type: 'AI 查詢', description: '查詢「React 最佳實踐」', timestamp: '2024-05-30 11:20' },
-  { id: 6, type: '登入', description: '從 Safari 瀏覽器登入', timestamp: '2024-05-30 10:05' },
-  {
-    id: 7,
-    type: '角色變更',
-    description: '角色從 viewer 變更為 member',
-    timestamp: '2024-05-28 15:30',
-  },
-  { id: 8, type: '發文', description: '在「技術分享」發布新文章', timestamp: '2024-05-27 14:10' },
-  { id: 9, type: '打卡', description: '完成每日打卡任務', timestamp: '2024-05-27 08:55' },
-  {
-    id: 10,
-    type: 'AI 查詢',
-    description: '查詢「專案管理工具比較」',
-    timestamp: '2024-05-26 17:00',
-  },
-]
-
-const mockLoginHistory = [
-  { id: 1, time: '2024-06-01 14:30', ip: '203.204.15.62', device: 'Chrome 125 / macOS' },
-  { id: 2, time: '2024-05-30 10:05', ip: '203.204.15.62', device: 'Safari 17 / macOS' },
-  { id: 3, time: '2024-05-25 09:12', ip: '118.163.42.88', device: 'Chrome 125 / Windows' },
-  { id: 4, time: '2024-05-20 16:48', ip: '203.204.15.62', device: 'Chrome Mobile / iOS' },
-  { id: 5, time: '2024-05-15 11:33', ip: '61.220.18.201', device: 'Firefox 126 / Linux' },
-]
-
-const allPermissions = [
-  '瀏覽社群內容',
-  '發布文章與留言',
-  '使用 AI 助手',
-  '參加活動',
-  '每日打卡',
-  '查看排行榜',
-]
-
-const roleOptions = ['viewer', 'member', 'moderator', 'admin']
-
-// ── Components ─────────────────────────────────────────────
-
-const tabs = ['活動時間軸', 'AI 用量', '登入歷史', '角色管理'] as const
+const tabs = [
+  '活動時間軸',
+  '活動統計',
+  '登入歷史',
+  '角色管理',
+  '實踐',
+  '人物誌',
+  'Onboarding',
+] as const
 type Tab = (typeof tabs)[number]
 
-const eventFilterOptions: ('全部' | EventType)[] = ['全部', '登入', '打卡', '發文', 'AI 查詢']
+const TIMELINE_TYPE_MAP: Record<string, EventType> = {
+  login: '登入',
+  checkin: '打卡',
+  post: '發文',
+}
 
-function ActivityTimeline() {
+const eventFilterOptions: ('全部' | EventType)[] = ['全部', '登入', '打卡', '發文']
+
+function ActivityTimeline({ events }: { events: TimelineEvent[] }) {
   const [filter, setFilter] = useState<'全部' | EventType>('全部')
 
-  const filtered = filter === '全部' ? mockEvents : mockEvents.filter((e) => e.type === filter)
+  const filtered = filter === '全部' ? events : events.filter((e) => e.type === filter)
 
   return (
     <div className="space-y-4">
-      {/* Filter buttons */}
       <div className="flex flex-wrap gap-2">
         {eventFilterOptions.map((opt) => (
-          <button
+          <Button
             type="button"
             key={opt}
+            variant="outline"
+            size="sm"
             onClick={() => setFilter(opt)}
             className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
               filter === opt
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-accent',
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-muted text-muted-foreground hover:bg-accent',
             )}
           >
             {opt}
-          </button>
+          </Button>
         ))}
       </div>
 
-      {/* Timeline */}
       <div className="space-y-3">
         {filtered.map((event) => {
           const config = eventTypeConfig[event.type]
@@ -146,7 +108,10 @@ function ActivityTimeline() {
           return (
             <div
               key={event.id}
-              className={cn('rounded-lg border-l-4 bg-card p-4 shadow-sm', config.color)}
+              className={cn(
+                'rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm border-l-4',
+                config.color,
+              )}
             >
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 rounded-md bg-muted p-1.5">
@@ -174,13 +139,15 @@ function ActivityTimeline() {
   )
 }
 
-function AIUsageTab() {
+function ActivityStatsTab({ stats }: { stats: AdminActivityStats | undefined }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard title="總查詢" value={156} icon={Search} change={12.5} changeLabel="較上月" />
-      <StatCard title="總 Token" value="234,567" icon={Hash} change={8.3} changeLabel="較上月" />
-      <StatCard title="總費用" value="$1.23" icon={DollarSign} change={-3.2} changeLabel="較上月" />
-      <StatCard title="常用模型" value="Claude 3.5" icon={Zap} />
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StatCard title="總實踐數" value={stats?.totalPractices ?? 0} icon={BookOpen} />
+      <StatCard title="總打卡數" value={stats?.totalCheckins ?? 0} icon={MapPin} />
+      <StatCard title="總發文數" value={stats?.totalPosts ?? 0} icon={FileText} />
+      <StatCard title="總反應數" value={stats?.totalReactions ?? 0} icon={Heart} />
+      <StatCard title="總登入次數" value={stats?.loginCount ?? 0} icon={LogIn} />
+      <StatCard title="近30天登入" value={stats?.recentLoginCount ?? 0} icon={Clock} />
     </div>
   )
 }
@@ -191,10 +158,10 @@ function LoginHistoryTab({
   rows: { id: number; time: string; ip: string; device: string }[]
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+      <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b border-border bg-muted/50">
+          <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">時間</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">IP</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">裝置 / 瀏覽器</th>
@@ -202,7 +169,10 @@ function LoginHistoryTab({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id} className="border-b border-border last:border-b-0">
+            <tr
+              key={row.id}
+              className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+            >
               <td className="whitespace-nowrap px-4 py-3 text-foreground">{row.time}</td>
               <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">
                 {row.ip}
@@ -221,15 +191,24 @@ function LoginHistoryTab({
   )
 }
 
-function RoleManagementTab() {
-  const [selectedRole, setSelectedRole] = useState(mockUser.role)
+function RoleManagementTab({
+  defaultRole,
+  permissions,
+}: {
+  defaultRole: string
+  permissions: string[]
+}) {
+  const [selectedRole, setSelectedRole] = useState(defaultRole)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+
+  const roleOptions = ['viewer', 'member', 'moderator', 'admin']
 
   return (
     <div className="space-y-6">
-      {/* Current role */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="heading-sm mb-4">目前角色</h3>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h3 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          目前角色
+        </h3>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <UserCheck className="h-5 w-5 text-primary" />
@@ -237,35 +216,37 @@ function RoleManagementTab() {
           </div>
         </div>
 
-        {/* Role selector */}
         <div className="mt-4">
           <span className="mb-1.5 block text-sm text-muted-foreground">變更角色</span>
           <div className="relative inline-block">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm text-foreground hover:bg-accent"
+              className="inline-flex h-9 items-center gap-2"
             >
               {selectedRole}
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </button>
+            </Button>
             {dropdownOpen && (
-              <div className="absolute left-0 z-10 mt-1 w-40 rounded-md border border-border bg-card py-1 shadow-lg">
+              <div className="absolute left-0 z-10 mt-1 w-40 rounded-md border border-border bg-card/90 py-1 shadow-lg">
                 {roleOptions.map((role) => (
-                  <button
+                  <Button
                     type="button"
                     key={role}
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setSelectedRole(role)
                       setDropdownOpen(false)
                     }}
                     className={cn(
-                      'block w-full px-4 py-2 text-left text-sm hover:bg-accent',
+                      'mt-0 block w-full justify-start rounded-none px-4 text-left',
                       role === selectedRole ? 'font-medium text-primary' : 'text-foreground',
                     )}
                   >
                     {role}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -273,23 +254,563 @@ function RoleManagementTab() {
         </div>
       </div>
 
-      {/* Permissions list */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="heading-sm mb-4">權限列表</h3>
-        <ul className="space-y-2">
-          {allPermissions.map((perm) => (
-            <li key={perm} className="flex items-center gap-2 text-sm text-foreground">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-              {perm}
-            </li>
-          ))}
-        </ul>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h3 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          權限列表
+        </h3>
+        {permissions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">尚無可顯示權限</p>
+        ) : (
+          <ul className="space-y-2">
+            {permissions.map((perm) => (
+              <li key={perm} className="flex items-center gap-2 text-sm text-foreground">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                {perm}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )
 }
 
-// ── Main Page ──────────────────────────────────────────────
+// ─── Practices Tab ────────────────────────────────────────────────────────────
+
+const DORMANT_DAYS = 14
+
+function relativeTime(dateStr?: string): string {
+  if (!dateStr) return '從未'
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
+  if (days === 0) return '今天'
+  if (days === 1) return '昨天'
+  if (days < 7) return `${days} 天前`
+  if (days < 30) return `${Math.floor(days / 7)} 週前`
+  return `${Math.floor(days / 30)} 個月前`
+}
+
+type EngagementLabel = '停滯中' | '從未打卡' | '高互動' | '已完成'
+type Segment = '全部' | EngagementLabel
+
+function getEngagementLabels(p: PracticeEntity): EngagementLabel[] {
+  const labels: EngagementLabel[] = []
+  if (p.checkInCount === 0) labels.push('從未打卡')
+  if (p.status === 'active') {
+    const noCheckin = !p.lastCheckinAt
+    const dormant =
+      p.lastCheckinAt &&
+      Math.floor((Date.now() - new Date(p.lastCheckinAt).getTime()) / 86400000) > DORMANT_DAYS
+    if (noCheckin || dormant) labels.push('停滯中')
+  }
+  if (p.stats.likeCount + p.stats.favoriteCount >= 5 || p.checkInCount >= 15) {
+    labels.push('高互動')
+  }
+  if (p.status === 'completed') labels.push('已完成')
+  return labels
+}
+
+const SEGMENTS: Segment[] = ['全部', '停滯中', '從未打卡', '高互動', '已完成']
+
+function PracticesTab({ userId }: { userId: string }) {
+  const [segment, setSegment] = useState<Segment>('全部')
+  const queryClient = useQueryClient()
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'user-practices', userId],
+    queryFn: () =>
+      getUserPractices(userId, { limit: 50, sort: 'updatedAt', order: 'desc' }).then(
+        (r) => r.data.data,
+      ),
+  })
+
+  const { mutate: changeStatus } = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: PracticeStatus }) =>
+      updatePracticeStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user-practices', userId] })
+    },
+  })
+
+  const practices = data ?? []
+  const labeled = practices.map((p) => ({ p, labels: getEngagementLabels(p) }))
+
+  const counts = SEGMENTS.reduce(
+    (acc, seg) => {
+      acc[seg] =
+        seg === '全部' ? practices.length : labeled.filter((lp) => lp.labels.includes(seg)).length
+      return acc
+    },
+    {} as Record<Segment, number>,
+  )
+
+  const filtered =
+    segment === '全部' ? labeled : labeled.filter((lp) => lp.labels.includes(segment))
+
+  if (isLoading) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">載入中...</p>
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Segment pills */}
+      <div className="flex flex-wrap gap-2">
+        {SEGMENTS.map((seg) => (
+          <button
+            type="button"
+            key={seg}
+            onClick={() => setSegment(seg)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              segment === seg
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground',
+            )}
+          >
+            {seg}
+            <span
+              className={cn(
+                'inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px]',
+                segment === seg ? 'bg-white/20 text-primary-foreground' : 'bg-muted',
+              )}
+            >
+              {counts[seg]}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Practice rows */}
+      <div className="space-y-2">
+        {filtered.map(({ p, labels }) => {
+          const dormantDays =
+            p.status === 'active' && p.lastCheckinAt && p.checkInCount > 0
+              ? Math.floor((Date.now() - new Date(p.lastCheckinAt).getTime()) / 86400000)
+              : null
+
+          return (
+            <div
+              key={p.id}
+              className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 px-4 py-3.5 shadow-sm"
+            >
+              {/* Title + signals + status select */}
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-sm font-medium text-foreground">{p.title}</span>
+                    {dormantDays !== null && dormantDays > DORMANT_DAYS && (
+                      <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
+                        停滯 {dormantDays} 天
+                      </span>
+                    )}
+                    {labels.includes('從未打卡') && (
+                      <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                        從未打卡
+                      </span>
+                    )}
+                    {labels.includes('高互動') && (
+                      <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
+                        高互動
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Select
+                  value={p.status}
+                  onValueChange={(v) => changeStatus({ id: p.id, status: v as PracticeStatus })}
+                  options={[
+                    { value: 'draft', label: '草稿' },
+                    { value: 'not_started', label: '尚未開始' },
+                    { value: 'active', label: '活躍' },
+                    { value: 'completed', label: '已完成' },
+                    { value: 'archived', label: '已封存' },
+                  ]}
+                  triggerClassName="h-7 w-auto shrink-0 min-w-[88px] px-2 text-xs"
+                />
+              </div>
+
+              {/* Progress bar */}
+              {p.progressPercentage !== undefined && (
+                <div className="mt-2.5">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground">完成進度</span>
+                    <span className="text-[10px] font-semibold text-primary">
+                      {Math.round(p.progressPercentage)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${Math.min(100, p.progressPercentage)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Stats row */}
+              <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <BookOpen className="h-3 w-3" />
+                  {p.checkInCount} 次打卡
+                </span>
+                <span className="flex items-center gap-1">
+                  <Heart className="h-3 w-3" />
+                  {p.stats.likeCount}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Star className="h-3 w-3" />
+                  {p.stats.favoriteCount}
+                </span>
+                <span className="ml-auto">最後打卡 {relativeTime(p.lastCheckinAt)}</span>
+              </div>
+            </div>
+          )
+        })}
+        {filtered.length === 0 && (
+          <p className="py-8 text-center text-sm text-muted-foreground">此分類沒有實踐</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Persona Tab ─────────────────────────────────────────────────────────────
+
+const QUESTION_TYPE_LABEL: Record<string, string> = {
+  choice: '選擇題',
+  sentence_completion: '句子完成',
+  scenario: '情境題',
+}
+
+function PersonaTab({ userUuid }: { userUuid: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'user-persona', userUuid],
+    queryFn: () => getUserPersonaProfile(userUuid).then((r) => r.data.data),
+    enabled: !!userUuid,
+  })
+
+  if (isLoading) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">載入中...</p>
+  }
+
+  if (!data) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">尚無人物誌資料</p>
+  }
+
+  const answered = data.questions.filter((q) => !q.isPlaceholder)
+  const unanswered = data.questions.filter((q) => q.isPlaceholder)
+
+  return (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="flex gap-4">
+        <div className="rounded-lg bg-muted/50 px-4 py-3 text-center">
+          <p className="text-xl font-bold text-foreground">{answered.length}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">已填寫</p>
+        </div>
+        <div className="rounded-lg bg-muted/50 px-4 py-3 text-center">
+          <p className="text-xl font-bold text-foreground">{unanswered.length}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">未填寫</p>
+        </div>
+      </div>
+
+      {answered.length === 0 && (
+        <p className="py-4 text-sm text-muted-foreground">此用戶尚未填寫任何人物誌問題</p>
+      )}
+
+      {/* Answered questions */}
+      <div className="space-y-3">
+        {answered.map((q) => (
+          <div
+            key={q.id}
+            className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-4 shadow-sm"
+          >
+            <div className="mb-2 flex items-start justify-between gap-3">
+              <p className="text-sm font-medium text-foreground">{q.prompt}</p>
+              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                {QUESTION_TYPE_LABEL[q.questionType] ?? q.questionType}
+              </span>
+            </div>
+            {q.answer && (
+              <div className="space-y-1.5">
+                <p className="rounded-md bg-primary/8 px-3 py-2 text-sm text-foreground">
+                  {q.answer.selectedValue ?? q.answer.textAnswer ?? '-'}
+                </p>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>共鳴 {q.answer.resonanceCount}</span>
+                  <span>{q.answer.createdAt.slice(0, 10)}</span>
+                  {q.isNewUserPriority && (
+                    <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] text-warning">
+                      新用戶優先題
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Unanswered questions */}
+      {unanswered.length > 0 && (
+        <details className="group">
+          <summary className="cursor-pointer select-none text-sm text-muted-foreground hover:text-foreground">
+            未填寫的題目（{unanswered.length} 題）
+          </summary>
+          <div className="mt-3 space-y-2">
+            {unanswered.map((q) => (
+              <div
+                key={q.id}
+                className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm text-muted-foreground">{q.prompt}</p>
+                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                    {QUESTION_TYPE_LABEL[q.questionType] ?? q.questionType}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  )
+}
+
+// ─── Onboarding Tab ──────────────────────────────────────────────────────────
+
+const LEARNING_STYLE_LABEL: Record<LearningStyleType, string> = {
+  D: '探究者（探探島）',
+  A: '行動者（動動島）',
+  O: '結構者（構構島）',
+  L: '流動者（跨跨島）',
+  C: '連結者（連連島）',
+}
+
+const EMAIL_TYPE_LABEL: Record<OnboardingEmailType, string> = {
+  L0: 'L0 歡迎信',
+  A: 'A 任務A',
+  B: 'B 任務B',
+  C: 'C 任務C',
+  D: 'D 任務D',
+  E: 'E 任務E',
+}
+
+const REGISTRATION_FLOW_LABEL: Record<string, string> = {
+  landing_page: 'Landing Page',
+  quiz: '測驗',
+  action_maker: 'Action Maker',
+}
+
+const CREATION_METHOD_LABEL: Record<string, string> = {
+  self_created: '自建',
+  copied: '複製',
+  action_generator: '產生器',
+}
+
+const EMAIL_STATUS_LABEL: Record<string, string> = {
+  sent: '已寄送',
+  failed: '寄送失敗',
+  not_sent: '未寄送',
+}
+
+const EMAIL_STATUS_COLOR: Record<string, string> = {
+  sent: 'text-success',
+  failed: 'text-destructive',
+  not_sent: 'text-muted-foreground',
+}
+
+function OnboardingTab({ userId }: { userId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'user-onboarding', userId],
+    queryFn: () => getUserOnboardingDetail(userId).then((r) => r.data.data),
+    enabled: !!userId,
+  })
+
+  if (isLoading) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">載入中...</p>
+  }
+
+  if (!data) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">尚無 Onboarding 資料</p>
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Onboarding Overview */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">
+          Onboarding 概況
+        </h3>
+        <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+          <InfoRow
+            label="註冊來源"
+            value={
+              data.registrationFlow
+                ? (REGISTRATION_FLOW_LABEL[data.registrationFlow] ?? data.registrationFlow)
+                : '未知'
+            }
+          />
+          <InfoRow label="任務排序" value={data.userSource ?? '-'} />
+          <InfoRow
+            label="實踐建立方式"
+            value={
+              data.creationMethod
+                ? (CREATION_METHOD_LABEL[data.creationMethod] ?? data.creationMethod)
+                : '-'
+            }
+          />
+          <InfoRow
+            label="Badge 獲得"
+            value={
+              data.badgeGranted ? (
+                <span className="font-medium text-success">已獲得</span>
+              ) : (
+                <span className="text-muted-foreground">未獲得</span>
+              )
+            }
+          />
+          {data.daysToComplete !== null && (
+            <InfoRow label="完成天數" value={`${data.daysToComplete} 天`} />
+          )}
+          {data.completedAt && <InfoRow label="完成時間" value={data.completedAt.slice(0, 10)} />}
+        </div>
+
+        <div className="mt-4">
+          <p className="mb-2 text-sm text-muted-foreground">任務狀態</p>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(data.taskStates).map(([key, state]) => (
+              <span
+                key={key}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                  state === 'done'
+                    ? 'bg-success/15 text-success'
+                    : 'bg-muted text-muted-foreground',
+                )}
+              >
+                Task {key}：{state === 'done' ? '完成' : '未完成'}
+                {data.taskCompletedAt[key] && ` (${data.taskCompletedAt[key].slice(0, 10)})`}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Learning Style */}
+      {data.learningStyle && (
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">
+            學習風格測驗
+          </h3>
+          {data.learningStyle.resultType ? (
+            <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+              <InfoRow
+                label="測驗結果"
+                value={`${data.learningStyle.resultType} ${LEARNING_STYLE_LABEL[data.learningStyle.resultType]}`}
+              />
+              <InfoRow label="測驗次數" value={`${data.learningStyle.attemptCount} 次`} />
+              {data.learningStyle.completedAt && (
+                <InfoRow label="最近測驗時間" value={data.learningStyle.completedAt.slice(0, 10)} />
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">尚未完成測驗</p>
+          )}
+        </div>
+      )}
+
+      {/* Persona */}
+      {data.persona && (
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">
+            學習人物誌
+          </h3>
+          <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+            <InfoRow label="填寫題數" value={`${data.persona.answerCount} 題`} />
+            <InfoRow
+              label="解鎖狀態"
+              value={
+                data.persona.isUnlocked ? (
+                  <span className="font-medium text-success">已解鎖（≥5 題）</span>
+                ) : (
+                  <span className="text-muted-foreground">未解鎖</span>
+                )
+              }
+            />
+            {data.persona.lastAnsweredAt && (
+              <InfoRow label="最後填寫時間" value={data.persona.lastAnsweredAt.slice(0, 10)} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Email Sequence */}
+      {data.emailSequence.length > 0 && (
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">
+            Email 序列
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                  <th className="pb-2 pr-4 font-medium">信件</th>
+                  <th className="pb-2 pr-4 font-medium">狀態</th>
+                  <th className="pb-2 pr-4 font-medium">寄送時間</th>
+                  <th className="pb-2 pr-4 font-medium">開信時間</th>
+                  <th className="pb-2 font-medium">開信次數</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.emailSequence.map((email) => (
+                  <tr key={email.emailType} className="border-b border-border/50 last:border-0">
+                    <td className="py-2 pr-4 font-medium text-foreground">
+                      {EMAIL_TYPE_LABEL[email.emailType] ?? email.emailType}
+                    </td>
+                    <td className={cn('py-2 pr-4', EMAIL_STATUS_COLOR[email.status] ?? '')}>
+                      {EMAIL_STATUS_LABEL[email.status] ?? email.status}
+                    </td>
+                    <td className="py-2 pr-4 text-muted-foreground">
+                      {email.sentAt ? email.sentAt.slice(0, 10) : '-'}
+                    </td>
+                    <td className="py-2 pr-4 text-muted-foreground">
+                      {email.openedAt ? email.openedAt.slice(0, 10) : '-'}
+                    </td>
+                    <td className="py-2 text-muted-foreground">{email.openCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Engagement */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">參與度</h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: '實踐總數', value: data.engagement.practiceCount },
+            { label: '活躍實踐數', value: data.engagement.activePracticeCount },
+            { label: '最長打卡 streak', value: `${data.engagement.maxCheckinStreak} 天` },
+            {
+              label: '最後活躍時間',
+              value: data.engagement.lastActiveAt ? data.engagement.lastActiveAt.slice(0, 10) : '-',
+            },
+          ].map(({ label, value }) => (
+            <div key={label} className="rounded-lg bg-muted/50 p-3 text-center">
+              <p className="text-xl font-bold text-foreground">{value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function UserDetailPage() {
   const { userId } = useParams<{ userId: string }>()
@@ -298,7 +819,8 @@ export function UserDetailPage() {
 
   const userDetail = useAdminUserDetail(userId ?? '')
   const loginHistory = useAdminLoginHistory(userId ?? '')
-  const _activityStats = useAdminActivityStats(userId ?? '')
+  const activityStats = useAdminActivityStats(userId ?? '')
+  const activityTimeline = useActivityTimeline(userId ?? '')
 
   const user = userDetail.data
     ? {
@@ -310,17 +832,24 @@ export function UserDetailPage() {
         lastLoginAt: userDetail.data.lastLoginAt ?? '-',
         status: userDetail.data.isActive ? ('active' as const) : ('inactive' as const),
         role: userDetail.data.roles[0]?.name ?? '-',
+        permissions: userDetail.data.permissions,
       }
-    : mockUser
+    : null
 
-  const loginHistoryRows = loginHistory.data
-    ? loginHistory.data.map((item, idx) => ({
-        id: item.id ?? idx,
-        time: item.loginAt,
-        ip: item.ipAddress ?? '-',
-        device: item.userAgent ?? '-',
-      }))
-    : mockLoginHistory
+  const loginHistoryRows = (loginHistory.data ?? []).map(
+    (item: AdminLoginHistoryItem, idx: number) => ({
+      id: item.id ?? idx,
+      time: item.loginAt,
+      ip: item.ipAddress ?? '-',
+      device: item.userAgent ?? '-',
+    }),
+  )
+  const timelineEvents: TimelineEvent[] = (activityTimeline.data ?? []).map((event, idx) => ({
+    id: idx,
+    type: TIMELINE_TYPE_MAP[event.type] ?? '登入',
+    description: event.description,
+    timestamp: event.timestamp,
+  }))
 
   const isLoading = userDetail.isLoading
 
@@ -335,8 +864,6 @@ export function UserDetailPage() {
     }
   }
 
-  const initials = user.name.slice(-2)
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -345,9 +872,18 @@ export function UserDetailPage() {
     )
   }
 
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+        找不到該用戶資料
+      </div>
+    )
+  }
+
+  const initials = user.name.slice(-2)
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Link
           to="/user-management"
@@ -359,23 +895,22 @@ export function UserDetailPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <h1 className="heading-lg">{user.name}</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          {user.name}
+        </h1>
         <Badge variant={user.status === 'active' ? 'success' : 'error'}>
           {user.status === 'active' ? '活躍' : '停用'}
         </Badge>
       </div>
 
-      {/* Profile card */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="flex flex-col gap-6 sm:flex-row">
-          {/* Avatar */}
           <div className="flex shrink-0 items-start justify-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
               {initials}
             </div>
           </div>
 
-          {/* Info */}
           <div className="flex-1 space-y-3">
             <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
               <InfoRow label="名稱" value={user.name} />
@@ -393,7 +928,6 @@ export function UserDetailPage() {
               <InfoRow label="角色" value={user.role} />
             </div>
 
-            {/* Actions */}
             <div className="flex flex-wrap gap-2 pt-2">
               <Button
                 variant="destructive"
@@ -411,37 +945,38 @@ export function UserDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-border pb-px">
+      <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1 flex w-full flex-wrap gap-0 pb-0">
         {tabs.map((tab) => (
-          <button
+          <Button
             type="button"
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={cn(
-              'rounded-t-md px-4 py-2 text-sm font-medium transition-colors',
+              'inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground flex-1 justify-center',
               activeTab === tab
-                ? 'border-b-2 border-primary text-primary'
+                ? 'bg-background/70 text-foreground shadow-sm hover:bg-background/70'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {tab}
-          </button>
+          </Button>
         ))}
       </div>
 
-      {/* Tab content */}
       <div>
-        {activeTab === '活動時間軸' && <ActivityTimeline />}
-        {activeTab === 'AI 用量' && <AIUsageTab />}
+        {activeTab === '活動時間軸' && <ActivityTimeline events={timelineEvents} />}
+        {activeTab === '活動統計' && <ActivityStatsTab stats={activityStats.data} />}
         {activeTab === '登入歷史' && <LoginHistoryTab rows={loginHistoryRows} />}
-        {activeTab === '角色管理' && <RoleManagementTab />}
+        {activeTab === '角色管理' && (
+          <RoleManagementTab defaultRole={user.role} permissions={user.permissions ?? []} />
+        )}
+        {activeTab === '實踐' && <PracticesTab userId={userId ?? ''} />}
+        {activeTab === '人物誌' && <PersonaTab userUuid={userDetail.data?.id ?? ''} />}
+        {activeTab === 'Onboarding' && <OnboardingTab userId={userId ?? ''} />}
       </div>
     </div>
   )
 }
-
-// ── Helpers ────────────────────────────────────────────────
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (

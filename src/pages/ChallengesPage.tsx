@@ -1,127 +1,57 @@
 import { CalendarDays, Plus, Trophy, Users } from 'lucide-react'
 import { useState } from 'react'
+import type { Challenge, StreakDistributionItem } from '@/api/admin-gamification'
+import { Button } from '@/components/ui/button'
+import { useChallenges, useStreakDistribution } from '@/hooks/useChallenges'
+import { clampPercent, safeNumber } from '@/lib/number'
 import { cn } from '@/lib/utils'
 
 type Tab = '進行中' | '即將開始' | '已結束'
 
-const TABS: { label: Tab; count: number }[] = [
-  { label: '進行中', count: 2 },
-  { label: '即將開始', count: 1 },
-  { label: '已結束', count: 3 },
-]
-
-interface Challenge {
-  id: number
-  name: string
-  description: string
-  currentDay: number
-  totalDays: number
-  participants: number
-  completionRate: number
-  status: Tab
-}
-
-const MOCK_CHALLENGES: Challenge[] = [
-  {
-    id: 1,
-    name: '7天閱讀挑戰',
-    description: '每天至少閱讀一篇文章並撰寫心得筆記',
-    currentDay: 4,
-    totalDays: 7,
-    participants: 156,
-    completionRate: 68,
-    status: '進行中',
-  },
-  {
-    id: 2,
-    name: '30天打卡挑戰',
-    description: '連續 30 天每日打卡，培養學習習慣',
-    currentDay: 18,
-    totalDays: 30,
-    participants: 89,
-    completionRate: 42,
-    status: '進行中',
-  },
-  {
-    id: 3,
-    name: '新年寫作挑戰',
-    description: '每週完成一篇原創文章，共四週',
-    currentDay: 0,
-    totalDays: 28,
-    participants: 0,
-    completionRate: 0,
-    status: '即將開始',
-  },
-  {
-    id: 4,
-    name: '14天冥想挑戰',
-    description: '每天完成 10 分鐘引導冥想',
-    currentDay: 14,
-    totalDays: 14,
-    participants: 203,
-    completionRate: 71,
-    status: '已結束',
-  },
-  {
-    id: 5,
-    name: '讀書馬拉松',
-    description: '一個月內閱讀 5 本書並發表書評',
-    currentDay: 30,
-    totalDays: 30,
-    participants: 67,
-    completionRate: 35,
-    status: '已結束',
-  },
-  {
-    id: 6,
-    name: '程式碼挑戰',
-    description: '每天完成一道演算法題目',
-    currentDay: 21,
-    totalDays: 21,
-    participants: 112,
-    completionRate: 58,
-    status: '已結束',
-  },
-]
-
-const STREAK_DATA = [
-  { label: '1-3 天', value: 2345, max: 2345 },
-  { label: '4-7 天', value: 890, max: 2345 },
-  { label: '8-14 天', value: 456, max: 2345 },
-  { label: '15-30 天', value: 123, max: 2345 },
-  { label: '30 天+', value: 45, max: 2345 },
-]
+const TABS: { label: Tab }[] = [{ label: '進行中' }, { label: '即將開始' }, { label: '已結束' }]
 
 export function ChallengesPage() {
   const [activeTab, setActiveTab] = useState<Tab>('進行中')
 
-  const filteredChallenges = MOCK_CHALLENGES.filter((c) => c.status === activeTab)
+  const { data: challengesData } = useChallenges()
+  const { data: streakData } = useStreakDistribution()
+
+  const allChallenges = (challengesData?.items as (Challenge & { status: Tab })[] | undefined) ?? []
+  const streakRows = (streakData ?? []) as StreakDistributionItem[]
+  const tabCounts: Record<string, number> = { 進行中: 0, 即將開始: 0, 已結束: 0 }
+  for (const tab of TABS) {
+    tabCounts[tab.label] = allChallenges.filter((item) => item.status === tab.label).length
+  }
+
+  const filteredChallenges = allChallenges.filter((c) => c.status === activeTab)
+
+  // Compute max for streak bars
+  const streakMax = streakRows.reduce((acc, r) => Math.max(acc, safeNumber(r.value)), 0) || 1
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">挑戰活動</h1>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          挑戰活動
+        </h1>
+        <Button type="button">
           <Plus className="h-4 w-4" />
           建立挑戰
-        </button>
+        </Button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
+      <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
         {TABS.map((tab) => (
-          <button
+          <Button
             key={tab.label}
             type="button"
             onClick={() => setActiveTab(tab.label)}
             className={cn(
-              'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
+              'inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground flex-1',
               activeTab === tab.label
-                ? 'bg-card text-foreground shadow-sm'
+                ? 'bg-background/70 text-foreground shadow-sm hover:bg-background/70'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -134,23 +64,25 @@ export function ChallengesPage() {
                   : 'bg-muted text-muted-foreground',
               )}
             >
-              {tab.count}
+              {tabCounts[tab.label]}
             </span>
-          </button>
+          </Button>
         ))}
       </div>
 
       {/* Challenge Cards */}
       <div className="grid gap-4 lg:grid-cols-2">
         {filteredChallenges.map((challenge) => {
+          const currentDay = safeNumber(challenge.currentDay)
+          const totalDays = safeNumber(challenge.totalDays)
+          const participants = safeNumber(challenge.participants)
+          const completionRate = clampPercent(challenge.completionRate)
           const progress =
-            challenge.totalDays > 0
-              ? Math.round((challenge.currentDay / challenge.totalDays) * 100)
-              : 0
+            totalDays > 0 ? clampPercent(Math.round((currentDay / totalDays) * 100)) : 0
           return (
             <div
               key={challenge.id}
-              className="rounded-xl border border-border bg-card p-5 shadow-sm"
+              className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -164,7 +96,7 @@ export function ChallengesPage() {
               <div className="mt-4">
                 <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
                   <span>
-                    Day {challenge.currentDay} / {challenge.totalDays}
+                    Day {currentDay} / {totalDays || '-'}
                   </span>
                   <span>{progress}%</span>
                 </div>
@@ -180,11 +112,11 @@ export function ChallengesPage() {
               <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <Users className="h-3.5 w-3.5" />
-                  {challenge.participants} 參與者
+                  {participants.toLocaleString()} 參與者
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <CalendarDays className="h-3.5 w-3.5" />
-                  完成率 {challenge.completionRate}%
+                  完成率 {completionRate}%
                 </span>
               </div>
             </div>
@@ -196,11 +128,15 @@ export function ChallengesPage() {
       </div>
 
       {/* Streak Distribution */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 heading-sm">連續打卡分布</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          連續打卡分布
+        </h2>
         <div className="space-y-3">
-          {STREAK_DATA.map((row) => {
-            const pct = Math.round((row.value / row.max) * 100)
+          {streakRows.map((row) => {
+            const value = safeNumber(row.value)
+            const max = safeNumber(row.max, streakMax) || streakMax
+            const pct = clampPercent(Math.round((value / max) * 100))
             return (
               <div key={row.label} className="flex items-center gap-3">
                 <span className="w-20 shrink-0 text-sm text-muted-foreground">{row.label}</span>
@@ -210,7 +146,7 @@ export function ChallengesPage() {
                     style={{ width: `${pct}%` }}
                   />
                   <span className="absolute inset-y-0 left-2 flex items-center text-xs font-medium text-foreground">
-                    {row.value.toLocaleString()}
+                    {value.toLocaleString()}
                   </span>
                 </div>
               </div>

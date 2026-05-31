@@ -1,5 +1,14 @@
-import { format, subDays } from 'date-fns'
-import { Activity, CalendarDays, TrendingUp, Users } from 'lucide-react'
+import { format, parseISO, subDays } from 'date-fns'
+import {
+  Activity,
+  Award,
+  BookOpen,
+  CalendarDays,
+  Flame,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
   CartesianGrid,
@@ -10,110 +19,154 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import type { LearningStyleType } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
 import { StatCard } from '@/components/StatCard'
-import { useActiveUsersTrend } from '@/hooks/useActiveUsersTrend'
+import { Input } from '@/components/ui/input'
+import {
+  useActiveUsersFunnel,
+  useActiveUsersTrend,
+  useUserCohortRetention,
+} from '@/hooks/useActiveUsersTrend'
+import {
+  useEngagementStats,
+  useOnboardingStats,
+  useQuizAnalyticsStats,
+} from '@/hooks/useOnboardingAnalytics'
 import { cn } from '@/lib/utils'
 
-// ---------------------------------------------------------------------------
-// Mock data generators
-// ---------------------------------------------------------------------------
-
-function generateRegistrationTrend() {
-  const today = new Date()
-  return Array.from({ length: 30 }, (_, i) => {
-    const date = subDays(today, 29 - i)
-    return {
-      date: format(date, 'MM/dd'),
-      count: Math.floor(Math.random() * 150) + 50,
-    }
-  })
-}
-
-const FUNNEL_STAGES: { label: string; value: number }[] = [
-  { label: '註冊', value: 10_000 },
-  { label: '首次登入', value: 8_500 },
-  { label: '首次打卡', value: 4_200 },
-  { label: '7日回訪', value: 2_800 },
-  { label: '30日活躍', value: 1_500 },
-]
-
-const COHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 const COHORT_COLUMNS = ['Day 1', 'Day 7', 'Day 14', 'Day 30', 'Day 60', 'Day 90']
 
-function generateCohortData() {
-  return COHORT_MONTHS.map((month) => {
-    const day1 = Math.floor(Math.random() * 10) + 85
-    const day7 = Math.floor(Math.random() * 15) + 55
-    const day14 = Math.floor(Math.random() * 15) + 38
-    const day30 = Math.floor(Math.random() * 12) + 25
-    const day60 = Math.floor(Math.random() * 10) + 15
-    const day90 = Math.floor(Math.random() * 8) + 8
-    return {
-      month,
-      values: [day1, day7, day14, day30, day60, day90],
-    }
-  })
+const ROLE_ORDER: LearningStyleType[] = ['D', 'A', 'O', 'L', 'C']
+
+const ROLE_META: Record<LearningStyleType, { label: string; color: string }> = {
+  D: { label: '探究者（探探島）', color: 'var(--chart-1)' },
+  A: { label: '行動者（動動島）', color: 'var(--chart-2)' },
+  O: { label: '結構者（構構島）', color: 'var(--chart-3)' },
+  L: { label: '流動者（跨跨島）', color: 'var(--chart-4)' },
+  C: { label: '連結者（連連島）', color: 'var(--chart-5)' },
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+function formatTrendDate(value: string) {
+  const date = parseISO(value)
+  if (Number.isNaN(date.getTime())) return value
+  return format(date, 'MM/dd')
+}
 
-/** Map a retention percentage (0-100) to a green intensity class. */
+function formatNumber(value?: number) {
+  return (value ?? 0).toLocaleString()
+}
+
 function retentionBg(pct: number): string {
-  if (pct >= 80) return 'bg-green-700 text-white'
-  if (pct >= 60) return 'bg-green-600 text-white'
-  if (pct >= 40) return 'bg-green-500 text-white'
-  if (pct >= 25) return 'bg-green-400 text-green-950'
-  if (pct >= 15) return 'bg-green-300 text-green-950'
-  return 'bg-green-200 text-green-950'
+  if (pct >= 80) return 'bg-success/70 text-primary-foreground'
+  if (pct >= 60) return 'bg-success/60 text-primary-foreground'
+  if (pct >= 40) return 'bg-success text-primary-foreground'
+  if (pct >= 25) return 'text-success text-foreground'
+  if (pct >= 15) return 'text-success text-foreground'
+  return 'text-success text-foreground'
 }
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 
 export function UserAnalyticsPage() {
-  const [dateFrom, setDateFrom] = useState(() => format(subDays(new Date(), 29), 'yyyy-MM-dd'))
-  const [dateTo, setDateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'))
+  const defaultDateFrom = useMemo(() => format(subDays(new Date(), 29), 'yyyy-MM-dd'), [])
+  const defaultDateTo = useMemo(() => format(new Date(), 'yyyy-MM-dd'), [])
 
-  const { data: trendData } = useActiveUsersTrend(30)
+  const [dateFrom, setDateFrom] = useState(defaultDateFrom)
+  const [dateTo, setDateTo] = useState(defaultDateTo)
 
-  const registrationTrend = useMemo(() => generateRegistrationTrend(), [])
-  const cohortData = useMemo(() => generateCohortData(), [])
+  const trendQuery = useMemo(() => {
+    const fromDate = dateFrom ? new Date(dateFrom) : new Date(defaultDateFrom)
+    const toDate = dateTo ? new Date(dateTo) : new Date(defaultDateTo)
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime()) || fromDate > toDate) {
+      return { startDate: defaultDateFrom, endDate: defaultDateTo }
+    }
+    return { startDate: format(fromDate, 'yyyy-MM-dd'), endDate: format(toDate, 'yyyy-MM-dd') }
+  }, [dateFrom, dateTo, defaultDateFrom, defaultDateTo])
 
-  // Flatten registration trend for export
+  const {
+    data: trendData,
+    isLoading: isTrendLoading,
+    isError: isTrendError,
+  } = useActiveUsersTrend(trendQuery)
+
+  const {
+    data: funnelData,
+    isLoading: isFunnelLoading,
+    isError: isFunnelError,
+  } = useActiveUsersFunnel(trendQuery)
+
+  const {
+    data: cohortData,
+    isLoading: isCohortLoading,
+    isError: isCohortError,
+  } = useUserCohortRetention(trendQuery)
+
+  const { data: onboardingStats } = useOnboardingStats()
+  const { data: quizStats } = useQuizAnalyticsStats()
+  const { data: engagementStats } = useEngagementStats()
+
+  const summary = trendData?.summary
+
+  const trendRows = useMemo(
+    () =>
+      (trendData?.data ?? []).map((item) => ({
+        date: formatTrendDate(item.date),
+        dau: item.dau,
+        wau: item.wau,
+        mau: item.mau,
+      })),
+    [trendData],
+  )
+
+  const funnelStages = useMemo(() => {
+    if (!funnelData?.steps?.length) return []
+    return funnelData.steps
+  }, [funnelData])
+
+  const funnelBase = useMemo(() => funnelStages[0]?.value || 1, [funnelStages])
+
+  const cohortRows = useMemo(() => {
+    if (!cohortData?.rows?.length) return []
+    return cohortData.rows.map((row) => ({
+      period: row.label || '未知週期',
+      values: [row.day1, row.day7, row.day14, row.day30, row.day60, row.day90],
+    }))
+  }, [cohortData])
+
+  const retentionRows = useMemo(() => engagementStats?.retentionByDay ?? [], [engagementStats])
+
   const exportColumns = [
     { key: 'date', header: '日期' },
-    { key: 'count', header: '註冊數' },
+    { key: 'dau', header: 'DAU' },
+    { key: 'wau', header: 'WAU' },
+    { key: 'mau', header: 'MAU' },
   ]
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="heading-lg">用戶分析</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          用戶分析
+        </h1>
         <div className="flex items-center gap-3">
-          {/* Date range filter (visual only) */}
           <div className="flex items-center gap-2 text-sm">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
-            <input
+            <Input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="rounded-md border border-border bg-card px-2 py-1.5 text-sm"
+              className="w-40"
             />
             <span className="text-muted-foreground">~</span>
-            <input
+            <Input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="rounded-md border border-border bg-card px-2 py-1.5 text-sm"
+              className="w-40"
             />
           </div>
           <ExportButton
-            data={registrationTrend as unknown as Record<string, unknown>[]}
+            data={trendRows as unknown as Record<string, unknown>[]}
             columns={exportColumns}
             fileName="user_analytics"
           />
@@ -124,130 +177,306 @@ export function UserAnalyticsPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           title="DAU (日活躍)"
-          value={trendData?.summary?.currentDau?.toLocaleString() ?? '1,234'}
-          change={trendData?.summary?.dauChangePercent ?? 5.2}
+          value={formatNumber(summary?.currentDau)}
+          change={summary?.dauChangePercent ?? 0}
           changeLabel="vs 上週"
           icon={Users}
         />
         <StatCard
           title="WAU (週活躍)"
-          value={trendData?.summary?.currentWau?.toLocaleString() ?? '4,567'}
-          change={trendData?.summary?.wauChangePercent ?? 3.1}
+          value={formatNumber(summary?.currentWau)}
+          change={summary?.wauChangePercent ?? 0}
           changeLabel="vs 上週"
           icon={Activity}
         />
         <StatCard
           title="MAU (月活躍)"
-          value={trendData?.summary?.currentMau?.toLocaleString() ?? '12,345'}
-          change={trendData?.summary?.mauChangePercent ?? 8.7}
+          value={formatNumber(summary?.currentMau)}
+          change={summary?.mauChangePercent ?? 0}
           changeLabel="vs 上月"
           icon={TrendingUp}
         />
       </div>
 
-      {/* Section 2: Registration trend chart */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 heading-sm">每日註冊趨勢（近 30 天）</h2>
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={registrationTrend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'var(--card)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                fontSize: 13,
-              }}
-              formatter={(v: number) => [v, '註冊數']}
-            />
-            <Line
-              type="monotone"
-              dataKey="count"
-              stroke="var(--primary)"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      {/* Section 2: Onboarding & engagement KPIs */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard
+          title="Badge 完成率"
+          value={`${onboardingStats?.badgeGrantedRate ?? 0}%`}
+          icon={Award}
+        />
+        <StatCard
+          title="測驗完成率"
+          value={`${quizStats?.quizCompletedRate ?? 0}%`}
+          icon={BookOpen}
+        />
+        <StatCard
+          title="實踐放棄率"
+          value={`${engagementStats?.practiceStats.abandonmentRate ?? 0}%`}
+          icon={TrendingDown}
+        />
+        <StatCard
+          title="Streak 7天+ 人數"
+          value={formatNumber(engagementStats?.checkinStats.usersWithStreak7Plus)}
+          icon={Flame}
+        />
       </div>
 
-      {/* Section 3: Funnel visualization */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 heading-sm">轉換漏斗</h2>
-        <div className="space-y-3">
-          {FUNNEL_STAGES.map((stage, idx) => {
-            const pct = (stage.value / FUNNEL_STAGES[0].value) * 100
-            return (
-              <div key={stage.label} className="flex items-center gap-4">
-                <span className="w-20 shrink-0 text-right text-sm font-medium text-foreground">
-                  {stage.label}
-                </span>
-                <div className="relative flex-1">
-                  <div
-                    className={cn(
-                      'flex h-9 items-center rounded-md px-3 text-sm font-medium text-white transition-all',
-                      idx === 0
-                        ? 'bg-primary'
-                        : idx === 1
-                          ? 'bg-primary/85'
-                          : idx === 2
-                            ? 'bg-primary/65'
-                            : idx === 3
-                              ? 'bg-primary/50'
-                              : 'bg-primary/35',
-                    )}
-                    style={{ width: `${Math.max(pct, 8)}%` }}
-                  >
-                    <span className="whitespace-nowrap">
-                      {stage.value.toLocaleString()} ({pct.toFixed(0)}%)
-                    </span>
+      {/* Section 3: Active trend chart */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          每日活躍趨勢（DAU / WAU / MAU）
+        </h2>
+        {isTrendLoading ? (
+          <p className="text-sm text-muted-foreground">載入中...</p>
+        ) : trendRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {isTrendError ? '無法載入活躍趨勢資料' : '目前沒有可顯示的趨勢資料'}
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={trendRows}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  fontSize: 13,
+                }}
+                formatter={(value: number, name: string) => [
+                  value.toLocaleString(),
+                  name.toUpperCase(),
+                ]}
+              />
+              <Line
+                type="monotone"
+                dataKey="dau"
+                name="dau"
+                stroke="var(--chart-2)"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="wau"
+                name="wau"
+                stroke="var(--chart-3)"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="mau"
+                name="mau"
+                stroke="var(--chart-4)"
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Section 4: Learning style distribution */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            學習風格分布
+          </h2>
+          {quizStats && (
+            <span className="text-sm text-muted-foreground">
+              測驗完成率 {quizStats.quizCompletedRate}%（
+              {quizStats.quizCompletedCount.toLocaleString()} /{' '}
+              {quizStats.totalUsers.toLocaleString()} 人）
+            </span>
+          )}
+        </div>
+        {!quizStats ? (
+          <p className="text-sm text-muted-foreground">載入中...</p>
+        ) : (
+          <div className="space-y-3">
+            {ROLE_ORDER.map((code) => {
+              const meta = ROLE_META[code]
+              const roleData = quizStats.byRole[code]
+              const count = roleData?.count ?? 0
+              const rate = roleData?.rate ?? 0
+              return (
+                <div key={code} className="flex items-center gap-4">
+                  <span className="w-36 shrink-0 text-right text-sm font-medium text-foreground">
+                    {code} {meta.label}
+                  </span>
+                  <div className="flex-1">
+                    <div
+                      className="flex h-8 items-center rounded-md px-3 text-xs font-semibold text-white transition-all"
+                      style={{ width: `${Math.max(rate, 4)}%`, backgroundColor: meta.color }}
+                    >
+                      <span className="whitespace-nowrap">
+                        {count.toLocaleString()} ({rate}%)
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Section 4: Cohort retention heatmap */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 heading-sm">Cohort 留存率</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">月份</th>
-                {COHORT_COLUMNS.map((col) => (
-                  <th key={col} className="px-3 py-2 text-center font-medium text-muted-foreground">
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {cohortData.map((row) => (
-                <tr key={row.month} className="border-t border-border">
-                  <td className="px-3 py-2 font-medium text-foreground">{row.month}</td>
-                  {row.values.map((val, ci) => (
-                    <td key={COHORT_COLUMNS[ci]} className="px-1 py-1 text-center">
-                      <span
-                        className={cn(
-                          'inline-flex h-8 w-full items-center justify-center rounded-md text-xs font-semibold',
-                          retentionBg(val),
-                        )}
-                      >
-                        {val}%
+      {/* Section 5: Funnel visualization */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          轉換漏斗
+        </h2>
+        {isFunnelLoading ? (
+          <p className="text-sm text-muted-foreground">載入中...</p>
+        ) : isFunnelError ? (
+          <p className="text-sm text-muted-foreground">
+            後端尚未提供 /api/v1/admin/user-stats/funnel
+          </p>
+        ) : funnelStages.length === 0 ? (
+          <p className="text-sm text-muted-foreground">目前沒有可顯示的漏斗資料</p>
+        ) : (
+          <div className="space-y-3">
+            {funnelStages.map((stage) => {
+              const pct = (stage.value / funnelBase) * 100
+              const barClass =
+                pct >= 90 ? 'bg-primary' : pct >= 70 ? 'bg-primary/85' : 'bg-primary/65'
+              return (
+                <div key={stage.label} className="flex items-center gap-4">
+                  <span className="w-20 shrink-0 text-right text-sm font-medium text-foreground">
+                    {stage.label}
+                  </span>
+                  <div className="relative flex-1">
+                    <div
+                      className={cn(
+                        'flex h-9 items-center rounded-md px-3 text-sm font-medium text-primary-foreground transition-all',
+                        barClass,
+                      )}
+                      style={{ width: `${Math.max(pct, 8)}%` }}
+                    >
+                      <span className="whitespace-nowrap">
+                        {stage.value.toLocaleString()} ({pct.toFixed(0)}%)
                       </span>
-                    </td>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Section 6: Checkin retention by day */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            打卡留存率（30天）
+          </h2>
+          {engagementStats && (
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              <span>平均最長 streak：{engagementStats.checkinStats.avgMaxStreak} 天</span>
+              <span>
+                30天+ streak：{engagementStats.checkinStats.usersWithStreak30Plus.toLocaleString()}{' '}
+                人
+              </span>
+            </div>
+          )}
+        </div>
+        {retentionRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {engagementStats ? '目前沒有打卡留存資料' : '載入中...'}
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={retentionRows}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 11 }}
+                label={{ value: '第幾天', position: 'insideBottomRight', offset: -8, fontSize: 11 }}
+              />
+              <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  fontSize: 13,
+                }}
+                formatter={(value: number) => [`${value}%`, '留存率']}
+                labelFormatter={(label) => `第 ${label} 天`}
+              />
+              <Line
+                type="monotone"
+                dataKey="retentionRate"
+                stroke="var(--chart-1)"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Section 7: Cohort retention heatmap */}
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          Cohort 留存率
+        </h2>
+        {isCohortLoading ? (
+          <p className="text-sm text-muted-foreground">載入中...</p>
+        ) : isCohortError ? (
+          <p className="text-sm text-muted-foreground">
+            後端尚未提供 /api/v1/admin/user-stats/cohort-retention
+          </p>
+        ) : cohortRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">目前沒有可顯示的留存資料</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">月份</th>
+                  {COHORT_COLUMNS.map((col) => (
+                    <th
+                      key={col}
+                      className="px-3 py-2 text-center font-medium text-muted-foreground"
+                    >
+                      {col}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {cohortRows.map((row) => (
+                  <tr key={row.period} className="border-t border-border">
+                    <td className="px-3 py-2 font-medium text-foreground">{row.period}</td>
+                    {row.values.map((val, ci) => {
+                      const safeValue = Math.max(0, Math.min(100, Math.round(val)))
+                      return (
+                        <td key={COHORT_COLUMNS[ci]} className="px-1 py-1 text-center">
+                          <span
+                            className={cn(
+                              'inline-flex h-8 w-full items-center justify-center rounded-md text-xs font-semibold',
+                              retentionBg(safeValue),
+                            )}
+                          >
+                            {safeValue}%
+                          </span>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

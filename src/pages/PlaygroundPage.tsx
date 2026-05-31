@@ -13,7 +13,7 @@ import {
   playgroundInsight,
   saveInsightResult,
   updateSystemPrompt,
-} from '@/api/admin'
+} from '@/api/admin-ai'
 import type { ChatMessage, PlaygroundChatResponse, PlaygroundInsightResponse } from '@/api/types'
 import { useAuth } from '@/auth/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -77,21 +77,23 @@ function InsightResultCard({
   const isSaved = card.savedOverride || card.data.saved
 
   return (
-    <div className="flex flex-col bg-background border border-border rounded-lg overflow-hidden">
+    <div className="rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm">
       {/* header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div>
           <p className="text-xs font-medium text-foreground">{card.model_used}</p>
           <p className="text-xs text-muted-foreground">{card.timestamp}</p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="xs"
+          className="ml-2 h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
           onClick={() => onRemove(card.id)}
-          className="text-muted-foreground hover:text-destructive text-xs ml-2"
           aria-label="刪除此卡片"
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       {/* body */}
@@ -111,15 +113,17 @@ function InsightResultCard({
         {/* thinking toggle */}
         {card.data.thinking && (
           <>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="xs"
+              className="block px-0 py-0 h-auto text-xs text-warning hover:text-warning/80"
               onClick={() => setShowThinking((v) => !v)}
-              className="block text-xs text-amber-600 dark:text-amber-400 hover:underline"
             >
               {showThinking ? '▾ 隱藏思考過程' : '▸ 查看思考過程'}
-            </button>
+            </Button>
             {showThinking && (
-              <pre className="text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-2 rounded overflow-x-auto whitespace-pre-wrap text-amber-900 dark:text-amber-200">
+              <pre className="text-xs bg-warning/10 border border-warning/30 p-2 rounded overflow-x-auto whitespace-pre-wrap text-warning">
                 {card.data.thinking}
               </pre>
             )}
@@ -127,13 +131,15 @@ function InsightResultCard({
         )}
 
         {/* prompt toggle */}
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="xs"
+          className="block px-0 py-0 h-auto text-xs"
           onClick={() => setShowPrompt((v) => !v)}
-          className="block text-xs text-muted-foreground hover:underline"
         >
           {showPrompt ? '▾ 隱藏 Prompt' : '▸ 查看 Prompt'}
-        </button>
+        </Button>
         {showPrompt && (
           <pre className="text-xs bg-muted p-2 rounded overflow-x-auto whitespace-pre-wrap">
             {card.data.prompt_used}
@@ -142,13 +148,9 @@ function InsightResultCard({
 
         {/* save button */}
         {!isSaved && (
-          <button
-            type="button"
-            onClick={() => onSave(card.id)}
-            className="rounded-md px-3 py-1.5 text-xs bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20"
-          >
+          <Button type="button" variant="destructive" size="xs" onClick={() => onSave(card.id)}>
             儲存此結果
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -371,7 +373,7 @@ function InsightTab() {
   return (
     <div className="flex flex-1 min-h-0 relative">
       {/* 左側設定欄 */}
-      <aside className="w-72 shrink-0 border-r border-border bg-card flex flex-col gap-4 p-4 overflow-y-auto">
+      <aside className="w-72 shrink-0 rounded-lg border border-[var(--admin-panel-border)] bg-background/70 p-2.5 shadow-sm border-r border-border flex flex-col gap-4 p-4 overflow-y-auto">
         <h2 className="font-semibold text-sm">Insight 設定</h2>
 
         {/* 使用者 */}
@@ -449,7 +451,7 @@ function InsightTab() {
             <label htmlFor="insight-max-tokens" className="text-xs text-muted-foreground">
               Max tokens
             </label>
-            <input
+            <Input
               id="insight-max-tokens"
               type="number"
               min={1}
@@ -457,14 +459,14 @@ function InsightTab() {
               placeholder="預設 2000"
               value={insightMaxTokens ?? ''}
               onChange={(e) => setInsightMaxTokens(e.target.value ? Number(e.target.value) : null)}
-              className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring tabular-nums"
+              className="tabular-nums"
             />
           </div>
           <div className="space-y-1">
             <label htmlFor="insight-temperature" className="text-xs text-muted-foreground">
               Temperature{insightTemperature !== null ? ` (${insightTemperature})` : ''}
             </label>
-            <input
+            <Input
               id="insight-temperature"
               type="range"
               min={0}
@@ -472,17 +474,19 @@ function InsightTab() {
               step={0.1}
               value={insightTemperature ?? 1}
               onChange={(e) => setInsightTemperature(Number(e.target.value))}
-              className="w-full accent-primary"
+              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-primary [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-primary"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>0</span>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="xs"
+                className="h-auto px-0 py-0 text-xs"
                 onClick={() => setInsightTemperature(null)}
-                className="hover:underline"
               >
                 重設
-              </button>
+              </Button>
               <span>2</span>
             </div>
           </div>
@@ -490,7 +494,7 @@ function InsightTab() {
             <label htmlFor="insight-top-p" className="text-xs text-muted-foreground">
               Top-p{insightTopP !== null ? ` (${insightTopP})` : ''}
             </label>
-            <input
+            <Input
               id="insight-top-p"
               type="range"
               min={0}
@@ -498,17 +502,19 @@ function InsightTab() {
               step={0.05}
               value={insightTopP ?? 1}
               onChange={(e) => setInsightTopP(Number(e.target.value))}
-              className="w-full accent-primary"
+              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-primary [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-primary"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>0</span>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="xs"
+                className="h-auto px-0 py-0 text-xs"
                 onClick={() => setInsightTopP(null)}
-                className="hover:underline"
               >
                 重設
-              </button>
+              </Button>
               <span>1</span>
             </div>
           </div>
@@ -516,7 +522,7 @@ function InsightTab() {
             <label htmlFor="insight-top-k" className="text-xs text-muted-foreground">
               Top-k
             </label>
-            <input
+            <Input
               id="insight-top-k"
               type="number"
               min={1}
@@ -524,7 +530,7 @@ function InsightTab() {
               placeholder="預設"
               value={insightTopK ?? ''}
               onChange={(e) => setInsightTopK(e.target.value ? Number(e.target.value) : null)}
-              className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring tabular-nums"
+              className="tabular-nums"
             />
           </div>
         </div>
@@ -550,7 +556,7 @@ function InsightTab() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">System Prompt</span>
             {systemPrompt !== defaultSystemPrompt && (
-              <span className="text-xs text-amber-500 font-medium">已修改</span>
+              <span className="text-xs text-success font-medium">已修改</span>
             )}
           </div>
           {prompts.length > 0 && (
@@ -563,8 +569,9 @@ function InsightTab() {
             />
           )}
           {/* 摘要預覽 */}
-          <button
+          <Button
             type="button"
+            variant="outline"
             className="w-full text-left rounded-md border border-input bg-muted/40 px-3 py-2 text-xs text-muted-foreground font-mono leading-relaxed line-clamp-3 min-h-[56px] cursor-pointer hover:bg-muted/70 transition-colors"
             onClick={() => {
               setEditingPrompt(systemPrompt)
@@ -572,17 +579,19 @@ function InsightTab() {
             }}
           >
             {systemPrompt || <span className="italic">（空白）</span>}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => {
               setEditingPrompt(systemPrompt)
               setShowPromptEditor(true)
             }}
-            className="w-full rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted transition-colors text-left"
+            variant="outline"
+            size="sm"
+            className="w-full justify-start text-left"
           >
             ✏️ 編輯 System Prompt
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -590,15 +599,16 @@ function InsightTab() {
       <div className="flex flex-1 flex-col min-w-0">
         {/* 操作列 */}
         <div className="border-b border-border p-3 flex gap-2 items-center">
-          <button
+          <Button
             type="button"
             onClick={handlePreview}
             disabled={!selectedPracticeId || !selectedModelId || isRunning}
-            className="rounded-md px-4 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50"
+            variant="secondary"
+            size="sm"
           >
             {isRunning ? '生成中…' : '預覽'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => {
               setSaveConfigName('')
@@ -607,18 +617,22 @@ function InsightTab() {
               setShowSaveConfig(true)
             }}
             disabled={!selectedModelId || resultCards.length === 0}
-            className="rounded-md px-3 py-2 text-sm border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            variant="outline"
+            size="sm"
+            className="disabled:cursor-not-allowed"
           >
             儲存為設定
-          </button>
+          </Button>
           {resultCards.length > 0 && (
-            <button
+            <Button
               type="button"
               onClick={() => setResultCards([])}
-              className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-destructive"
             >
               清除所有結果
-            </button>
+            </Button>
           )}
           {runError && <p className="text-xs text-destructive ml-2">{runError}</p>}
         </div>
@@ -682,17 +696,17 @@ function InsightTab() {
               />
             </div>
             {saveConfigStatus === 'success' && (
-              <p className="text-xs text-green-600 dark:text-green-400">
-                已成功儲存！可至「AI 服務設定」頁面查看。
-              </p>
+              <p className="text-xs text-success">已成功儲存！可至「AI 服務設定」頁面查看。</p>
             )}
             {saveConfigStatus === 'error' && (
               <p className="text-xs text-destructive">{saveConfigError ?? '儲存失敗，請重試'}</p>
             )}
           </div>
           <div className="border-t border-border px-5 py-3 flex gap-2 shrink-0">
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="sm"
               disabled={!saveConfigName.trim() || saveConfigStatus === 'saving'}
               onClick={async () => {
                 if (!selectedModelId || !saveConfigName.trim()) return
@@ -716,17 +730,17 @@ function InsightTab() {
                   setSaveConfigError(e instanceof Error ? e.message : '儲存失敗')
                 }
               }}
-              className="rounded-md px-4 py-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {saveConfigStatus === 'saving' ? '儲存中…' : '儲存'}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => setShowSaveConfig(false)}
-              className="rounded-md px-4 py-1.5 text-sm border border-border hover:bg-muted"
+              variant="outline"
+              size="sm"
             >
               {saveConfigStatus === 'success' ? '關閉' : '取消'}
-            </button>
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -764,8 +778,8 @@ function InsightTab() {
           </div>
 
           {/* textarea */}
-          <textarea
-            className="flex-1 resize-none bg-card px-5 py-4 text-sm font-mono leading-relaxed focus:outline-none"
+          <Textarea
+            className="flex-1 rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm resize-none px-5 py-4 text-sm font-mono leading-relaxed focus:outline-none"
             value={editingPrompt}
             onChange={(e) => setEditingPrompt(e.target.value)}
             placeholder="在這裡撰寫 System Prompt…"
@@ -785,7 +799,7 @@ function InsightTab() {
                     if (e.key === 'Enter') handleCreateVersion(editingPrompt)
                   }}
                 />
-                <button
+                <Button
                   type="button"
                   onClick={async () => {
                     setSystemPrompt(editingPrompt)
@@ -793,22 +807,25 @@ function InsightTab() {
                     setShowPromptEditor(false)
                   }}
                   disabled={isCreatingVersion || !newVersionName.trim()}
-                  className="rounded-md px-4 py-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  size="sm"
                 >
                   {isCreatingVersion ? '建立中…' : '確認建立'}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => setShowNewVersionInput(false)}
-                  className="text-xs text-muted-foreground hover:underline"
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground"
                 >
                   取消
-                </button>
+                </Button>
               </>
             ) : (
               <>
-                <button
+                <Button
                   type="button"
+                  size="sm"
                   onClick={async () => {
                     setSystemPrompt(editingPrompt)
                     setShowPromptEditor(false)
@@ -825,38 +842,41 @@ function InsightTab() {
                     }
                   }}
                   disabled={isSavingPrompt}
-                  className="rounded-md px-4 py-1.5 text-sm bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
                   {isSavingPrompt ? '儲存中…' : '覆蓋儲存'}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
+                  variant="outline"
                   onClick={() => {
                     const base = prompts.find((p) => p.id === selectedPromptId)
                     setNewVersionName(base ? `${base.name} v2` : '')
                     setShowNewVersionInput(true)
                   }}
-                  className="rounded-md px-4 py-1.5 text-sm border border-border hover:bg-muted"
                 >
                   另存為新版本
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
+                  variant="outline"
                   onClick={() => {
                     setSystemPrompt(editingPrompt)
                     setShowPromptEditor(false)
                   }}
-                  className="rounded-md px-4 py-1.5 text-sm border border-border hover:bg-muted"
                 >
                   套用（不儲存）
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
+                  variant="ghost"
                   onClick={() => setShowPromptEditor(false)}
-                  className="ml-auto text-xs text-muted-foreground hover:underline"
+                  className="ml-auto text-xs text-muted-foreground"
                 >
                   取消
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -892,11 +912,12 @@ export function PlaygroundPage() {
     queryFn: () => listSystemPrompts({ is_active: true }).then((r) => r.data.data),
   })
 
-  // 使用者 quota（有 adminId 才查）
+  // 使用者 quota（有 userId 才查）
+  const adminIdNum = adminInfo?.userId ? Number(adminInfo.userId) : null
   const { data: quotaData, refetch: refetchQuota } = useQuery({
-    queryKey: ['admin-quota', adminInfo?.adminId],
-    queryFn: () => getUserQuota(adminInfo?.adminId as number).then((r) => r.data.data),
-    enabled: !!adminInfo?.adminId,
+    queryKey: ['admin-quota', adminIdNum],
+    queryFn: () => getUserQuota(adminIdNum as number).then((r) => r.data.data),
+    enabled: !!adminIdNum,
     staleTime: 30_000, // 30 秒內不重新查
   })
 
@@ -988,30 +1009,30 @@ export function PlaygroundPage() {
   const dailyLimit = quotaData?.quota?.daily_token_limit ?? null
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex min-h-0 flex-col">
       {/* Tab bar */}
-      <div className="flex border-b border-border">
+      <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
         {(['chat', 'insight'] as const).map((tab) => (
-          <button
+          <Button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground flex-1 justify-center ${
               activeTab === tab
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'bg-background/70 text-foreground shadow-sm hover:bg-background/70'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab === 'chat' ? 'Chat' : 'Insight 測試'}
-          </button>
+          </Button>
         ))}
       </div>
 
       {/* Content */}
       {activeTab === 'chat' ? (
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-1 min-h-0 flex-col xl:flex-row gap-4 xl:gap-0">
           {/* ── 左側設定欄 ── */}
-          <aside className="w-64 shrink-0 border-r border-border bg-card flex flex-col gap-4 p-4">
+          <aside className="w-full xl:w-64 xl:shrink-0 rounded-lg border border-[var(--admin-panel-border)] bg-background/70 p-2.5 shadow-sm border-b xl:border-b-0 xl:border-r border-border flex flex-col gap-4 p-4">
             <h2 className="font-semibold text-sm text-foreground">設定</h2>
 
             {/* Model 選擇 */}
@@ -1059,7 +1080,7 @@ export function PlaygroundPage() {
                 <label htmlFor="chat-max-tokens" className="text-xs text-muted-foreground">
                   Max tokens
                 </label>
-                <input
+                <Input
                   id="chat-max-tokens"
                   type="number"
                   min={1}
@@ -1067,14 +1088,14 @@ export function PlaygroundPage() {
                   placeholder="預設"
                   value={chatMaxTokens ?? ''}
                   onChange={(e) => setChatMaxTokens(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring tabular-nums"
+                  className="tabular-nums"
                 />
               </div>
               <div className="space-y-1">
                 <label htmlFor="chat-temperature" className="text-xs text-muted-foreground">
                   Temperature{chatTemperature !== null ? ` (${chatTemperature})` : ''}
                 </label>
-                <input
+                <Input
                   id="chat-temperature"
                   type="range"
                   min={0}
@@ -1082,17 +1103,19 @@ export function PlaygroundPage() {
                   step={0.1}
                   value={chatTemperature ?? 1}
                   onChange={(e) => setChatTemperature(Number(e.target.value))}
-                  className="w-full accent-primary"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-primary [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-primary"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>0</span>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="xs"
+                    className="h-auto px-0 py-0 text-xs"
                     onClick={() => setChatTemperature(null)}
-                    className="hover:underline"
                   >
                     重設
-                  </button>
+                  </Button>
                   <span>2</span>
                 </div>
               </div>
@@ -1100,7 +1123,7 @@ export function PlaygroundPage() {
                 <label htmlFor="chat-top-p" className="text-xs text-muted-foreground">
                   Top-p{chatTopP !== null ? ` (${chatTopP})` : ''}
                 </label>
-                <input
+                <Input
                   id="chat-top-p"
                   type="range"
                   min={0}
@@ -1108,17 +1131,19 @@ export function PlaygroundPage() {
                   step={0.05}
                   value={chatTopP ?? 1}
                   onChange={(e) => setChatTopP(Number(e.target.value))}
-                  className="w-full accent-primary"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-primary [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-primary"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>0</span>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="xs"
+                    className="h-auto px-0 py-0 text-xs"
                     onClick={() => setChatTopP(null)}
-                    className="hover:underline"
                   >
                     重設
-                  </button>
+                  </Button>
                   <span>1</span>
                 </div>
               </div>
@@ -1126,7 +1151,7 @@ export function PlaygroundPage() {
                 <label htmlFor="chat-top-k" className="text-xs text-muted-foreground">
                   Top-k
                 </label>
-                <input
+                <Input
                   id="chat-top-k"
                   type="number"
                   min={1}
@@ -1134,7 +1159,7 @@ export function PlaygroundPage() {
                   placeholder="預設"
                   value={chatTopK ?? ''}
                   onChange={(e) => setChatTopK(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring tabular-nums"
+                  className="tabular-nums"
                 />
               </div>
             </div>
@@ -1160,9 +1185,9 @@ export function PlaygroundPage() {
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">目前使用者</p>
                   <p className="text-sm font-medium text-foreground truncate">
-                    {adminInfo.adminNickname ?? `Admin #${adminInfo.adminId}`}
+                    {adminInfo.nickname ?? `Admin #${adminInfo.userId}`}
                   </p>
-                  <p className="text-xs text-muted-foreground">ID: {adminInfo.adminId}</p>
+                  <p className="text-xs text-muted-foreground">ID: {adminInfo.userId}</p>
                 </div>
 
                 {quotaData ? (
@@ -1277,7 +1302,7 @@ export function PlaygroundPage() {
           </div>
 
           {/* ── 右側統計欄 ── */}
-          <aside className="w-52 shrink-0 border-l border-border bg-card p-4 space-y-4">
+          <aside className="w-full xl:w-52 xl:shrink-0 rounded-lg border border-[var(--admin-panel-border)] bg-background/70 p-2.5 shadow-sm border-t xl:border-t-0 xl:border-l border-border p-4 space-y-4">
             <h2 className="font-semibold text-sm text-foreground">最後一次統計</h2>
             {lastStats ? (
               <dl className="space-y-3 text-sm">

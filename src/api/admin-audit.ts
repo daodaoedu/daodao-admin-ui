@@ -29,4 +29,34 @@ export interface AuditLogFilters {
 }
 
 export const listAuditLogs = (params?: AuditLogFilters) =>
-  apiClient.get<ApiResponse<AuditLogListResponse>>('/api/v1/admin/audit-logs', { params })
+  apiClient.get<ApiResponse<AuditLogListResponse>>('/daodao-server/api/v1/admin/audit-logs', {
+    params,
+  })
+
+// ── Compliance Hold ──────────────────────────────────────
+
+export interface ComplianceHoldBody {
+  dateFrom: string
+  dateTo: string
+}
+
+export const createComplianceHold = (body: ComplianceHoldBody) =>
+  apiClient.post<ApiResponse<null>>('/daodao-server/api/v1/admin/audit-logs/compliance-hold', body)
+
+// ── Data Retention Policy ────────────────────────────────
+
+export interface DataRetentionPolicy {
+  retentionDays: number
+  [key: string]: unknown
+}
+
+export const getDataRetentionPolicy = () =>
+  apiClient.get<ApiResponse<DataRetentionPolicy>>(
+    '/daodao-server/api/v1/admin/data-retention-policy',
+  )
+
+export const updateDataRetentionPolicy = (body: DataRetentionPolicy) =>
+  apiClient.put<ApiResponse<DataRetentionPolicy>>(
+    '/daodao-server/api/v1/admin/data-retention-policy',
+    body,
+  )

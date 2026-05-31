@@ -1,8 +1,11 @@
+import { useMutation } from '@tanstack/react-query'
 import { Lock, Search } from 'lucide-react'
 import { useState } from 'react'
+import { createComplianceHold } from '@/api/admin-audit'
 import { ExportButton } from '@/components/ExportButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { useAuditLogs } from '@/hooks/useAuditLogs'
 import { cn } from '@/lib/utils'
 
@@ -19,106 +22,13 @@ interface AuditLogItem {
 }
 
 const actionBadgeClass: Record<ActionType, string> = {
-  登入: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  角色變更: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  用戶停用: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-  設定修改: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-  資料匯出: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
-  通知發送: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+  登入: 'bg-success/15 text-success',
+  角色變更: 'bg-info/15 text-info',
+  用戶停用: 'bg-destructive/15 text-destructive',
+  設定修改: 'bg-warning/15 text-warning',
+  資料匯出: 'bg-info/15 text-info',
+  通知發送: 'bg-info/15 text-info',
 }
-
-const mockLogs: AuditLogItem[] = [
-  {
-    id: 1,
-    time: '2025-12-20 14:32:10',
-    admin: 'Admin1',
-    actionType: '登入',
-    target: '系統',
-    detail: '管理員 Admin1 登入後台',
-    ip: '192.168.1.100',
-  },
-  {
-    id: 2,
-    time: '2025-12-20 14:15:45',
-    admin: 'Admin1',
-    actionType: '角色變更',
-    target: '用戶 #123',
-    detail: '將用戶 #123 角色從 member 改為 moderator',
-    ip: '192.168.1.100',
-  },
-  {
-    id: 3,
-    time: '2025-12-20 13:50:22',
-    admin: 'Admin2',
-    actionType: '用戶停用',
-    target: '用戶 #456',
-    detail: '因違規行為停用用戶 #456 帳號',
-    ip: '10.0.0.55',
-  },
-  {
-    id: 4,
-    time: '2025-12-20 11:20:00',
-    admin: 'Admin1',
-    actionType: '設定修改',
-    target: '系統設定',
-    detail: '修改站內通知預設頻率為每週一次',
-    ip: '192.168.1.100',
-  },
-  {
-    id: 5,
-    time: '2025-12-19 17:00:30',
-    admin: 'Admin2',
-    actionType: '資料匯出',
-    target: '用戶資料',
-    detail: '匯出 2025 年 12 月用戶清單（CSV）',
-    ip: '10.0.0.55',
-  },
-  {
-    id: 6,
-    time: '2025-12-19 16:45:10',
-    admin: 'Admin1',
-    actionType: '通知發送',
-    target: '全體用戶',
-    detail: '發送系統維護公告通知至全體用戶',
-    ip: '192.168.1.100',
-  },
-  {
-    id: 7,
-    time: '2025-12-19 10:30:00',
-    admin: 'Admin2',
-    actionType: '登入',
-    target: '系統',
-    detail: '管理員 Admin2 登入後台',
-    ip: '10.0.0.55',
-  },
-  {
-    id: 8,
-    time: '2025-12-18 15:20:18',
-    admin: 'Admin1',
-    actionType: '角色變更',
-    target: '用戶 #789',
-    detail: '將用戶 #789 角色從 guest 改為 member',
-    ip: '192.168.1.100',
-  },
-  {
-    id: 9,
-    time: '2025-12-18 09:10:05',
-    admin: 'Admin2',
-    actionType: '設定修改',
-    target: 'AI 服務',
-    detail: '調整 AI 助手每日免費使用次數從 5 改為 10',
-    ip: '10.0.0.55',
-  },
-  {
-    id: 10,
-    time: '2025-12-17 14:55:33',
-    admin: 'Admin1',
-    actionType: '用戶停用',
-    target: '用戶 #321',
-    detail: '因帳號異常活動停用用戶 #321 帳號',
-    ip: '192.168.1.100',
-  },
-]
 
 const adminOptions = ['全部', 'Admin1', 'Admin2'] as const
 const actionOptions: ('全部' | ActionType)[] = [
@@ -130,6 +40,14 @@ const actionOptions: ('全部' | ActionType)[] = [
   '資料匯出',
   '通知發送',
 ]
+const ADMIN_FILTER_OPTIONS = adminOptions.map((admin) => ({
+  value: admin,
+  label: admin === '全部' ? '全部管理員' : admin,
+}))
+const ACTION_FILTER_OPTIONS = actionOptions.map((action) => ({
+  value: action,
+  label: action === '全部' ? '全部類型' : action,
+}))
 
 const exportColumns = [
   { key: 'time', header: '時間' },
@@ -150,6 +68,10 @@ export function AuditLogPage() {
   const [lockFrom, setLockFrom] = useState('')
   const [lockTo, setLockTo] = useState('')
 
+  const complianceHoldMutation = useMutation({
+    mutationFn: (body: { dateFrom: string; dateTo: string }) => createComplianceHold(body),
+  })
+
   const PAGE_SIZE = 5
 
   const { data: apiData } = useAuditLogs({
@@ -162,7 +84,7 @@ export function AuditLogPage() {
     offset: (page - 1) * PAGE_SIZE,
   })
 
-  const allLogs = (apiData?.items as unknown as AuditLogItem[] | undefined) ?? mockLogs
+  const allLogs = (apiData?.items as unknown as AuditLogItem[] | undefined) ?? []
 
   const filtered = allLogs.filter((log) => {
     if (adminFilter !== '全部' && log.admin !== adminFilter) return false
@@ -188,7 +110,9 @@ export function AuditLogPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">審計日誌</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          審計日誌
+        </h1>
         <ExportButton
           data={filtered as unknown as Record<string, unknown>[]}
           columns={exportColumns}
@@ -205,21 +129,16 @@ export function AuditLogPage() {
           >
             管理員
           </label>
-          <select
+          <Select
             id="audit-admin-filter"
-            className="rounded-md border border-border bg-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             value={adminFilter}
-            onChange={(e) => {
-              setAdminFilter(e.target.value)
+            onValueChange={(value) => {
+              setAdminFilter(value)
               setPage(1)
             }}
-          >
-            {adminOptions.map((a) => (
-              <option key={a} value={a}>
-                {a === '全部' ? '全部管理員' : a}
-              </option>
-            ))}
-          </select>
+            options={ADMIN_FILTER_OPTIONS}
+            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+          />
         </div>
 
         <div>
@@ -229,21 +148,16 @@ export function AuditLogPage() {
           >
             操作類型
           </label>
-          <select
+          <Select
             id="audit-action-filter"
-            className="rounded-md border border-border bg-card px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             value={actionFilter}
-            onChange={(e) => {
-              setActionFilter(e.target.value)
+            onValueChange={(value) => {
+              setActionFilter(value)
               setPage(1)
             }}
-          >
-            {actionOptions.map((a) => (
-              <option key={a} value={a}>
-                {a === '全部' ? '全部類型' : a}
-              </option>
-            ))}
-          </select>
+            options={ACTION_FILTER_OPTIONS}
+            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+          />
         </div>
 
         <div>
@@ -308,10 +222,10 @@ export function AuditLogPage() {
       </div>
 
       {/* Log Table */}
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted text-muted-foreground">
+            <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
               {['時間', '管理員', '操作類型', '目標', '詳情', 'IP'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium">
                   {h}
@@ -330,7 +244,7 @@ export function AuditLogPage() {
               paginated.map((log) => (
                 <tr
                   key={log.id}
-                  className="border-b border-border last:border-0 hover:bg-accent transition-colors"
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0 transition-colors"
                 >
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">{log.time}</td>
                   <td className="px-4 py-3 font-medium">{log.admin}</td>
@@ -386,10 +300,12 @@ export function AuditLogPage() {
       </div>
 
       {/* Compliance Lock Section */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="flex items-center gap-2">
           <Lock className="h-5 w-5 text-muted-foreground" />
-          <h2 className="heading-sm">合規鎖定</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            合規鎖定
+          </h2>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           鎖定期間內的日誌不會被自動清除，以符合稽核與合規需求。
@@ -427,9 +343,20 @@ export function AuditLogPage() {
           </div>
           <Button
             type="button"
-            onClick={() =>
-              alert(lockFrom && lockTo ? `已啟用鎖定：${lockFrom} ~ ${lockTo}` : '請先選擇日期範圍')
-            }
+            disabled={complianceHoldMutation.isPending}
+            onClick={() => {
+              if (!lockFrom || !lockTo) {
+                alert('請先選擇日期範圍')
+                return
+              }
+              complianceHoldMutation.mutate(
+                { dateFrom: lockFrom, dateTo: lockTo },
+                {
+                  onSuccess: () => alert(`已啟用鎖定：${lockFrom} ~ ${lockTo}`),
+                  onError: () => alert('鎖定失敗，請稍後再試'),
+                },
+              )
+            }}
           >
             <Lock className="h-4 w-4" />
             啟用鎖定

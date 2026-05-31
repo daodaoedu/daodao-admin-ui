@@ -1,4 +1,4 @@
-// ── API 回應外殼 ──────────────────────────────────────────
+// ── API 回應外殼 ──────────────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean
   data: T
@@ -17,7 +17,7 @@ export interface OffsetPagination {
   has_next: boolean
 }
 
-// ── Auth ──────────────────────────────────────────────────
+// ── Auth ────────────────────────────────────────────────────────
 export interface AdminPingData {
   status: string
   admin_id: number
@@ -25,7 +25,25 @@ export interface AdminPingData {
   nickname: string | null
 }
 
-// ── Dashboard ─────────────────────────────────────────────
+export interface AuthMeUser {
+  id: string
+  nickname?: string
+  email: string | null
+  name: string | null
+  photo_url: string | null
+  is_active: boolean
+  email_verified: boolean
+  email_verified_at: string | null
+  roles: string[]
+  permissions: string[]
+}
+
+export interface AuthMeData {
+  user: AuthMeUser
+  isTemporary: boolean
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────
 export interface BackendStat {
   backend: string
   query_count: number
@@ -49,7 +67,7 @@ export interface DashboardStats {
   daily_series: DailyStatPoint[]
 }
 
-// ── System Prompts ────────────────────────────────────────
+// ── System Prompts ────────────────────────────────────────────────
 export interface SystemPrompt {
   id: number
   name: string
@@ -74,7 +92,7 @@ export interface SystemPromptUpdate {
   is_active?: boolean
 }
 
-// ── LLM Models ────────────────────────────────────────────
+// ── LLM Models ─────────────────────────────────────────────────────
 export interface LLMModel {
   id: number
   provider: string
@@ -100,7 +118,7 @@ export interface LLMModelCreate {
   notes?: string
 }
 
-// ── AI Query Logs ─────────────────────────────────────────
+// ── AI Query Logs ───────────────────────────────────────────────────
 export interface AIQueryLog {
   id: number
   request_id: string
@@ -126,7 +144,7 @@ export interface AIQueryLog {
   usage_detail?: Record<string, unknown>
 }
 
-// ── Playground ────────────────────────────────────────────
+// ── Playground ────────────────────────────────────────────────────
 export interface PlaygroundChatRequest {
   model_id: number
   system_prompt_id?: number | null
@@ -159,7 +177,7 @@ export interface ChatMessage {
   }
 }
 
-// ── AI Query Log Filters ─────────────────────────────────
+// ── AI Query Log Filters ───────────────────────────────────────────
 export interface QueryLogFilters {
   backend?: string
   context?: string
@@ -171,7 +189,7 @@ export interface QueryLogFilters {
   offset?: number
 }
 
-// ── User Quotas ───────────────────────────────────────────
+// ── User Quotas ─────────────────────────────────────────────────────
 export interface UserQuota {
   id: number
   user_id: number
@@ -192,7 +210,7 @@ export interface UserWithQuota {
   quota: UserQuota | null
 }
 
-// ── Insight Playground ────────────────────────────────────
+// ── Insight Playground ────────────────────────────────────────────
 export interface InsightUser {
   id: number
   nickname: string | null
@@ -247,7 +265,7 @@ export interface ModelSyncResult {
   existing: number
 }
 
-// ── AI Service Configs ────────────────────────────────
+// ── AI Service Configs ──────────────────────────────────────
 export interface AIServiceConfig {
   id: number
   service: string
@@ -255,7 +273,7 @@ export interface AIServiceConfig {
   model_id: number
   system_prompt_id: number | null
   max_tokens: number | null
-  temperature: string | null // Decimal from backend comes as string
+  temperature: string | null
   top_p: string | null
   top_k: number | null
   is_active: boolean
@@ -289,7 +307,7 @@ export interface AIServiceConfigUpdate {
   notes?: string | null
 }
 
-// ── Roles & Permissions (daodao-server) ───────────────────
+// ── Roles & Permissions (daodao-server) ────────────────────────────────
 export interface Role {
   id: number
   name: string
@@ -328,9 +346,12 @@ export interface AdminUserListItem {
   permissions: string[]
   createdAt: string
   lastLoginAt: string | null
+  personaType: 'L' | 'C' | 'A' | 'D' | 'O' | null
+  badgeGranted: boolean | null
+  userSource: string | null
 }
 
-// ── Admin User Detail ─────────────────────────────────────
+// ── Admin User Detail ─────────────────────────────────────────────────
 export interface AdminUserDetail {
   id: string
   internalId: number
@@ -359,11 +380,21 @@ export interface AdminLoginHistoryItem {
 }
 
 export interface AdminActivityStats {
+  lastLoginAt: string | null
+  lastActiveAt: string | null
+  loginCount: number
+  recentLoginCount: number
+  totalPractices: number
   totalCheckins: number
   totalPosts: number
-  totalComments: number
   totalReactions: number
-  lastActivityAt: string | null
+}
+
+export interface ActivityTimelineEvent {
+  id: string
+  type: 'login' | 'checkin' | 'post'
+  description: string
+  timestamp: string
 }
 
 export interface PracticeStats {
@@ -371,7 +402,75 @@ export interface PracticeStats {
   active: number
   completed: number
   totalCheckIns: number
-  avgCheckInsPerPractice: number
+  avgCheckInsPerPractice?: number
+  averageCompletionRate?: number
+  practicesByCategory?: Array<{
+    category: string
+    count: number
+  }>
+  practicesByStatus?: Array<{
+    status: string
+    count: number
+  }>
+}
+
+export interface PagePagination {
+  currentPage: number
+  totalPages: number
+  totalItems: number
+  itemsPerPage: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+export interface PaginatedApiResponse<T> {
+  success: boolean
+  data: T[]
+  pagination: PagePagination
+  timestamp: string
+  meta?: Record<string, unknown>
+}
+
+export type PracticeStatus = 'draft' | 'not_started' | 'active' | 'completed' | 'archived'
+
+export interface PracticeUserInfo {
+  id: string
+  name: string
+  photoURL: string | null
+  roleList: string[]
+}
+
+export interface PracticeEntity {
+  id: string
+  title: string
+  practiceAction?: string
+  startDate?: string
+  endDate?: string
+  durationDays?: number
+  frequencyMinDays?: number
+  frequencyMaxDays?: number
+  sessionDurationMinutes?: number
+  practiceTimePeriods: string[]
+  otherContext?: string
+  status: PracticeStatus
+  hasResources: boolean
+  progressPercentage?: number
+  firstCheckinAt?: string
+  lastCheckinAt?: string
+  checkInCount: number
+  themeColor?: string
+  createdAt: string
+  updatedAt?: string
+  user: PracticeUserInfo
+  tags: string[]
+  privacyStatus: string
+  stats: {
+    likeCount: number
+    viewCount: number
+    favoriteCount: number
+    shareCount: number
+    commentCount: number
+  }
 }
 
 export interface ActiveUsersTrendPoint {
@@ -393,9 +492,33 @@ export interface ActiveUsersTrendResponse {
   }
 }
 
+export interface ActiveUsersFunnelStep {
+  label: string
+  value: number
+}
+
+export interface ActiveUsersFunnelResponse {
+  steps: ActiveUsersFunnelStep[]
+}
+
+export interface UserCohortRow {
+  label: string
+  day1: number
+  day7: number
+  day14: number
+  day30: number
+  day60: number
+  day90: number
+}
+
+export interface UserCohortResponse {
+  rows: UserCohortRow[]
+}
+
 export interface EmailHistoryItem {
   id: number
   recipient: string
+  recipientName: string | null
   subject: string
   status: string
   sentAt: string
@@ -411,4 +534,388 @@ export interface EmailHistoryResponse {
     successRate: number
   }
   pagination: OffsetPagination
+}
+
+// ── Wish Pool / Roadmap ──────────────────────────────────────────────
+export type WishCategory =
+  | 'operation'
+  | 'practice'
+  | 'social'
+  | 'explore'
+  | 'challenge'
+  | 'ai'
+  | 'profile'
+  | 'other'
+
+export type WishStatus = 'pending' | 'linked' | 'archived'
+
+export type RoadmapStatus =
+  | 'collected'
+  | 'discussing'
+  | 'planned'
+  | 'in_progress'
+  | 'done'
+  | 'parked'
+
+/** 游標分頁（許願池端點，與 OffsetPagination 不同） */
+export interface CursorPagination {
+  hasMore: boolean
+  nextCursor: string | null
+  count: number
+  limit: number
+}
+
+export interface CursorResponse<T> {
+  success: boolean
+  data: T[]
+  pagination: CursorPagination
+  timestamp: string
+}
+
+export interface AdminWishItem {
+  id: number
+  category: WishCategory
+  situation: string
+  desire: string
+  status: WishStatus
+  contact_email: string | null
+  internal_module_tag: string | null
+  source: 'web' | 'app'
+  linked_roadmap_item_id: number | null
+  created_at: string
+  submitter: {
+    external_id: string | null
+    nickname: string | null
+    email: string | null
+  }
+}
+
+export interface AdminRoadmapItem {
+  id: number
+  external_id: string
+  title: string
+  description: string
+  category: WishCategory
+  status: RoadmapStatus
+  support_count: number
+  is_public: boolean
+  pinned: boolean
+  sort_order: number
+  shipped_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface LinkWishPayload {
+  roadmap_item_id: number
+  internal_module_tag?: string
+}
+
+export interface PromoteWishPayload {
+  title: string
+  description: string
+  category: WishCategory
+  status?: RoadmapStatus
+  internal_module_tag?: string
+}
+
+export interface CreateRoadmapItemPayload {
+  title: string
+  description: string
+  category: WishCategory
+  status?: RoadmapStatus
+  is_public?: boolean
+  pinned?: boolean
+  sort_order?: number
+}
+
+export interface UpdateRoadmapItemPayload {
+  title?: string
+  description?: string
+  category?: WishCategory
+  status?: RoadmapStatus
+  is_public?: boolean
+  pinned?: boolean
+  sort_order?: number
+}
+
+export interface RoadmapReport {
+  popularCategories: Array<{ category: WishCategory; count: number }>
+  popularItems: Array<{
+    external_id: string
+    title: string
+    status: RoadmapStatus
+    support_count: number
+  }>
+  wishTrend: Array<{ period: string; count: number }>
+  backlog: {
+    pendingCount: number
+    oldestPendingWaitingHours: number | null
+  }
+}
+
+// ── Survey (問卷) ─────────────────────────────────────────────────
+export type SurveyStatus = 'draft' | 'active' | 'closed' | 'archived'
+
+export interface AdminSurveyListItem {
+  id: number
+  external_id: string
+  title: string
+  status: SurveyStatus
+  is_anonymous: boolean
+  tags: string[]
+  view_count: number
+  created_at: string
+  response_count: number
+  creator: {
+    id: number | null
+    email: string | null
+    nickname: string | null
+  }
+}
+
+export interface AdminSurveyDetail extends AdminSurveyListItem {
+  description: string | null
+  max_responses: number | null
+  cover_url: string | null
+  updated_at: string
+  questions: Array<{
+    id: number
+    question_text: string
+    question_type: string
+    is_required: boolean
+    position: number
+    options: Array<{ id: number; option_text: string; position: number }>
+  }>
+}
+
+export interface AdminSurveyResponse {
+  id: number
+  user_id: number | null
+  completed_at: string
+  answer_count: number
+}
+
+export interface AdminSurveyQuestionForm {
+  question_text: string
+  question_type: string
+  is_required: boolean
+  position: number
+  options: Array<{ option_text: string; position: number }>
+}
+
+export interface AdminSurveyCreatePayload {
+  title: string
+  description?: string
+  is_anonymous?: boolean
+  tags?: string[]
+  max_responses?: number | null
+  start_time?: string | null
+  end_time?: string | null
+  questions?: AdminSurveyQuestionForm[]
+}
+
+export type AdminSurveyUpdatePayload = Partial<AdminSurveyCreatePayload>
+
+export interface AdminSurveyAnswerItem {
+  question_id: number
+  question_text: string
+  question_type: string
+  answer_text: string | null
+  selected_option_ids: number[]
+  selected_options: string[]
+  rating_value: number | null
+  boolean_value: boolean | null
+}
+
+export interface AdminSurveyResponseDetail {
+  id: number
+  user_id: number | null
+  completed_at: string
+  answers: AdminSurveyAnswerItem[]
+}
+
+export interface AdminSurveyQuestionStats {
+  avg?: number | null
+  min?: number | null
+  max?: number | null
+  true?: number
+  false?: number
+  option_counts?: Array<{ option_id: number; option_text: string; count: number }>
+  sample_answers?: Array<string | null>
+}
+
+export interface AdminSurveyPerQuestion {
+  question_id: number
+  question_text: string
+  question_type: string
+  answer_count: number
+  stats: AdminSurveyQuestionStats
+}
+
+export interface AdminSurveyAnalytics {
+  survey_id: number
+  response_count: number
+  view_count: number
+  avg_duration_seconds: number | null
+  drop_off: Array<{ last_position: number; count: number }>
+  per_question: AdminSurveyPerQuestion[]
+}
+
+// ── Email Templates ──────────────────────────────────────────────────────────
+export interface EmailTemplate {
+  id: number
+  name: string
+  slug: string | null
+  subject: string
+  preheader: string | null
+  body: string
+  variables: string[]
+  dataSource: 'user' | 'practice' | 'event' | 'none'
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface EmailTemplateCreate {
+  name: string
+  subject: string
+  preheader?: string
+  body: string
+  variables?: string[]
+  dataSource?: 'user' | 'practice' | 'event' | 'none'
+  isActive?: boolean
+  slug?: string
+}
+
+export interface EmailTemplateUpdate {
+  name?: string
+  subject?: string
+  preheader?: string
+  body?: string
+  variables?: string[]
+  dataSource?: 'user' | 'practice' | 'event' | 'none'
+  isActive?: boolean
+}
+
+// ── Onboarding Analytics ────────────────────────────────────────────────────
+export type LearningStyleType = 'L' | 'C' | 'A' | 'D' | 'O'
+export type RegistrationFlow = 'landing_page' | 'quiz' | 'action_maker'
+export type CreationMethod = 'self_created' | 'copied' | 'action_generator'
+export type OnboardingEmailType = 'L0' | 'A' | 'B' | 'C' | 'D' | 'E'
+
+export interface OnboardingStats {
+  totalUsers: number
+  badgeGrantedCount: number
+  badgeGrantedRate: number
+  avgDaysToComplete: number
+  byRegistrationFlow: Record<RegistrationFlow, { total: number; badgeGranted: number }>
+  byCreationMethod: Record<CreationMethod, number>
+  completionByDay: Array<{ days: number; count: number }>
+}
+
+export interface UserOnboardingDetail {
+  userId: string
+  registrationFlow: RegistrationFlow | null
+  userSource: 'S1' | 'S2' | 'S3'
+  creationMethod: CreationMethod | null
+  taskStates: Record<string, 'done' | 'pending'>
+  taskCompletedAt: Record<string, string>
+  badgeGranted: boolean
+  badgeGrantedAt: string | null
+  daysToComplete: number | null
+  completedAt: string | null
+  learningStyle: {
+    resultType: LearningStyleType | null
+    completedAt: string | null
+    attemptCount: number
+  } | null
+  persona: {
+    answerCount: number
+    isUnlocked: boolean
+    lastAnsweredAt: string | null
+  } | null
+  emailSequence: Array<{
+    emailType: OnboardingEmailType
+    status: 'sent' | 'failed' | 'not_sent'
+    sentAt: string | null
+    openedAt: string | null
+    openCount: number
+  }>
+  engagement: {
+    practiceCount: number
+    activePracticeCount: number
+    maxCheckinStreak: number
+    lastActiveAt: string | null
+  }
+}
+
+export interface QuizStats {
+  totalUsers: number
+  quizCompletedCount: number
+  quizCompletedRate: number
+  byRole: Record<LearningStyleType, { count: number; rate: number }>
+  byRoleAndBadge: Record<LearningStyleType, { badgeGranted: number; total: number }>
+  byRoleAndRegistrationFlow: Record<LearningStyleType, Record<RegistrationFlow, number>>
+}
+
+export interface PersonaStats {
+  totalUsers: number
+  anyAnswerCount: number
+  anyAnswerRate: number
+  unlockedCount: number
+  unlockedRate: number
+  avgAnswerCount: number
+  answerCountDistribution: Array<{ answerCount: number; userCount: number }>
+  topQuestions: Array<{ questionId: number; prompt: string; answerCount: number }>
+}
+
+export interface EmailOnboardingStats {
+  byEmailType: Record<
+    OnboardingEmailType,
+    { sentCount: number; openedCount: number; openRate: number; failedCount: number }
+  >
+  byUserSource: Record<
+    'S1' | 'S2' | 'S3',
+    { sentCount: number; openedCount: number; openRate: number }
+  >
+}
+
+export interface EngagementStats {
+  practiceStats: {
+    avgPracticeCount: number
+    avgActivePracticeCount: number
+    abandonmentRate: number
+  }
+  checkinStats: {
+    avgMaxStreak: number
+    usersWithStreak7Plus: number
+    usersWithStreak30Plus: number
+  }
+  retentionByDay: Array<{ day: number; retentionRate: number }>
+}
+
+export interface PersonaProfileAnswer {
+  id: number
+  selectedValue: string | null
+  textAnswer: string | null
+  resonanceCount: number
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface PersonaProfileQuestion {
+  id: number
+  prompt: string
+  questionType: 'choice' | 'sentence_completion' | 'scenario'
+  options: string[] | null
+  isNewUserPriority: boolean
+  isPlaceholder: boolean
+  answer: PersonaProfileAnswer | null
+}
+
+export interface PersonaUserProfile {
+  questions: PersonaProfileQuestion[]
+  viewerIsLocked?: boolean
+  answersNeeded?: number
 }

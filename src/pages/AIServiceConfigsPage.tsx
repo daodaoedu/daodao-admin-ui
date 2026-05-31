@@ -5,13 +5,22 @@ import {
   createAIServiceConfig,
   deleteAIServiceConfig,
   listAIServiceConfigs,
+  listLLMModels,
+  listSystemPrompts,
   updateAIServiceConfig,
-} from '@/api/admin'
-import type { AIServiceConfig, AIServiceConfigCreate, AIServiceConfigUpdate } from '@/api/types'
+} from '@/api/admin-ai'
+import type {
+  AIServiceConfig,
+  AIServiceConfigCreate,
+  AIServiceConfigUpdate,
+  LLMModel,
+  SystemPrompt,
+} from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 
 const EMPTY_FORM: AIServiceConfigCreate = {
   service: '',
@@ -26,10 +35,14 @@ const EMPTY_FORM: AIServiceConfigCreate = {
   notes: null,
 }
 
+function modelLabel(m: LLMModel) {
+  return m.display_name ? `${m.display_name} (${m.provider})` : `${m.model_name} (${m.provider})`
+}
+
 function ParamBadge({ label, value }: { label: string; value: string | number | null }) {
   if (value === null || value === undefined) return null
   return (
-    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-muted text-muted-foreground">
+    <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs bg-muted text-muted-foreground">
       {label}={value}
     </span>
   )
@@ -50,6 +63,16 @@ export function AIServiceConfigsPage() {
   const { data = [], isLoading } = useQuery({
     queryKey: ['ai-service-configs'],
     queryFn: () => listAIServiceConfigs().then((r) => r.data.data),
+  })
+
+  const { data: models = [] } = useQuery({
+    queryKey: ['llm-models'],
+    queryFn: () => listLLMModels().then((r) => r.data.data),
+  })
+
+  const { data: prompts = [] } = useQuery({
+    queryKey: ['system-prompts'],
+    queryFn: () => listSystemPrompts().then((r) => r.data.data),
   })
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['ai-service-configs'] })
@@ -114,14 +137,18 @@ export function AIServiceConfigsPage() {
     value: AIServiceConfigUpdate[K],
   ) => setEditForm((f) => ({ ...f, [key]: value }))
 
-  // Derive unique services from data
   const services = ['全部', ...Array.from(new Set(data.map((c) => c.service))).sort()]
-
   const filtered = activeService === '全部' ? data : data.filter((c) => c.service === activeService)
+
+  const modelOptions = models.map((m) => ({ value: String(m.id), label: modelLabel(m) }))
+  const promptOptions = [
+    { value: '', label: '無' },
+    ...prompts.map((p) => ({ value: String(p.id), label: p.name })),
+  ]
 
   const handleCreate = () => {
     if (!form.service.trim() || !form.name.trim() || !form.model_id) {
-      setCreateError('service、name、model_id 為必填')
+      setCreateError('服務類型、設定名稱、模型為必填')
       return
     }
     setCreateError(null)
@@ -137,7 +164,9 @@ export function AIServiceConfigsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">AI 服務設定</h1>
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          AI 服務設定
+        </h1>
         <Button
           type="button"
           size="xs"
@@ -153,20 +182,20 @@ export function AIServiceConfigsPage() {
       </div>
 
       {/* Service tab bar */}
-      <div className="flex gap-1 border-b border-border pb-0">
+      <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
         {services.map((svc) => (
-          <button
+          <Button
             key={svc}
             type="button"
             onClick={() => setActiveService(svc)}
-            className={`px-3 py-1.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border-transparent bg-transparent shadow-none hover:bg-muted hover:text-foreground flex-1 justify-center ${
               activeService === svc
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'bg-background/70 text-foreground shadow-sm hover:bg-background/70'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {svc}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -176,19 +205,18 @@ export function AIServiceConfigsPage() {
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">目前沒有設定</p>
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm overflow-hidden">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40">
-                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Service</th>
-                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Name</th>
-                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">
-                  Model ID
-                </th>
-                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">參數</th>
-                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">狀態</th>
-                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">備註</th>
-                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">操作</th>
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+                <th className="px-4 py-2.5 font-medium text-muted-foreground">服務類型</th>
+                <th className="px-4 py-2.5 font-medium text-muted-foreground">設定名稱</th>
+                <th className="px-4 py-2.5 font-medium text-muted-foreground">模型</th>
+                <th className="px-4 py-2.5 font-medium text-muted-foreground">系統提示詞</th>
+                <th className="px-4 py-2.5 font-medium text-muted-foreground">參數</th>
+                <th className="px-4 py-2.5 font-medium text-muted-foreground">狀態</th>
+                <th className="px-4 py-2.5 font-medium text-muted-foreground">備註</th>
+                <th className="px-4 py-2.5 font-medium text-muted-foreground">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -196,6 +224,8 @@ export function AIServiceConfigsPage() {
                 <ConfigRow
                   key={cfg.id}
                   cfg={cfg}
+                  models={models}
+                  prompts={prompts}
                   onEdit={() => openEdit(cfg)}
                   onActivate={() => setConfirmActivateId(cfg.id)}
                   onDelete={() => setConfirmDeleteId(cfg.id)}
@@ -227,13 +257,13 @@ export function AIServiceConfigsPage() {
                   htmlFor="cfg-service"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  service *
+                  服務類型 *
                 </label>
                 <Input
                   id="cfg-service"
                   value={form.service}
                   onChange={(e) => setField('service', e.target.value)}
-                  placeholder="insight"
+                  placeholder="例：insight、chat"
                 />
               </div>
               <div>
@@ -241,47 +271,43 @@ export function AIServiceConfigsPage() {
                   htmlFor="cfg-name"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  name *
+                  設定名稱 *
                 </label>
                 <Input
                   id="cfg-name"
                   value={form.name}
                   onChange={(e) => setField('name', e.target.value)}
-                  placeholder="設定名稱"
+                  placeholder="例：預設設定"
                 />
               </div>
-              <div>
+              <div className="col-span-2">
                 <label
-                  htmlFor="cfg-model-id"
+                  htmlFor="cfg-model"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  model_id *
+                  模型 *
                 </label>
-                <Input
-                  id="cfg-model-id"
-                  type="number"
-                  value={form.model_id || ''}
-                  onChange={(e) =>
-                    setField('model_id', e.target.value ? Number(e.target.value) : 0)
-                  }
-                  placeholder="Model DB ID"
+                <Select
+                  id="cfg-model"
+                  value={form.model_id ? String(form.model_id) : ''}
+                  onValueChange={(v) => setField('model_id', v ? Number(v) : 0)}
+                  options={modelOptions}
+                  placeholder="選擇模型…"
                 />
               </div>
-              <div>
+              <div className="col-span-2">
                 <label
-                  htmlFor="cfg-prompt-id"
+                  htmlFor="cfg-prompt"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  system_prompt_id
+                  系統提示詞
                 </label>
-                <Input
-                  id="cfg-prompt-id"
-                  type="number"
-                  value={form.system_prompt_id ?? ''}
-                  onChange={(e) =>
-                    setField('system_prompt_id', e.target.value ? Number(e.target.value) : null)
-                  }
-                  placeholder="選填"
+                <Select
+                  id="cfg-prompt"
+                  value={form.system_prompt_id !== null ? String(form.system_prompt_id) : ''}
+                  onValueChange={(v) => setField('system_prompt_id', v ? Number(v) : null)}
+                  options={promptOptions}
+                  placeholder="選擇提示詞…"
                 />
               </div>
               <div>
@@ -289,7 +315,7 @@ export function AIServiceConfigsPage() {
                   htmlFor="cfg-max-tokens"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  max_tokens
+                  最大 Token 數
                 </label>
                 <Input
                   id="cfg-max-tokens"
@@ -306,7 +332,7 @@ export function AIServiceConfigsPage() {
                   htmlFor="cfg-temperature"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  temperature
+                  Temperature
                 </label>
                 <Input
                   id="cfg-temperature"
@@ -324,7 +350,7 @@ export function AIServiceConfigsPage() {
                   htmlFor="cfg-top-p"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  top_p
+                  Top P
                 </label>
                 <Input
                   id="cfg-top-p"
@@ -342,7 +368,7 @@ export function AIServiceConfigsPage() {
                   htmlFor="cfg-top-k"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  top_k
+                  Top K
                 </label>
                 <Input
                   id="cfg-top-k"
@@ -360,13 +386,13 @@ export function AIServiceConfigsPage() {
                 htmlFor="cfg-notes"
                 className="mb-1 block text-xs font-medium text-muted-foreground"
               >
-                notes
+                備註
               </label>
               <Input
                 id="cfg-notes"
                 value={form.notes ?? ''}
                 onChange={(e) => setField('notes', e.target.value || null)}
-                placeholder="備註（選填）"
+                placeholder="選填"
               />
             </div>
             {createError && <p className="text-xs text-destructive">{createError}</p>}
@@ -400,7 +426,7 @@ export function AIServiceConfigsPage() {
             </DialogClose>
           </div>
           <div className="px-5 py-4 text-sm">
-            確定要啟用此設定？同一 service 的其他設定將會被停用。
+            確定要啟用此設定？同一服務類型的其他設定將會被停用。
           </div>
           <div className="border-t border-border px-5 py-3 flex gap-2 shrink-0">
             <Button
@@ -443,7 +469,7 @@ export function AIServiceConfigsPage() {
                   htmlFor="edit-cfg-name"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  name *
+                  設定名稱 *
                 </label>
                 <Input
                   id="edit-cfg-name"
@@ -452,38 +478,38 @@ export function AIServiceConfigsPage() {
                   placeholder="設定名稱"
                 />
               </div>
-              <div>
+              <div className="col-span-2">
                 <label
-                  htmlFor="edit-cfg-model-id"
+                  htmlFor="edit-cfg-model"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  model_id *
+                  模型 *
                 </label>
-                <Input
-                  id="edit-cfg-model-id"
-                  type="number"
-                  value={editForm.model_id ?? ''}
-                  onChange={(e) =>
-                    setEditField('model_id', e.target.value ? Number(e.target.value) : undefined)
-                  }
-                  placeholder="Model DB ID"
+                <Select
+                  id="edit-cfg-model"
+                  value={editForm.model_id ? String(editForm.model_id) : ''}
+                  onValueChange={(v) => setEditField('model_id', v ? Number(v) : undefined)}
+                  options={modelOptions}
+                  placeholder="選擇模型…"
                 />
               </div>
-              <div>
+              <div className="col-span-2">
                 <label
-                  htmlFor="edit-cfg-prompt-id"
+                  htmlFor="edit-cfg-prompt"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  system_prompt_id
+                  系統提示詞
                 </label>
-                <Input
-                  id="edit-cfg-prompt-id"
-                  type="number"
-                  value={editForm.system_prompt_id ?? ''}
-                  onChange={(e) =>
-                    setEditField('system_prompt_id', e.target.value ? Number(e.target.value) : null)
+                <Select
+                  id="edit-cfg-prompt"
+                  value={
+                    editForm.system_prompt_id !== null && editForm.system_prompt_id !== undefined
+                      ? String(editForm.system_prompt_id)
+                      : ''
                   }
-                  placeholder="選填"
+                  onValueChange={(v) => setEditField('system_prompt_id', v ? Number(v) : null)}
+                  options={promptOptions}
+                  placeholder="選擇提示詞…"
                 />
               </div>
               <div>
@@ -491,7 +517,7 @@ export function AIServiceConfigsPage() {
                   htmlFor="edit-cfg-max-tokens"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  max_tokens
+                  最大 Token 數
                 </label>
                 <Input
                   id="edit-cfg-max-tokens"
@@ -508,7 +534,7 @@ export function AIServiceConfigsPage() {
                   htmlFor="edit-cfg-temperature"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  temperature
+                  Temperature
                 </label>
                 <Input
                   id="edit-cfg-temperature"
@@ -526,7 +552,7 @@ export function AIServiceConfigsPage() {
                   htmlFor="edit-cfg-top-p"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  top_p
+                  Top P
                 </label>
                 <Input
                   id="edit-cfg-top-p"
@@ -544,7 +570,7 @@ export function AIServiceConfigsPage() {
                   htmlFor="edit-cfg-top-k"
                   className="mb-1 block text-xs font-medium text-muted-foreground"
                 >
-                  top_k
+                  Top K
                 </label>
                 <Input
                   id="edit-cfg-top-k"
@@ -562,13 +588,13 @@ export function AIServiceConfigsPage() {
                 htmlFor="edit-cfg-notes"
                 className="mb-1 block text-xs font-medium text-muted-foreground"
               >
-                notes
+                備註
               </label>
               <Input
                 id="edit-cfg-notes"
                 value={editForm.notes ?? ''}
                 onChange={(e) => setEditField('notes', e.target.value || null)}
-                placeholder="備註（選填）"
+                placeholder="選填"
               />
             </div>
             {editError && <p className="text-xs text-destructive">{editError}</p>}
@@ -631,6 +657,8 @@ export function AIServiceConfigsPage() {
 
 function ConfigRow({
   cfg,
+  models,
+  prompts,
   onEdit,
   onActivate,
   onDelete,
@@ -638,19 +666,36 @@ function ConfigRow({
   isDeleting,
 }: {
   cfg: AIServiceConfig
+  models: LLMModel[]
+  prompts: SystemPrompt[]
   onEdit: () => void
   onActivate: () => void
   onDelete: () => void
   isActivating: boolean
   isDeleting: boolean
 }) {
+  const model = models.find((m) => m.id === cfg.model_id)
+  const prompt = prompts.find((p) => p.id === cfg.system_prompt_id)
+
   return (
     <tr
-      className={`border-b border-border last:border-0 transition-colors ${cfg.is_active ? 'bg-green-50/40 dark:bg-green-950/20' : 'hover:bg-accent/30'}`}
+      className={`border-b border-border/80 transition-colors ${cfg.is_active ? 'bg-success/10' : 'hover:bg-accent/30'}`}
     >
       <td className="px-4 py-2.5 font-mono text-xs">{cfg.service}</td>
       <td className="px-4 py-2.5 font-medium">{cfg.name}</td>
-      <td className="px-4 py-2.5 text-muted-foreground">{cfg.model_id}</td>
+      <td className="px-4 py-2.5 text-sm">
+        {model ? (
+          <span>
+            {model.display_name ?? model.model_name}
+            <span className="ml-1 text-xs text-muted-foreground">({model.provider})</span>
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )}
+      </td>
+      <td className="px-4 py-2.5 text-sm text-muted-foreground max-w-[120px] truncate">
+        {prompt ? prompt.name : '—'}
+      </td>
       <td className="px-4 py-2.5">
         <div className="flex flex-wrap gap-1">
           <ParamBadge label="max_tokens" value={cfg.max_tokens} />
@@ -675,32 +720,30 @@ function ConfigRow({
       </td>
       <td className="px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onEdit}
-            className="rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          >
+          <Button type="button" size="xs" variant="ghost" onClick={onEdit}>
             編輯
-          </button>
+          </Button>
           {!cfg.is_active && (
-            <button
+            <Button
               type="button"
+              size="xs"
+              variant="secondary"
               onClick={onActivate}
               disabled={isActivating}
-              className="rounded px-2 py-1 text-xs bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
             >
               {isActivating ? '啟用中…' : '啟用'}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
+            size="xs"
+            variant="destructive"
             onClick={cfg.is_active ? undefined : onDelete}
             disabled={cfg.is_active || isDeleting}
             title={cfg.is_active ? '無法刪除已啟用的設定' : '刪除'}
-            className="rounded px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isDeleting ? '刪除中…' : '刪除'}
-          </button>
+          </Button>
         </div>
       </td>
     </tr>

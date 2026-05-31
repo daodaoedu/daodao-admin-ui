@@ -1,85 +1,26 @@
 import { ClipboardList, FileQuestion, Hash, Percent, Plus } from 'lucide-react'
+import type { Quiz, QuizQuestion } from '@/api/admin-learning'
 import { StatCard } from '@/components/StatCard'
+import { Button } from '@/components/ui/button'
+import { useQuizzes } from '@/hooks/useQuizzes'
 import { cn } from '@/lib/utils'
 
-const MOCK_QUIZZES = [
-  {
-    name: '前端基礎測驗',
-    course: 'React 入門實戰',
-    questions: 15,
-    passingScore: 70,
-    avgScore: 78,
-    passRate: 82,
-  },
-  {
-    name: 'TypeScript 型別挑戰',
-    course: 'TypeScript 完全指南',
-    questions: 20,
-    passingScore: 75,
-    avgScore: 62,
-    passRate: 58,
-  },
-  {
-    name: 'Node.js 核心概念',
-    course: 'Node.js 後端開發',
-    questions: 12,
-    passingScore: 70,
-    avgScore: 71,
-    passRate: 72,
-  },
-  {
-    name: 'CSS 選擇器測驗',
-    course: 'CSS 動畫大師班',
-    questions: 10,
-    passingScore: 80,
-    avgScore: 85,
-    passRate: 88,
-  },
-  {
-    name: 'Git 工作流程',
-    course: 'Git 版本控制',
-    questions: 8,
-    passingScore: 60,
-    avgScore: 74,
-    passRate: 90,
-  },
-]
-
-const MOCK_QUESTION_STATS = [
-  {
-    question: 'React 中 useEffect 的清理函式何時執行？',
-    type: '選擇',
-    correctRate: 45,
-    commonWrong: '元件掛載時',
-  },
-  {
-    question: 'Virtual DOM 的主要目的是什麼？',
-    type: '選擇',
-    correctRate: 72,
-    commonWrong: '取代真實 DOM',
-  },
-  { question: 'JSX 是 JavaScript 的語法糖', type: '是非', correctRate: 88, commonWrong: '否' },
-  {
-    question: '解釋 React 中 key 的作用',
-    type: '簡答',
-    correctRate: 38,
-    commonWrong: '未提及 reconciliation',
-  },
-]
-
 export function QuizzesPage() {
+  const { data: quizzesData } = useQuizzes()
+  const quizzes = quizzesData ?? ([] as Quiz[])
+  const quizQuestions: QuizQuestion[] = []
+
   return (
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <h1 className="heading-lg">測驗管理</h1>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
+        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+          測驗管理
+        </h1>
+        <Button type="button">
           <Plus className="h-4 w-4" />
           建立測驗
-        </button>
+        </Button>
       </div>
 
       {/* ── Stats ──────────────────────────────────────── */}
@@ -90,12 +31,14 @@ export function QuizzesPage() {
       </div>
 
       {/* ── Quiz table ─────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 heading-sm">測驗列表</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+          測驗列表
+        </h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">測驗名稱</th>
                 <th className="pb-3 pr-4 font-medium">附加課程</th>
                 <th className="pb-3 pr-4 font-medium">題目數</th>
@@ -106,8 +49,11 @@ export function QuizzesPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_QUIZZES.map((quiz) => (
-                <tr key={quiz.name} className="border-b border-border last:border-0">
+              {quizzes.map((quiz) => (
+                <tr
+                  key={quiz.name}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground">{quiz.name}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{quiz.course}</td>
                   <td className="py-3 pr-4 text-foreground">{quiz.questions}</td>
@@ -141,9 +87,14 @@ export function QuizzesPage() {
                     </div>
                   </td>
                   <td className="py-3">
-                    <button type="button" className="text-primary hover:underline">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      className="h-auto px-0 py-0 text-primary"
+                    >
                       編輯
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -153,18 +104,20 @@ export function QuizzesPage() {
       </div>
 
       {/* ── Per-question stats ─────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <FileQuestion className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">題目分析</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            題目分析
+          </h2>
           <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
             前端基礎測驗
           </span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">題目</th>
                 <th className="pb-3 pr-4 font-medium">類型</th>
                 <th className="pb-3 pr-4 font-medium">正確率</th>
@@ -172,8 +125,11 @@ export function QuizzesPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_QUESTION_STATS.map((q) => (
-                <tr key={q.question} className="border-b border-border last:border-0">
+              {quizQuestions.map((q) => (
+                <tr
+                  key={q.question}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground max-w-xs truncate">
                     {q.question}
                   </td>

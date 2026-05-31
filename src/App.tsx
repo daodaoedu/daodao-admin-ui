@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/auth/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
 
 // Existing pages (eager load)
+import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 
@@ -119,6 +120,24 @@ const AIAssistantPage = lazy(() =>
 )
 const EventsPage = lazy(() => import('@/pages/EventsPage').then((m) => ({ default: m.EventsPage })))
 
+// Wishpool pages
+const WishInboxPage = lazy(() =>
+  import('@/pages/WishInboxPage').then((m) => ({ default: m.WishInboxPage })),
+)
+const RoadmapItemsPage = lazy(() =>
+  import('@/pages/RoadmapItemsPage').then((m) => ({ default: m.RoadmapItemsPage })),
+)
+const RoadmapReportsPage = lazy(() =>
+  import('@/pages/RoadmapReportsPage').then((m) => ({ default: m.RoadmapReportsPage })),
+)
+const SurveyManagementPage = lazy(() =>
+  import('@/pages/SurveyManagementPage').then((m) => ({ default: m.SurveyManagementPage })),
+)
+const EmailTemplatesPage = lazy(() =>
+  import('@/pages/EmailTemplatesPage').then((m) => ({ default: m.EmailTemplatesPage })),
+)
+const EmailTemplateEditorPage = lazy(() => import('@/pages/EmailTemplateEditorPage'))
+
 function PageLoader() {
   return (
     <div className="flex items-center justify-center py-20">
@@ -140,6 +159,7 @@ export function App() {
         path="/login"
         element={isLoading ? null : isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
       />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           {/* Dashboard (eager) */}
@@ -336,6 +356,22 @@ export function App() {
             }
           />
           <Route
+            path="/email-templates"
+            element={
+              <LazyPage>
+                <EmailTemplatesPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/email-templates/:id/edit"
+            element={
+              <LazyPage>
+                <EmailTemplateEditorPage />
+              </LazyPage>
+            }
+          />
+          <Route
             path="/audit-log"
             element={
               <LazyPage>
@@ -462,6 +498,42 @@ export function App() {
             element={
               <LazyPage>
                 <EventsPage />
+              </LazyPage>
+            }
+          />
+
+          {/* 許願池 */}
+          <Route
+            path="/wishes"
+            element={
+              <LazyPage>
+                <WishInboxPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/roadmap-items"
+            element={
+              <LazyPage>
+                <RoadmapItemsPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/roadmap-reports"
+            element={
+              <LazyPage>
+                <RoadmapReportsPage />
+              </LazyPage>
+            }
+          />
+
+          {/* 問卷 */}
+          <Route
+            path="/surveys"
+            element={
+              <LazyPage>
+                <SurveyManagementPage />
               </LazyPage>
             }
           />
