@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   BookOpen,
   Brain,
-  ChevronDown,
   Clock,
   FileText,
   Heart,
@@ -18,6 +17,7 @@ import {
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getUserOnboardingDetail, getUserPersonaProfile } from '@/api/admin-community'
+import { listRoles, updateUserRole } from '@/api/admin-server'
 import { getUserPractices, updateAdminUserStatus, updatePracticeStatus } from '@/api/admin-users'
 import type {
   AdminActivityStats,
@@ -38,6 +38,14 @@ import {
   useAdminUserDetail,
 } from '@/hooks/useAdminUserDetail'
 import { cn } from '@/lib/utils'
+
+const PERSONA_LABELS: Record<string, string> = {
+  D: '探探島',
+  A: '動動島',
+  O: '構構島',
+  L: '跨跨島',
+  C: '連連島',
+}
 
 type EventType = '登入' | '打卡' | '發文' | 'AI 查詢' | '角色變更'
 
@@ -192,70 +200,63 @@ function LoginHistoryTab({
 }
 
 function RoleManagementTab({
-  defaultRole,
+  userId,
+  currentRoleId,
+  roles,
   permissions,
+  onSuccess,
 }: {
-  defaultRole: string
+  userId: number
+  currentRoleId: number | undefined
+  roles: { id: number; name: string }[]
   permissions: string[]
+  onSuccess: () => void
 }) {
-  const [selectedRole, setSelectedRole] = useState(defaultRole)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const { mutate: changeRole, isPending } = useMutation({
+    mutationFn: (roleId: number) => updateUserRole(userId, roleId),
+    onSuccess,
+  })
 
-  const roleOptions = ['viewer', 'member', 'moderator', 'admin']
+  const roleOptions = [
+    { value: '', label: '選擇角色' },
+    ...roles.map((r) => ({ value: String(r.id), label: r.name })),
+  ]
+
+  const currentRoleName = roles.find((r) => r.id === currentRoleId)?.name ?? '無角色'
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
-        <h3 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h3 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
           目前角色
         </h3>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <UserCheck className="h-5 w-5 text-primary" />
-            <span className="text-lg font-semibold text-foreground">{selectedRole}</span>
-          </div>
+        <div className="mb-4 flex items-center gap-2">
+          <UserCheck className="h-5 w-5 text-primary" />
+          <span className="text-lg font-semibold text-foreground">{currentRoleName}</span>
         </div>
-
-        <div className="mt-4">
-          <span className="mb-1.5 block text-sm text-muted-foreground">變更角色</span>
-          <div className="relative inline-block">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="inline-flex h-9 items-center gap-2"
-            >
-              {selectedRole}
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </Button>
-            {dropdownOpen && (
-              <div className="absolute left-0 z-10 mt-1 w-40 rounded-md border border-border bg-card/90 py-1 shadow-lg">
-                {roleOptions.map((role) => (
-                  <Button
-                    type="button"
-                    key={role}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRole(role)
-                      setDropdownOpen(false)
-                    }}
-                    className={cn(
-                      'mt-0 block w-full justify-start rounded-none px-4 text-left',
-                      role === selectedRole ? 'font-medium text-primary' : 'text-foreground',
-                    )}
-                  >
-                    {role}
-                  </Button>
-                ))}
-              </div>
-            )}
+        <div>
+          <label
+            htmlFor="detail-role-select"
+            className="mb-1.5 block text-sm text-muted-foreground"
+          >
+            變更角色
+          </label>
+          <div className="flex items-center gap-3">
+            <Select
+              id="detail-role-select"
+              value={currentRoleId ? String(currentRoleId) : ''}
+              onValueChange={(v) => {
+                if (v) changeRole(Number(v))
+              }}
+              options={roleOptions}
+            />
+            {isPending && <span className="text-xs text-muted-foreground">儲存中...</span>}
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
-        <h3 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <h3 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
           權限列表
         </h3>
         {permissions.length === 0 ? (
@@ -815,9 +816,15 @@ function OnboardingTab({ userId }: { userId: string }) {
 export function UserDetailPage() {
   const { userId } = useParams<{ userId: string }>()
   const [activeTab, setActiveTab] = useState<Tab>('活動時間軸')
-  const [disabling, setDisabling] = useState(false)
+  const [toggling, setToggling] = useState(false)
 
   const userDetail = useAdminUserDetail(userId ?? '')
+
+  const { data: rolesData } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => listRoles().then((r) => r.data),
+  })
+  const roles = rolesData?.data ?? []
   const loginHistory = useAdminLoginHistory(userId ?? '')
   const activityStats = useAdminActivityStats(userId ?? '')
   const activityTimeline = useActivityTimeline(userId ?? '')
@@ -853,14 +860,14 @@ export function UserDetailPage() {
 
   const isLoading = userDetail.isLoading
 
-  const handleDisableAccount = async () => {
+  const handleToggleStatus = async (isActive: boolean) => {
     if (!userId) return
-    setDisabling(true)
+    setToggling(true)
     try {
-      await updateAdminUserStatus(userId, { isActive: false })
+      await updateAdminUserStatus(userId, { isActive })
       userDetail.refetch()
     } finally {
-      setDisabling(false)
+      setToggling(false)
     }
   }
 
@@ -913,8 +920,21 @@ export function UserDetailPage() {
 
           <div className="flex-1 space-y-3">
             <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+              <InfoRow label="ID" value={`#${userDetail.data?.internalId}`} />
               <InfoRow label="名稱" value={user.name} />
               <InfoRow label="Email" value={user.email} />
+              <InfoRow
+                label="Email 驗證"
+                value={
+                  userDetail.data?.emailVerified ? (
+                    <span className="font-medium text-success">
+                      已驗證{userDetail.data.emailVerifiedAt ? `（${userDetail.data.emailVerifiedAt.slice(0, 10)}）` : ''}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">未驗證</span>
+                  )
+                }
+              />
               <InfoRow label="註冊日期" value={user.registeredAt} />
               <InfoRow label="最後登入" value={user.lastLoginAt} />
               <InfoRow
@@ -926,20 +946,53 @@ export function UserDetailPage() {
                 }
               />
               <InfoRow label="角色" value={user.role} />
+              <InfoRow
+                label="人物誌"
+                value={
+                  userDetail.data?.personaType
+                    ? `${userDetail.data.personaType} ${PERSONA_LABELS[userDetail.data.personaType]}`
+                    : '未測驗'
+                }
+              />
+              <InfoRow
+                label="Onboarding Badge"
+                value={
+                  userDetail.data?.badgeGranted == null ? (
+                    <span className="text-muted-foreground">-</span>
+                  ) : userDetail.data.badgeGranted ? (
+                    <span className="font-medium text-success">已完成</span>
+                  ) : (
+                    <span className="text-muted-foreground">未完成</span>
+                  )
+                }
+              />
+              {userDetail.data?.userSource && (
+                <InfoRow label="來源" value={userDetail.data.userSource} />
+              )}
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={disabling}
-                onClick={handleDisableAccount}
-              >
-                {disabling ? '處理中...' : '停用帳號'}
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => alert('功能開發中')}>
-                匯出個人資料
-              </Button>
+              {user.status === 'active' ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={toggling}
+                  onClick={() => handleToggleStatus(false)}
+                >
+                  {toggling ? '處理中...' : '停用帳號'}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={toggling}
+                  onClick={() => handleToggleStatus(true)}
+                >
+                  {toggling ? '處理中...' : '啟用帳號'}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -967,8 +1020,14 @@ export function UserDetailPage() {
         {activeTab === '活動時間軸' && <ActivityTimeline events={timelineEvents} />}
         {activeTab === '活動統計' && <ActivityStatsTab stats={activityStats.data} />}
         {activeTab === '登入歷史' && <LoginHistoryTab rows={loginHistoryRows} />}
-        {activeTab === '角色管理' && (
-          <RoleManagementTab defaultRole={user.role} permissions={user.permissions ?? []} />
+        {activeTab === '角色管理' && userDetail.data && (
+          <RoleManagementTab
+            userId={userDetail.data.internalId}
+            currentRoleId={userDetail.data.roles[0]?.id}
+            roles={roles}
+            permissions={user.permissions ?? []}
+            onSuccess={() => userDetail.refetch()}
+          />
         )}
         {activeTab === '實踐' && <PracticesTab userId={userId ?? ''} />}
         {activeTab === '人物誌' && <PersonaTab userUuid={userDetail.data?.id ?? ''} />}

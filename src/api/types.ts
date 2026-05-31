@@ -359,17 +359,15 @@ export interface AdminUserDetail {
   email: string | null
   photoURL: string | null
   emailVerified: boolean
+  emailVerifiedAt: string | null
   isActive: boolean
   roles: Array<{ id: number; name: string }>
   permissions: string[]
   createdAt: string
   lastLoginAt: string | null
-  activityStats?: {
-    totalCheckins: number
-    totalPosts: number
-    totalComments: number
-    lastActivityAt: string | null
-  }
+  personaType: 'L' | 'C' | 'A' | 'D' | 'O' | null
+  badgeGranted: boolean | null
+  userSource: string | null
 }
 
 export interface AdminLoginHistoryItem {
@@ -918,4 +916,41 @@ export interface PersonaUserProfile {
   questions: PersonaProfileQuestion[]
   viewerIsLocked?: boolean
   answersNeeded?: number
+}
+
+// ── Persona Question Admin ────────────────────────────────────────────────────
+export type PersonaQuestionType = 'choice' | 'sentence_completion' | 'scenario'
+
+export interface AdminPersonaQuestionTranslation {
+  locale: string
+  prompt: string
+  options: string[] | null
+}
+
+export interface AdminPersonaQuestion {
+  id: number
+  questionType: PersonaQuestionType
+  isNewUserPriority: boolean
+  createdAt: string
+  translations: AdminPersonaQuestionTranslation[]
+}
+
+export interface AdminPersonaQuestionCreate {
+  questionType: PersonaQuestionType
+  isNewUserPriority?: boolean
+  translations: Array<{
+    locale: string
+    prompt: string
+    options?: string[] | null
+  }>
+}
+
+export interface AdminPersonaQuestionUpdate {
+  questionType?: PersonaQuestionType
+  isNewUserPriority?: boolean
+}
+
+export interface AdminPersonaTranslationUpsert {
+  prompt: string
+  options?: string[] | null
 }

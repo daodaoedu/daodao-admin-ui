@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { listContentPerformance, setContentFeatured } from '@/api/admin-content'
 
-export function useContentPerformance() {
+export function useContentPerformance(days?: number) {
   return useQuery({
-    queryKey: ['admin', 'content', 'performance'],
-    queryFn: () => listContentPerformance().then((r) => r.data.data),
+    queryKey: ['admin', 'content', 'performance', days],
+    queryFn: () => listContentPerformance({ days }).then((r) => r.data.data),
   })
 }
 

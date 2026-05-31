@@ -36,52 +36,125 @@ export interface ProfileFieldUpdate {
   visibility?: string
 }
 
-export interface MemberDirectoryStats {
-  searchCount: number
-  profileViews: number
-  connectionRate: number
+export interface CommunityMapStats {
+  totalMembers: number
+  completedProfiles: number
+  averageFillRate: number
 }
 
-export interface MemberDirectoryAnalytics {
-  searchCount: number
-  profileViews: number
-  connectionRate: number
-  [key: string]: unknown
+export interface CommunityMapAnalytics {
+  fieldFillRates: Array<{ fieldId: number; fieldName: string; fillRate: number }>
+  signupTrend: Array<{ date: string; count: number }>
 }
 
-export const listMemberDirectoryFields = () =>
+export interface CommunityInteractionPeriodStats {
+  reactions: number
+  comments: number
+  follows: number
+  connects: number
+}
+
+export interface CommunityInteractionStats {
+  current: CommunityInteractionPeriodStats
+  changes: {
+    reactions: number
+    comments: number
+    follows: number
+    connects: number
+  }
+  trend: Array<{
+    date: string
+    reactions: number
+    comments: number
+    follows: number
+    connects: number
+  }>
+}
+
+export const getCommunityInteractionStats = (params?: { period?: '7d' | '30d' | '90d' }) =>
+  apiClient.get<ApiResponse<CommunityInteractionStats>>(
+    '/daodao-server/api/v1/admin/community/interaction-stats',
+    { params },
+  )
+
+export interface InteractionDetails {
+  reactionTypes: Array<{ type: string; count: number }>
+  commentReplyRate: number
+  connectionFunnel: {
+    requests: number
+    accepted: number
+    rejected: number
+    pending: number
+    acceptRate: number
+  }
+  topContent: Array<{
+    targetType: string
+    targetId: number
+    targetName: string
+    reactions: number
+    comments: number
+    total: number
+  }>
+  topActiveUsers: Array<{
+    userId: number
+    name: string
+    avatarUrl: string | null
+    interactions: number
+  }>
+  topFollowedUsers: Array<{
+    userId: number
+    name: string
+    avatarUrl: string | null
+    followers: number
+  }>
+  heatmap: Array<{ dow: number; hour: number; count: number }>
+  engagementFunnel: {
+    reactors: number
+    commenters: number
+    followers: number
+    connectors: number
+  }
+}
+
+export const getInteractionDetails = (params?: { period?: '7d' | '30d' | '90d' }) =>
+  apiClient.get<ApiResponse<InteractionDetails>>(
+    '/daodao-server/api/v1/admin/community/interaction-details',
+    { params },
+  )
+
+export const listCommunityMapFields = () =>
   apiClient.get<ApiResponse<ProfileField[]>>('/daodao-server/api/v1/admin/member-directory/fields')
 
-export const createMemberDirectoryField = (data: ProfileFieldCreate) =>
+export const createCommunityMapField = (data: ProfileFieldCreate) =>
   apiClient.post<ApiResponse<ProfileField>>(
     '/daodao-server/api/v1/admin/member-directory/fields',
     data,
   )
 
-export const updateMemberDirectoryField = (id: number, data: ProfileFieldUpdate) =>
+export const updateCommunityMapField = (id: number, data: ProfileFieldUpdate) =>
   apiClient.put<ApiResponse<ProfileField>>(
     `/daodao-server/api/v1/admin/member-directory/fields/${id}`,
     data,
   )
 
-export const deleteMemberDirectoryField = (id: number) =>
+export const deleteCommunityMapField = (id: number) =>
   apiClient.delete<ApiResponse<{ deleted: boolean }>>(
     `/daodao-server/api/v1/admin/member-directory/fields/${id}`,
   )
 
-export const reorderMemberDirectoryFields = (data: { ids: number[] }) =>
+export const reorderCommunityMapFields = (data: { ids: number[] }) =>
   apiClient.patch<ApiResponse<{ success: boolean }>>(
     '/daodao-server/api/v1/admin/member-directory/fields/reorder',
     data,
   )
 
-export const getMemberDirectoryStats = () =>
-  apiClient.get<ApiResponse<MemberDirectoryStats>>(
+export const getCommunityMapStats = () =>
+  apiClient.get<ApiResponse<CommunityMapStats>>(
     '/daodao-server/api/v1/admin/member-directory/stats',
   )
 
-export const getMemberDirectoryAnalytics = () =>
-  apiClient.get<ApiResponse<MemberDirectoryAnalytics>>(
+export const getCommunityMapAnalytics = () =>
+  apiClient.get<ApiResponse<CommunityMapAnalytics>>(
     '/daodao-server/api/v1/admin/member-directory/analytics',
   )
 

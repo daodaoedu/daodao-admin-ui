@@ -1,5 +1,6 @@
 import { Activity, Cpu, Database, HardDrive, MemoryStick, RefreshCw } from 'lucide-react'
 import type { DbInfo, RedisInfo, SystemMonitorData } from '@/api/admin-system'
+import { PageHeader } from '@/components/PageHeader'
 import { useDbInfo, useRedisInfo, useSystemMonitor } from '@/hooks/useSystemMonitor'
 import { cn } from '@/lib/utils'
 
@@ -76,15 +77,15 @@ export function SystemMonitorPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          系統監控
-        </h1>
-        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-          <RefreshCw className="h-3 w-3 animate-spin" />每 30 秒自動刷新
-        </span>
-      </div>
+      <PageHeader
+        title="系統監控"
+        description="即時查看資料庫、快取與服務的健康狀態、效能指標與連線數。"
+        actions={
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+            <RefreshCw className="h-3 w-3 animate-spin" />每 30 秒自動刷新
+          </span>
+        }
+      />
 
       {/* Resource Gauges */}
       <div className="grid gap-4 sm:grid-cols-3">

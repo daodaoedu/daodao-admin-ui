@@ -1,5 +1,6 @@
 import { CalendarClock, CheckCircle2, Clock, History, Plus, XCircle } from 'lucide-react'
 import { useState } from 'react'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useScheduledReportHistory, useScheduledReports } from '@/hooks/useScheduledReports'
 import { cn } from '@/lib/utils'
@@ -22,16 +23,16 @@ export function ScheduledReportsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          排程報表
-        </h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          新增排程
-        </Button>
-      </div>
+      <PageHeader
+        title="排程報表"
+        description="設定定時自動產生並寄送報表，讓關鍵指標定期送達指定收件人。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            新增排程
+          </Button>
+        }
+      />
 
       {/* Schedules Table */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">

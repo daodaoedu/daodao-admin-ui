@@ -3,6 +3,7 @@ import { Lock, Search } from 'lucide-react'
 import { useState } from 'react'
 import { createComplianceHold } from '@/api/admin-audit'
 import { ExportButton } from '@/components/ExportButton'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -108,17 +109,17 @@ export function AuditLogPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          審計日誌
-        </h1>
-        <ExportButton
-          data={filtered as unknown as Record<string, unknown>[]}
-          columns={exportColumns}
-          fileName="audit-log"
-        />
-      </div>
+      <PageHeader
+        title="審計日誌"
+        description="追蹤所有管理員操作記錄，確保操作可稽核、可追溯，符合資安合規需求。"
+        actions={
+          <ExportButton
+            data={filtered as unknown as Record<string, unknown>[]}
+            columns={exportColumns}
+            fileName="audit-log"
+          />
+        }
+      />
 
       {/* Filter Bar */}
       <div className="flex flex-wrap items-end gap-3">

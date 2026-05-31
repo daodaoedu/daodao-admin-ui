@@ -1,4 +1,5 @@
 import { Loader2, Mail, MailCheck, Percent, Plus, Zap } from 'lucide-react'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import {
   useEmailTriggerLogs,
@@ -19,20 +20,20 @@ export function TriggeredEmailsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          觸發式郵件
-        </h1>
-        <button
-          type="button"
-          onClick={() => alert('功能開發中')}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" />
-          新增規則
-        </button>
-      </div>
+      <PageHeader
+        title="觸發式郵件"
+        description="設定由用戶行為自動觸發的郵件規則，例如歡迎信、提醒信與里程碑通知。"
+        actions={
+          <button
+            type="button"
+            onClick={() => alert('功能開發中')}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" />
+            新增規則
+          </button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

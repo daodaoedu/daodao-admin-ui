@@ -4,6 +4,7 @@ import type {
   TrustLevelDistributionItem,
   TrustLevelHistoryItem,
 } from '@/api/admin-trust'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -36,9 +37,10 @@ export function TrustLevelsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-        信任等級
-      </h1>
+      <PageHeader
+        title="信任等級"
+        description="設定用戶信任等級的晉升條件與對應權限，建立社群貢獻激勵機制。"
+      />
 
       {/* Stats row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

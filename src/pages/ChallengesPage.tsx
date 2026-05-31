@@ -1,6 +1,7 @@
 import { CalendarDays, Plus, Trophy, Users } from 'lucide-react'
 import { useState } from 'react'
 import type { Challenge, StreakDistributionItem } from '@/api/admin-gamification'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useChallenges, useStreakDistribution } from '@/hooks/useChallenges'
 import { clampPercent, safeNumber } from '@/lib/number'
@@ -30,16 +31,16 @@ export function ChallengesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          挑戰活動
-        </h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          建立挑戰
-        </Button>
-      </div>
+      <PageHeader
+        title="挑戰活動"
+        description="建立與管理限時挑戰任務，驅動用戶持續學習並累積積分。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            建立挑戰
+          </Button>
+        }
+      />
 
       {/* Tabs */}
       <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">

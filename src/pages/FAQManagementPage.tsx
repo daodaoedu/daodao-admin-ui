@@ -1,5 +1,6 @@
 import { ChevronDown, Edit, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input, Textarea } from '@/components/ui/input'
 import {
@@ -62,15 +63,16 @@ export function FAQManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          FAQ 管理
-        </h1>
-        <Button type="button" onClick={() => setShowForm((v) => !v)}>
-          <Plus className="h-4 w-4" />
-          新增 FAQ
-        </Button>
-      </div>
+      <PageHeader
+        title="FAQ 管理"
+        description="維護常見問題集，提升用戶自助解決問題的能力，減少客服負擔。"
+        actions={
+          <Button type="button" onClick={() => setShowForm((v) => !v)}>
+            <Plus className="h-4 w-4" />
+            新增 FAQ
+          </Button>
+        }
+      />
 
       {categories.length > 0 && (
         <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">

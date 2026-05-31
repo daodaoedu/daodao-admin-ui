@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { listUsers, upsertUserQuota } from '@/api/admin-ai'
 import type { UserWithQuota } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -54,22 +55,23 @@ export function UserQuotasPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          User Token Quotas
-        </h1>
-        <ExportButton
-          data={users as unknown as Record<string, unknown>[]}
-          fileName="user-quotas"
-          columns={[
-            { key: 'id', header: 'ID' },
-            { key: 'nickname', header: 'Nickname' },
-            { key: 'mongo_id', header: 'Mongo ID' },
-            { key: 'role_id', header: 'Role' },
-            { key: 'current_month_tokens_used', header: '本月使用 Tokens' },
-          ]}
-        />
-      </div>
+      <PageHeader
+        title="User Token Quotas"
+        description="設定各用戶的 AI Token 使用額度，管理資源分配避免過度消耗。"
+        actions={
+          <ExportButton
+            data={users as unknown as Record<string, unknown>[]}
+            fileName="user-quotas"
+            columns={[
+              { key: 'id', header: 'ID' },
+              { key: 'nickname', header: 'Nickname' },
+              { key: 'mongo_id', header: 'Mongo ID' },
+              { key: 'role_id', header: 'Role' },
+              { key: 'current_month_tokens_used', header: '本月使用 Tokens' },
+            ]}
+          />
+        }
+      />
 
       <div className="flex gap-2">
         <Input

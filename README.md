@@ -24,11 +24,12 @@
 
 ### 內容管理
 - **主題實踐** — 實踐管理、搜尋、篩選
-- **內容績效** — 閱讀深度、停留時間、策展
+- **內容分析** — 閱讀深度、停留時間、策展
 
 ### 溝通
 - **站內通知** — 推送通知、排程、已讀統計
 - **觸發式郵件** — 自動郵件規則、模板、成效追蹤
+- **郵件模板編輯器** — 視覺化模板編輯
 
 ### 報表
 - **排程報表** — 週/月 KPI 自動寄送
@@ -62,8 +63,15 @@
 
 ### 社群
 - **Onboarding** — 新手引導問卷
-- **會員名錄** — 自訂 Profile 欄位
+- **社群地圖** — 成員地理分佈視覺化
+- **人格問題設定** — AI 人格問卷題目管理（選擇題／填空題）
+- **問卷管理** — 使用者調查問卷建立與統計
 - **AI 助手** — 知識庫 RAG 回答
+
+### 產品規劃
+- **願望收件匣** — 用戶功能許願管理、晉升 Roadmap
+- **Roadmap 項目** — 開發項目狀態、釘選、愛心追蹤
+- **Roadmap 報表** — 進度統計與分析
 
 ### 活動
 - **活動管理** — RSVP、簽到、週期模板
@@ -96,12 +104,12 @@ pnpm run typecheck  # TypeScript check
 
 ```
 src/
-├── api/              # API client + 13 domain files
+├── api/              # API client + 19 domain files
 ├── auth/             # AuthContext + ProtectedRoute
-├── components/       # Shared components (ExportButton, StatCard, layout/)
+├── components/       # Shared components (PageHeader, ExportButton, StatCard, layout/)
 ├── hooks/            # Custom React Query hooks
 ├── lib/              # Utilities (cn)
-├── pages/            # 39 page components (React.lazy loaded)
+├── pages/            # 45 feature page components (React.lazy loaded)
 └── test/             # Test setup
 ```
 

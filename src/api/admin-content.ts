@@ -16,17 +16,44 @@ export interface ContentPerformanceItem {
 export interface ContentCollection {
   id: string
   name: string
+  description: string
   count: number
+}
+
+export interface CheckinSummary {
+  total: number
+  last7Days: number
+  uniqueUsers: number
+  withReaction: number
+  withComment: number
+  moodDistribution: Array<{ mood: string; count: number }>
+}
+
+export interface QuizSummary {
+  completed: number
+  completionRate: number
+  byRole: Array<{ role: string; count: number; rate: number }>
+}
+
+export interface PersonaSummary {
+  totalQuestions: number
+  usersAnswered: number
+  totalAnswers: number
+  questions: Array<{ id: number; prompt: string; answerCount: number }>
 }
 
 export interface ContentPerformanceData {
   items: ContentPerformanceItem[]
   collections: ContentCollection[]
+  checkinSummary: CheckinSummary
+  quizSummary: QuizSummary
+  personaSummary: PersonaSummary
 }
 
-export const listContentPerformance = () =>
+export const listContentPerformance = (params?: { days?: number }) =>
   apiClient.get<ApiResponse<ContentPerformanceData>>(
     '/daodao-server/api/v1/admin/content/performance',
+    { params },
   )
 
 export const setContentFeatured = (id: number, featured: boolean) =>

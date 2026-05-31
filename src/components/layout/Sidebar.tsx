@@ -3,6 +3,7 @@ import {
   Bell,
   BookOpen,
   Bot,
+  Brain,
   Calendar,
   ChevronDown,
   ClipboardList,
@@ -42,11 +43,13 @@ interface NavItem {
   to: string
   label: string
   icon: typeof LayoutDashboard
+  planned?: boolean
 }
 
 interface NavGroup {
   title: string
   items: NavItem[]
+  planned?: boolean
 }
 
 const navGroups: NavGroup[] = [
@@ -82,8 +85,8 @@ const navGroups: NavGroup[] = [
     title: '社群',
     items: [
       { to: '/onboarding-flows', label: 'Onboarding', icon: UserPlus },
-      { to: '/content-performance', label: '內容績效', icon: TrendingUp },
-      { to: '/member-directory', label: '會員名錄', icon: Users },
+      { to: '/content-performance', label: '內容分析', icon: TrendingUp },
+      { to: '/community-map', label: '社群地圖', icon: Users },
       { to: '/ai-assistant', label: 'AI 助手', icon: Bot },
     ],
   },
@@ -105,14 +108,19 @@ const navGroups: NavGroup[] = [
   },
   {
     title: '問卷',
-    items: [{ to: '/surveys', label: '問卷管理', icon: ClipboardList }],
+    items: [
+      { to: '/surveys', label: '問卷管理', icon: ClipboardList },
+      { to: '/persona-questions', label: '人物誌題目', icon: Brain },
+    ],
   },
   {
     title: '溝通',
+    planned: true,
     items: [{ to: '/notifications', label: '站內通知', icon: Bell }],
   },
   {
     title: '報表',
+    planned: true,
     items: [
       { to: '/scheduled-reports', label: '排程報表', icon: FileText },
       { to: '/custom-reports', label: '自訂報表', icon: BarChart3 },
@@ -121,6 +129,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: '支援',
+    planned: true,
     items: [
       { to: '/feedback', label: '意見回饋', icon: MessageSquare },
       { to: '/faq', label: 'FAQ 管理', icon: HelpCircle },
@@ -135,6 +144,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: '信任與審核',
+    planned: true,
     items: [
       { to: '/trust-levels', label: '信任等級', icon: Shield },
       { to: '/automod', label: 'AutoMod', icon: Bot },
@@ -142,10 +152,12 @@ const navGroups: NavGroup[] = [
   },
   {
     title: '活動',
+    planned: true,
     items: [{ to: '/events', label: '活動管理', icon: Calendar }],
   },
   {
     title: '學習',
+    planned: true,
     items: [
       { to: '/learning-progress', label: '課程進度', icon: BookOpen },
       { to: '/drip-content', label: '內容滴灌', icon: BookOpen },
@@ -155,7 +167,8 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: '遲戲化',
+    title: '遊戲化',
+    planned: true,
     items: [
       { to: '/badges', label: '徽章', icon: Trophy },
       { to: '/challenges', label: '挑戰', icon: Target },
@@ -196,7 +209,14 @@ function SidebarGroup({
         onClick={onToggle}
         className="rounded-lg border border-[var(--admin-panel-border)] bg-background/70 p-2.5 shadow-sm w-full justify-between rounded-md border border-transparent px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:border-border hover:text-foreground"
       >
-        {group.title}
+        <span className="flex items-center gap-2">
+          {group.title}
+          {group.planned && (
+            <span className="rounded px-1 py-0.5 text-[9px] font-medium bg-muted text-muted-foreground/60 leading-none">
+              規劃中
+            </span>
+          )}
+        </span>
         <ChevronDown
           className={cn('h-3 w-3 transition-transform duration-200', collapsed && '-rotate-90')}
         />
@@ -207,8 +227,27 @@ function SidebarGroup({
           collapsed ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100',
         )}
       >
-        {group.items.map(({ to, label, icon: Icon }) => {
-          const active = location.pathname === to
+        {group.items.map(({ to, label, icon: Icon, planned }) => {
+          const isPlanned = planned || group.planned
+          const active = !isPlanned && location.pathname === to
+
+          if (isPlanned) {
+            return (
+              <div
+                key={to}
+                className="relative flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground/40 cursor-default select-none"
+              >
+                <span className="flex items-center gap-3">
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {label}
+                </span>
+                <span className="rounded px-1.5 py-0.5 text-[9px] font-medium bg-muted/60 text-muted-foreground/50 leading-none shrink-0">
+                  規劃中
+                </span>
+              </div>
+            )
+          }
+
           return (
             <Link
               key={to}

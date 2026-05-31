@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { SlidersHorizontal, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin-server'
 import type { AdminUserListItem } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
@@ -20,7 +22,7 @@ const PERSONA_LABELS: Record<PersonaType, string> = {
 }
 
 const PERSONA_OPTIONS = [
-  { value: '', label: '全部人物誌' },
+  { value: '', label: '全部學習風格' },
   { value: 'D', label: 'D 探探島' },
   { value: 'A', label: 'A 動動島' },
   { value: 'O', label: 'O 構構島' },
@@ -57,20 +59,76 @@ const SORT_OPTIONS = [
 const SELECT_CLASS =
   'rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20'
 
+const LIMIT = 20
+const TABLE_COLS = 9
+
+function SkeletonRow() {
+  return (
+    <tr className="border-b border-border/80">
+      {Array.from({ length: TABLE_COLS }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
+        <td key={i} className="px-4 py-3">
+          <div
+            className="h-4 animate-pulse rounded bg-muted"
+            style={{ width: `${60 + (i % 3) * 20}%` }}
+          />
+        </td>
+      ))}
+    </tr>
+  )
+}
+
 export function UserManagementPage() {
   const qc = useQueryClient()
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [statusFilter, setStatusFilter] = useState('')
-  const [roleIdFilter, setRoleIdFilter] = useState('')
-  const [personaFilter, setPersonaFilter] = useState('')
-  const [badgeFilter, setBadgeFilter] = useState('')
-  const [sourceFilter, setSourceFilter] = useState('')
-  const [sortValue, setSortValue] = useState('createdAt_desc')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') ?? '')
+  const [search, setSearch] = useState(searchParams.get('search') ?? '')
+  const [page, setPage] = useState(Number(searchParams.get('page') ?? '1'))
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') ?? '')
+  const [roleIdFilter, setRoleIdFilter] = useState(searchParams.get('roleId') ?? '')
+  const [personaFilter, setPersonaFilter] = useState(searchParams.get('persona') ?? '')
+  const [badgeFilter, setBadgeFilter] = useState(searchParams.get('badge') ?? '')
+  const [sourceFilter, setSourceFilter] = useState(searchParams.get('source') ?? '')
+  const [sortValue, setSortValue] = useState(searchParams.get('sort') ?? 'createdAt_desc')
+
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false)
   const [assigningUser, setAssigningUser] = useState<AdminUserListItem | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string>('')
+  const [confirmDisableUser, setConfirmDisableUser] = useState<AdminUserListItem | null>(null)
 
-  const LIMIT = 20
+  // Debounce search input → search state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput)
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
+  // Sync filter state → URL params
+  useEffect(() => {
+    const params: Record<string, string> = {}
+    if (search) params.search = search
+    if (page > 1) params.page = String(page)
+    if (statusFilter) params.status = statusFilter
+    if (roleIdFilter) params.roleId = roleIdFilter
+    if (personaFilter) params.persona = personaFilter
+    if (badgeFilter) params.badge = badgeFilter
+    if (sourceFilter) params.source = sourceFilter
+    if (sortValue !== 'createdAt_desc') params.sort = sortValue
+    setSearchParams(params, { replace: true })
+  }, [
+    search,
+    page,
+    statusFilter,
+    roleIdFilter,
+    personaFilter,
+    badgeFilter,
+    sourceFilter,
+    sortValue,
+    setSearchParams,
+  ])
 
   const [sortBy, sortOrder] = sortValue.split('_') as [
     'createdAt' | 'lastLoginAt' | 'name' | 'email',
@@ -124,8 +182,14 @@ export function UserManagementPage() {
     ...roles.map((role) => ({ value: String(role.id), label: role.name })),
   ]
 
-  const hasActiveFilters =
-    statusFilter || roleIdFilter || personaFilter || badgeFilter || sourceFilter
+  const activeFilterCount = [
+    statusFilter,
+    roleIdFilter,
+    personaFilter,
+    badgeFilter,
+    sourceFilter,
+  ].filter(Boolean).length
+  const hasActiveFilters = activeFilterCount > 0
 
   const resetFilters = () => {
     setStatusFilter('')
@@ -134,6 +198,16 @@ export function UserManagementPage() {
     setBadgeFilter('')
     setSourceFilter('')
     setPage(1)
+  }
+
+  const togglePreset = (preset: 'incomplete-onboarding' | 'disabled') => {
+    if (preset === 'incomplete-onboarding') {
+      setBadgeFilter((v) => (v === 'false' ? '' : 'false'))
+      setPage(1)
+    } else {
+      setStatusFilter((v) => (v === 'false' ? '' : 'false'))
+      setPage(1)
+    }
   }
 
   const updateStatusMut = useMutation({
@@ -158,15 +232,74 @@ export function UserManagementPage() {
     setSelectedRoleId(userRoles[0] ? String(userRoles[0].id) : '')
   }
 
-  const TABLE_COLS = 9
+  // Build active filter chips
+  const activeChips: { label: string; onRemove: () => void }[] = []
+  if (statusFilter) {
+    const opt = STATUS_OPTIONS.find((o) => o.value === statusFilter)
+    activeChips.push({
+      label: `狀態: ${opt?.label}`,
+      onRemove: () => {
+        setStatusFilter('')
+        setPage(1)
+      },
+    })
+  }
+  if (roleIdFilter) {
+    const role = roles.find((r) => String(r.id) === roleIdFilter)
+    activeChips.push({
+      label: `角色: ${role?.name ?? roleIdFilter}`,
+      onRemove: () => {
+        setRoleIdFilter('')
+        setPage(1)
+      },
+    })
+  }
+  if (personaFilter) {
+    const opt = PERSONA_OPTIONS.find((o) => o.value === personaFilter)
+    activeChips.push({
+      label: `學習風格: ${opt?.label}`,
+      onRemove: () => {
+        setPersonaFilter('')
+        setPage(1)
+      },
+    })
+  }
+  if (badgeFilter) {
+    const opt = BADGE_OPTIONS.find((o) => o.value === badgeFilter)
+    activeChips.push({
+      label: `Onboarding: ${opt?.label}`,
+      onRemove: () => {
+        setBadgeFilter('')
+        setPage(1)
+      },
+    })
+  }
+  if (sourceFilter) {
+    activeChips.push({
+      label: `來源: ${sourceFilter}`,
+      onRemove: () => {
+        setSourceFilter('')
+        setPage(1)
+      },
+    })
+  }
+
+  const totalPages = pagination?.total_count ? Math.ceil(pagination.total_count / LIMIT) : 0
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          用戶管理
-        </h1>
+        <div>
+          <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
+            用戶管理
+          </h1>
+          {pagination && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              共 {(pagination.total_count ?? 0).toLocaleString()} 位用戶
+            </p>
+          )}
+        </div>
         <ExportButton
           data={users as unknown as Record<string, unknown>[]}
           fileName="user-management"
@@ -176,82 +309,151 @@ export function UserManagementPage() {
             { key: 'email', header: 'Email' },
             { key: 'isActive', header: '狀態' },
             { key: 'userSource', header: '來源' },
-            { key: 'personaType', header: '人物誌' },
+            { key: 'personaType', header: '學習風格' },
             { key: 'badgeGranted', header: 'Badge' },
             { key: 'lastLoginAt', header: '最後登入' },
           ]}
         />
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="搜尋名稱 / Email"
-          className="w-56"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(1)
-          }}
-        />
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            setStatusFilter(v)
-            setPage(1)
-          }}
-          options={STATUS_OPTIONS}
-          triggerClassName={SELECT_CLASS}
-        />
-        <Select
-          value={roleIdFilter}
-          onValueChange={(v) => {
-            setRoleIdFilter(v)
-            setPage(1)
-          }}
-          options={roleFilterOptions}
-          triggerClassName={SELECT_CLASS}
-        />
-        <Select
-          value={personaFilter}
-          onValueChange={(v) => {
-            setPersonaFilter(v)
-            setPage(1)
-          }}
-          options={PERSONA_OPTIONS}
-          triggerClassName={SELECT_CLASS}
-        />
-        <Select
-          value={badgeFilter}
-          onValueChange={(v) => {
-            setBadgeFilter(v)
-            setPage(1)
-          }}
-          options={BADGE_OPTIONS}
-          triggerClassName={SELECT_CLASS}
-        />
-        <Select
-          value={sourceFilter}
-          onValueChange={(v) => {
-            setSourceFilter(v)
-            setPage(1)
-          }}
-          options={SOURCE_OPTIONS}
-          triggerClassName={SELECT_CLASS}
-        />
-        <Select
-          value={sortValue}
-          onValueChange={(v) => {
-            setSortValue(v)
-            setPage(1)
-          }}
-          options={SORT_OPTIONS}
-          triggerClassName={SELECT_CLASS}
-        />
-        {hasActiveFilters && (
-          <Button type="button" variant="secondary" size="xs" onClick={resetFilters}>
-            清除篩選
+      {/* Toolbar */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="搜尋名稱 / Email"
+            className="w-56"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+
+          {/* Filter panel toggle */}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="flex items-center gap-1.5"
+            onClick={() => setFilterPanelOpen((v) => !v)}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            篩選
+            {activeFilterCount > 0 && (
+              <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                {activeFilterCount}
+              </span>
+            )}
           </Button>
+
+          {/* Quick presets */}
+          <Button
+            type="button"
+            variant={badgeFilter === 'false' ? 'primary' : 'secondary'}
+            size="xs"
+            onClick={() => togglePreset('incomplete-onboarding')}
+          >
+            未完成 Onboarding
+          </Button>
+          <Button
+            type="button"
+            variant={statusFilter === 'false' ? 'primary' : 'secondary'}
+            size="xs"
+            onClick={() => togglePreset('disabled')}
+          >
+            已停用
+          </Button>
+
+          {hasActiveFilters && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              onClick={resetFilters}
+              className="text-muted-foreground"
+            >
+              清除篩選
+            </Button>
+          )}
+        </div>
+
+        {/* Collapsible filter panel */}
+        {filterPanelOpen && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v)
+                setPage(1)
+              }}
+              options={STATUS_OPTIONS}
+              triggerClassName={SELECT_CLASS}
+            />
+            <Select
+              value={roleIdFilter}
+              onValueChange={(v) => {
+                setRoleIdFilter(v)
+                setPage(1)
+              }}
+              options={roleFilterOptions}
+              triggerClassName={SELECT_CLASS}
+            />
+            <Select
+              value={personaFilter}
+              onValueChange={(v) => {
+                setPersonaFilter(v)
+                setPage(1)
+              }}
+              options={PERSONA_OPTIONS}
+              triggerClassName={SELECT_CLASS}
+            />
+            <Select
+              value={badgeFilter}
+              onValueChange={(v) => {
+                setBadgeFilter(v)
+                setPage(1)
+              }}
+              options={BADGE_OPTIONS}
+              triggerClassName={SELECT_CLASS}
+            />
+            <Select
+              value={sourceFilter}
+              onValueChange={(v) => {
+                setSourceFilter(v)
+                setPage(1)
+              }}
+              options={SOURCE_OPTIONS}
+              triggerClassName={SELECT_CLASS}
+            />
+            <Select
+              value={sortValue}
+              onValueChange={(v) => {
+                setSortValue(v)
+                setPage(1)
+              }}
+              options={SORT_OPTIONS}
+              triggerClassName={SELECT_CLASS}
+            />
+          </div>
+        )}
+
+        {/* Active filter chips */}
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {activeChips.map((chip) => (
+              <span
+                key={chip.label}
+                className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-0.5 text-xs text-foreground"
+              >
+                {chip.label}
+                <button
+                  type="button"
+                  onClick={chip.onRemove}
+                  className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-muted"
+                  aria-label={`移除 ${chip.label} 篩選`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
@@ -266,7 +468,7 @@ export function UserManagementPage() {
                 'Email',
                 '狀態',
                 '角色',
-                '人物誌',
+                '學習風格',
                 'Onboarding',
                 '最後登入',
                 '操作',
@@ -279,11 +481,10 @@ export function UserManagementPage() {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr>
-                <td colSpan={TABLE_COLS} className="px-4 py-6 text-center text-muted-foreground">
-                  載入中...
-                </td>
-              </tr>
+              Array.from({ length: 5 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
+                <SkeletonRow key={i} />
+              ))
             ) : users.length === 0 ? (
               <tr>
                 <td colSpan={TABLE_COLS} className="px-4 py-6 text-center text-muted-foreground">
@@ -294,7 +495,7 @@ export function UserManagementPage() {
               users.map((user) => (
                 <tr
                   key={user.id}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors"
+                  className="border-b border-border/80 transition-colors hover:bg-muted/45"
                 >
                   <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
                     {user.internalId}
@@ -357,12 +558,13 @@ export function UserManagementPage() {
                         variant="secondary"
                         size="xs"
                         disabled={updateStatusMut.isPending}
-                        onClick={() =>
-                          updateStatusMut.mutate({
-                            userId: user.internalId,
-                            isActive: !user.isActive,
-                          })
-                        }
+                        onClick={() => {
+                          if (user.isActive) {
+                            setConfirmDisableUser(user)
+                          } else {
+                            updateStatusMut.mutate({ userId: user.internalId, isActive: true })
+                          }
+                        }}
                       >
                         {user.isActive ? '停用' : '啟用'}
                       </Button>
@@ -378,7 +580,9 @@ export function UserManagementPage() {
       {/* Pagination */}
       {pagination && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>共 {pagination.total_count} 位用戶</span>
+          <span>
+            共 {(pagination.total_count ?? 0).toLocaleString()} 位 · 第 {page} / {totalPages} 頁
+          </span>
           <div className="flex gap-2">
             <Button
               type="button"
@@ -404,10 +608,10 @@ export function UserManagementPage() {
         </div>
       )}
 
-      {/* Assign Role Modal */}
+      {/* Assign Role Modal — auto-saves on select */}
       {assigningUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-6 shadow-lg w-full max-w-sm">
+          <div className="w-full max-w-sm rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-6 shadow-lg">
             <h3 className="mb-4 font-semibold">
               設定角色 —{' '}
               {assigningUser.name ?? assigningUser.email ?? `#${assigningUser.internalId}`}
@@ -420,12 +624,23 @@ export function UserManagementPage() {
                 <Select
                   id="role-select"
                   value={selectedRoleId}
-                  onValueChange={(value) => setSelectedRoleId(value)}
+                  onValueChange={(value) => {
+                    setSelectedRoleId(value)
+                    if (value && assigningUser) {
+                      updateRoleMut.mutate({
+                        userId: assigningUser.internalId,
+                        roleId: Number(value),
+                      })
+                    }
+                  }}
                   options={roleOptions}
                 />
               </div>
+              {updateRoleMut.isPending && (
+                <p className="text-xs text-muted-foreground">儲存中...</p>
+              )}
             </div>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex justify-end">
               <Button
                 type="button"
                 variant="secondary"
@@ -434,20 +649,40 @@ export function UserManagementPage() {
                   setSelectedRoleId('')
                 }}
               >
+                關閉
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm disable dialog */}
+      {confirmDisableUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-6 shadow-lg">
+            <h3 className="mb-2 font-semibold">確定要停用此用戶？</h3>
+            <p className="mb-5 text-sm text-muted-foreground">
+              {confirmDisableUser.name ??
+                confirmDisableUser.email ??
+                `#${confirmDisableUser.internalId}`}{' '}
+              將無法登入，此操作可隨時撤回。
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setConfirmDisableUser(null)}>
                 取消
               </Button>
               <Button
                 type="button"
-                disabled={!selectedRoleId || updateRoleMut.isPending}
+                variant="destructive"
+                disabled={updateStatusMut.isPending}
                 onClick={() => {
-                  if (!selectedRoleId) return
-                  updateRoleMut.mutate({
-                    userId: assigningUser.internalId,
-                    roleId: Number(selectedRoleId),
-                  })
+                  updateStatusMut.mutate(
+                    { userId: confirmDisableUser.internalId, isActive: false },
+                    { onSuccess: () => setConfirmDisableUser(null) },
+                  )
                 }}
               >
-                {updateRoleMut.isPending ? '儲存中...' : '儲存'}
+                {updateStatusMut.isPending ? '處理中...' : '確定停用'}
               </Button>
             </div>
           </div>

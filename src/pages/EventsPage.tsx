@@ -1,5 +1,6 @@
 import { Calendar, Clock, Edit, MapPin, Plus, RefreshCw, Send, Users, Video } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useEventRSVPs, useEvents, useEventTemplates } from '@/hooks/useEvents'
 import { cn } from '@/lib/utils'
@@ -60,15 +61,16 @@ export function EventsPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ──────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          活動管理
-        </h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          建立活動
-        </Button>
-      </div>
+      <PageHeader
+        title="活動管理"
+        description="建立線上或實體活動、管理報名名單與出席記錄。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            建立活動
+          </Button>
+        }
+      />
 
       {/* ── Filter tabs ─────────────────────────────────── */}
       <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">

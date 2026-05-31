@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  Activity,
   BarChart3,
   BookOpen,
+  CalendarCheck,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -21,6 +23,7 @@ import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 
 import { listPractices, updatePracticeStatus } from '@/api/admin-users'
 import type { PracticeEntity, PracticeStatus } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { UserLink } from '@/components/UserLink'
 import { Badge } from '@/components/ui/badge'
@@ -36,11 +39,31 @@ type SortField = 'createdAt' | 'updatedAt' | 'likeCount'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const statusConfig: Record<PracticeStatus, { label: string; className: string; color: string }> = {
-  active: { label: '活躍', className: 'bg-success/15 text-success', color: '#22c55e' },
-  not_started: { label: '尚未開始', className: 'bg-muted text-muted-foreground', color: '#94a3b8' },
-  archived: { label: '已封存', className: 'bg-muted text-muted-foreground', color: '#64748b' },
-  draft: { label: '草稿', className: 'bg-warning/15 text-warning', color: '#f59e0b' },
-  completed: { label: '已完成', className: 'bg-primary/15 text-primary', color: '#6366f1' },
+  active: {
+    label: '活躍',
+    className: 'bg-success/15 text-success',
+    color: 'oklch(0.763 0.172 132.6)',
+  },
+  not_started: {
+    label: '尚未開始',
+    className: 'bg-muted text-muted-foreground',
+    color: 'oklch(0.675 0.008 219.6)',
+  },
+  archived: {
+    label: '已封存',
+    className: 'bg-muted text-muted-foreground',
+    color: 'oklch(0.483 0.019 221.3)',
+  },
+  draft: {
+    label: '草稿',
+    className: 'bg-warning/15 text-warning',
+    color: 'oklch(0.786 0.17 68.2)',
+  },
+  completed: {
+    label: '已完成',
+    className: 'bg-primary/15 text-primary',
+    color: 'oklch(0.711 0.12 190.6)',
+  },
 }
 
 const exportColumns = [
@@ -49,7 +72,8 @@ const exportColumns = [
   { key: 'creator', header: '建立者' },
   { key: 'createdAt', header: '建立日期' },
   { key: 'participants', header: '打卡次數' },
-  { key: 'likes', header: '按讚數' },
+  { key: 'views', header: '瀏覽數' },
+  { key: 'likes', header: '迴響數' },
 ]
 
 const PAGE_SIZE_OPTIONS = [
@@ -175,6 +199,54 @@ function StatusDistributionChart({ data }: { data?: Array<{ status: string; coun
   )
 }
 
+// ─── Category Distribution Chart ──────────────────────────────────────────────
+
+const CATEGORY_COLORS = [
+  'oklch(0.711 0.12 190.6)',
+  'oklch(0.786 0.17 68.2)',
+  'oklch(0.763 0.172 132.6)',
+  'oklch(0.908 0.186 102.5)',
+  'oklch(0.577 0.245 27.325)',
+  'oklch(0.675 0.008 219.6)',
+]
+
+function CategoryDistributionChart({ data }: { data: Array<{ category: string; count: number }> }) {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+        暫無資料
+      </div>
+    )
+  }
+
+  const sorted = [...data].sort((a, b) => b.count - a.count).slice(0, 6)
+
+  return (
+    <ResponsiveContainer width="100%" height={160}>
+      <BarChart data={sorted} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 60 }}>
+        <XAxis type="number" hide />
+        <YAxis
+          type="category"
+          dataKey="category"
+          tick={{ fontSize: 12 }}
+          tickLine={false}
+          axisLine={false}
+          width={56}
+        />
+        <Tooltip
+          formatter={(value: number) => [value.toLocaleString(), '數量']}
+          contentStyle={{ fontSize: 12, borderRadius: 8 }}
+        />
+        <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+          {sorted.map((entry, index) => (
+            <Cell key={entry.category} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
 // ─── Batch Action Bar ─────────────────────────────────────────────────────────
 
 function BatchActionBar({
@@ -248,7 +320,7 @@ function PracticeDetail({
 
   const socialStats = [
     { icon: Eye, label: '瀏覽', value: practice.stats.viewCount },
-    { icon: Heart, label: '按讚', value: practice.stats.likeCount },
+    { icon: Heart, label: '迴響', value: practice.stats.likeCount },
     { icon: Star, label: '收藏', value: practice.stats.favoriteCount },
     { icon: MessageSquare, label: '留言', value: practice.stats.commentCount },
     { icon: Share2, label: '分享', value: practice.stats.shareCount },
@@ -632,6 +704,7 @@ export function PracticesPage() {
     creator: p.user.name,
     createdAt: formatDate(p.createdAt),
     participants: p.checkInCount,
+    views: p.stats.viewCount,
     likes: p.stats.likeCount,
   }))
 
@@ -640,27 +713,70 @@ export function PracticesPage() {
       ? `${Math.round(practiceStats.averageCompletionRate)}%`
       : '—'
 
+  const totalCheckIns = practiceStats?.totalCheckIns ?? 0
+  const avgCheckInsDisplay =
+    practiceStats?.avgCheckInsPerPractice !== undefined
+      ? practiceStats.avgCheckInsPerPractice.toFixed(1)
+      : '—'
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          主題實踐管理
-        </h1>
-        <ExportButton data={exportData} columns={exportColumns} fileName="practices" />
-      </div>
+      <PageHeader
+        title="主題實踐管理"
+        description="管理島島各主題下的實踐任務，設定完成條件與對應積分。"
+        actions={<ExportButton data={exportData} columns={exportColumns} fileName="practices" />}
+      />
 
       {/* ── Section 1: 概覽 ── */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
-        <div className="grid grid-cols-2 gap-4">
-          <StatCard title="總實踐數" value={practiceStats?.total ?? 0} icon={BookOpen} />
-          <StatCard title="活躍中" value={practiceStats?.active ?? 0} icon={Zap} />
-          <StatCard title="已完成" value={practiceStats?.completed ?? 0} icon={CheckCircle2} />
-          <StatCard title="平均完成率" value={completionRateDisplay} icon={BarChart3} />
-        </div>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        <StatCard
+          title="總實踐數"
+          value={practiceStats?.total ?? 0}
+          icon={BookOpen}
+          iconClassName="bg-primary/15 text-primary"
+        />
+        <StatCard
+          title="活躍中"
+          value={practiceStats?.active ?? 0}
+          icon={Zap}
+          iconClassName="bg-success/15 text-success"
+        />
+        <StatCard
+          title="已完成"
+          value={practiceStats?.completed ?? 0}
+          icon={CheckCircle2}
+          iconClassName="bg-warning/15 text-warning"
+        />
+        <StatCard
+          title="平均完成率"
+          value={completionRateDisplay}
+          icon={BarChart3}
+          iconClassName="bg-destructive/15 text-destructive"
+        />
+        <StatCard
+          title="總打卡次數"
+          value={totalCheckIns}
+          icon={CalendarCheck}
+          iconClassName="bg-info/15 text-info"
+        />
+        <StatCard
+          title="平均打卡/實踐"
+          value={avgCheckInsDisplay}
+          icon={Activity}
+          iconClassName="bg-accent text-accent-foreground"
+          description="每個實踐的平均打卡次數"
+        />
+      </div>
+
+      {/* ── Section 1b: 分布圖 ── */}
+      <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
           <p className="text-sm font-semibold text-foreground mb-4">狀態分布</p>
           <StatusDistributionChart data={practiceStats?.practicesByStatus} />
+        </div>
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+          <p className="text-sm font-semibold text-foreground mb-4">分類分布</p>
+          <CategoryDistributionChart data={practiceStats?.practicesByCategory ?? []} />
         </div>
       </div>
 
@@ -784,8 +900,9 @@ export function PracticesPage() {
                   onSort={handleSort}
                 />
                 <th className="px-4 py-3 font-medium text-muted-foreground text-right">打卡次數</th>
+                <th className="px-4 py-3 font-medium text-muted-foreground text-right">瀏覽數</th>
                 <SortableHeader
-                  label="按讚數"
+                  label="迴響數"
                   field="likeCount"
                   currentSort={sort}
                   currentOrder={order}
@@ -865,6 +982,9 @@ export function PracticesPage() {
                     <td className="px-4 py-3 text-right">
                       {practice.checkInCount.toLocaleString()}
                     </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {practice.stats.viewCount.toLocaleString()}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       {practice.stats.likeCount.toLocaleString()}
                     </td>
@@ -883,7 +1003,7 @@ export function PracticesPage() {
               })}
               {practices.length === 0 && (
                 <tr>
-                  <td className="px-5 py-10 text-center text-muted-foreground" colSpan={8}>
+                  <td className="px-5 py-10 text-center text-muted-foreground" colSpan={9}>
                     {isFetching ? '載入中...' : '沒有符合條件的實踐'}
                   </td>
                 </tr>

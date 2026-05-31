@@ -1,6 +1,7 @@
 import { Calendar, Clock, Lock, Unlock } from 'lucide-react'
 import { useState } from 'react'
 import type { DripSchedule } from '@/api/admin-learning'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { useDripSchedules } from '@/hooks/useDripSchedules'
@@ -38,9 +39,10 @@ export function DripContentPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
-      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-        內容滴灌排程
-      </h1>
+      <PageHeader
+        title="內容滴灌排程"
+        description="設定依加入天數自動推送的內容序列，引導新成員逐步探索島島。"
+      />
 
       {/* ── Schedule list ──────────────────────────────── */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">

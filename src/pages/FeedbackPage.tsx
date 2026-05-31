@@ -1,5 +1,6 @@
 import { ChevronDown, Inbox, MessageSquare, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/input'
@@ -75,26 +76,26 @@ export function FeedbackPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header + Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          意見回饋
-        </h1>
-        <div className="flex gap-2">
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as '全部' | FeedbackStatus)}
-            options={STATUS_SELECT_OPTIONS}
-            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
-          />
-          <Select
-            value={categoryFilter}
-            onValueChange={(value) => setCategoryFilter(value as '全部' | FeedbackCategory)}
-            options={CATEGORY_SELECT_OPTIONS}
-            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="意見回饋"
+        description="收集用戶對平台的建議與問題回報，了解待改善的功能與痛點。"
+        actions={
+          <div className="flex gap-2">
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as '全部' | FeedbackStatus)}
+              options={STATUS_SELECT_OPTIONS}
+              triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+            />
+            <Select
+              value={categoryFilter}
+              onValueChange={(value) => setCategoryFilter(value as '全部' | FeedbackCategory)}
+              options={CATEGORY_SELECT_OPTIONS}
+              triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+            />
+          </div>
+        }
+      />
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

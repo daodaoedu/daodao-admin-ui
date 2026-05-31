@@ -26,6 +26,7 @@ import type {
 const SURVEY_PUBLIC_BASE =
   import.meta.env.VITE_SURVEY_PUBLIC_BASE ?? 'https://app.daodao.so/survey/r'
 
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -174,20 +175,23 @@ export function SurveyManagementPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="heading-lg">問卷管理</h1>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => {
-            setActiveSurveyId(null)
-            setDrawerMode('create')
-          }}
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          新增問卷
-        </Button>
-      </div>
+      <PageHeader
+        title="問卷管理"
+        description="建立與發布問卷調查，收集用戶回饋並統計分析作答結果。"
+        actions={
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setActiveSurveyId(null)
+              setDrawerMode('create')
+            }}
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            新增問卷
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-36">

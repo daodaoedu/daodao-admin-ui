@@ -112,8 +112,8 @@ const OnboardingFlowsPage = lazy(() =>
 const ContentPerformancePage = lazy(() =>
   import('@/pages/ContentPerformancePage').then((m) => ({ default: m.ContentPerformancePage })),
 )
-const MemberDirectoryPage = lazy(() =>
-  import('@/pages/MemberDirectoryPage').then((m) => ({ default: m.MemberDirectoryPage })),
+const CommunityMapPage = lazy(() =>
+  import('@/pages/CommunityMapPage').then((m) => ({ default: m.CommunityMapPage })),
 )
 const AIAssistantPage = lazy(() =>
   import('@/pages/AIAssistantPage').then((m) => ({ default: m.AIAssistantPage })),
@@ -132,6 +132,9 @@ const RoadmapReportsPage = lazy(() =>
 )
 const SurveyManagementPage = lazy(() =>
   import('@/pages/SurveyManagementPage').then((m) => ({ default: m.SurveyManagementPage })),
+)
+const PersonaQuestionsPage = lazy(() =>
+  import('@/pages/PersonaQuestionsPage').then((m) => ({ default: m.PersonaQuestionsPage })),
 )
 const EmailTemplatesPage = lazy(() =>
   import('@/pages/EmailTemplatesPage').then((m) => ({ default: m.EmailTemplatesPage })),
@@ -476,10 +479,10 @@ export function App() {
             }
           />
           <Route
-            path="/member-directory"
+            path="/community-map"
             element={
               <LazyPage>
-                <MemberDirectoryPage />
+                <CommunityMapPage />
               </LazyPage>
             }
           />
@@ -534,6 +537,14 @@ export function App() {
             element={
               <LazyPage>
                 <SurveyManagementPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/persona-questions"
+            element={
+              <LazyPage>
+                <PersonaQuestionsPage />
               </LazyPage>
             }
           />

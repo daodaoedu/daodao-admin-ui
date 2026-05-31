@@ -2,6 +2,7 @@ import { FileText, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { EmailTemplate } from '@/api/types'
+import { PageHeader } from '@/components/PageHeader'
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Input, Textarea } from '@/components/ui/input'
 import {
@@ -266,29 +267,25 @@ export function EmailTemplatesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-            信件模板
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            管理可重複使用的 HTML 郵件模板，供觸發式信件與手動發信使用。
-          </p>
-        </div>
-        <TemplateDialog
-          trigger={
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4" />
-              新增模板
-            </button>
-          }
-          onSave={handleCreate}
-          isSaving={createMutation.isPending}
-        />
-      </div>
+      <PageHeader
+        title="信件模板"
+        description="建立與編輯系統郵件模板，支援動態變數替換，統一信件風格。"
+        actions={
+          <TemplateDialog
+            trigger={
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="h-4 w-4" />
+                新增模板
+              </button>
+            }
+            onSave={handleCreate}
+            isSaving={createMutation.isPending}
+          />
+        }
+      />
 
       <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="p-5">
