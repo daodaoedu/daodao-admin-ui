@@ -16,6 +16,7 @@ import {
   updateAutoModRule,
   updateAutoModSpamDetection,
 } from '@/api/admin-trust'
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -157,9 +158,10 @@ export function AutoModPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-        AutoMod 自動審核
-      </h1>
+      <PageHeader
+        title="AutoMod 自動審核"
+        description="設定自動內容審核規則，過濾違規發文與留言，維護社群討論品質。"
+      />
 
       {/* Two-column grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

@@ -21,6 +21,7 @@ import {
 } from 'recharts'
 import type { LearningStyleType } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Input } from '@/components/ui/input'
 import {
@@ -39,12 +40,12 @@ const COHORT_COLUMNS = ['Day 1', 'Day 7', 'Day 14', 'Day 30', 'Day 60', 'Day 90'
 
 const ROLE_ORDER: LearningStyleType[] = ['D', 'A', 'O', 'L', 'C']
 
-const ROLE_META: Record<LearningStyleType, { label: string; color: string }> = {
-  D: { label: '探究者（探探島）', color: 'var(--chart-1)' },
-  A: { label: '行動者（動動島）', color: 'var(--chart-2)' },
-  O: { label: '結構者（構構島）', color: 'var(--chart-3)' },
-  L: { label: '流動者（跨跨島）', color: 'var(--chart-4)' },
-  C: { label: '連結者（連連島）', color: 'var(--chart-5)' },
+const ROLE_META: Record<LearningStyleType, { label: string; color: string; textColor: string }> = {
+  D: { label: '探究者（探探島）', color: '#78C8E8', textColor: '#1a5a7a' },
+  A: { label: '行動者（動動島）', color: '#F5A01A', textColor: '#fff' },
+  O: { label: '結構者（構構島）', color: '#2BADA0', textColor: '#fff' },
+  L: { label: '流動者（跨跨島）', color: '#E86B2A', textColor: '#fff' },
+  C: { label: '連結者（連連島）', color: '#F0D020', textColor: '#7a5c00' },
 }
 
 function formatTrendDate(value: string) {
@@ -143,47 +144,49 @@ export function UserAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          用戶分析
-        </h1>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm">
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-40"
-            />
-            <span className="text-muted-foreground">~</span>
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-40"
+      <PageHeader
+        title="用戶分析"
+        description="深入分析用戶行為、留存率、活躍週期與成長趨勢，支援數據驅動決策。"
+        actions={
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-40"
+              />
+              <span className="text-muted-foreground">~</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <ExportButton
+              data={trendRows as unknown as Record<string, unknown>[]}
+              columns={exportColumns}
+              fileName="user_analytics"
             />
           </div>
-          <ExportButton
-            data={trendRows as unknown as Record<string, unknown>[]}
-            columns={exportColumns}
-            fileName="user_analytics"
-          />
-        </div>
-      </div>
+        }
+      />
 
       {/* Section 1: DAU / WAU / MAU */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           title="DAU (日活躍)"
+          description="Daily Active Users：當日至少登入或操作一次的用戶數"
           value={formatNumber(summary?.currentDau)}
           change={summary?.dauChangePercent ?? 0}
-          changeLabel="vs 上週"
+          changeLabel="vs 上週同日"
           icon={Users}
         />
         <StatCard
           title="WAU (週活躍)"
+          description="Weekly Active Users：近 7 天內至少登入或操作一次的用戶數"
           value={formatNumber(summary?.currentWau)}
           change={summary?.wauChangePercent ?? 0}
           changeLabel="vs 上週"
@@ -191,6 +194,7 @@ export function UserAnalyticsPage() {
         />
         <StatCard
           title="MAU (月活躍)"
+          description="Monthly Active Users：近 30 天內至少登入或操作一次的用戶數"
           value={formatNumber(summary?.currentMau)}
           change={summary?.mauChangePercent ?? 0}
           changeLabel="vs 上月"
@@ -202,21 +206,25 @@ export function UserAnalyticsPage() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
           title="Badge 完成率"
+          description="已獲得至少一個徽章的用戶佔總用戶比例，反映任務完成度"
           value={`${onboardingStats?.badgeGrantedRate ?? 0}%`}
           icon={Award}
         />
         <StatCard
           title="測驗完成率"
+          description="完成島嶼人格測驗（學習風格）的用戶比例，越高代表用戶越願意參與引導流程"
           value={`${quizStats?.quizCompletedRate ?? 0}%`}
           icon={BookOpen}
         />
         <StatCard
           title="實踐放棄率"
+          description="已開始但未完成實踐任務的用戶比例，越低越好"
           value={`${engagementStats?.practiceStats.abandonmentRate ?? 0}%`}
           icon={TrendingDown}
         />
         <StatCard
           title="Streak 7天+ 人數"
+          description="連續打卡達 7 天以上的用戶人數，代表高度活躍的核心用戶群"
           value={formatNumber(engagementStats?.checkinStats.usersWithStreak7Plus)}
           icon={Flame}
         />
@@ -224,9 +232,39 @@ export function UserAnalyticsPage() {
 
       {/* Section 3: Active trend chart */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
-          每日活躍趨勢（DAU / WAU / MAU）
-        </h2>
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              每日活躍趨勢（DAU / WAU / MAU）
+            </h2>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              追蹤日、週、月活躍用戶在所選時間區間內的變化，可用於判斷用戶成長與留存健康度
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 w-4 rounded-sm"
+                style={{ backgroundColor: 'var(--chart-2)' }}
+              />
+              DAU（日活）
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 w-4 rounded-sm"
+                style={{ backgroundColor: 'var(--chart-3)' }}
+              />
+              WAU（週活）
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 w-4 rounded-sm"
+                style={{ backgroundColor: 'var(--chart-4)' }}
+              />
+              MAU（月活）
+            </span>
+          </div>
+        </div>
         {isTrendLoading ? (
           <p className="text-sm text-muted-foreground">載入中...</p>
         ) : trendRows.length === 0 ? (
@@ -283,10 +321,15 @@ export function UserAnalyticsPage() {
 
       {/* Section 4: Learning style distribution */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
-            學習風格分布
-          </h2>
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              學習風格分布
+            </h2>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              依島嶼人格測驗結果分類，顯示社群用戶的學習風格組成比例
+            </p>
+          </div>
           {quizStats && (
             <span className="text-sm text-muted-foreground">
               測驗完成率 {quizStats.quizCompletedRate}%（
@@ -311,8 +354,12 @@ export function UserAnalyticsPage() {
                   </span>
                   <div className="flex-1">
                     <div
-                      className="flex h-8 items-center rounded-md px-3 text-xs font-semibold text-white transition-all"
-                      style={{ width: `${Math.max(rate, 4)}%`, backgroundColor: meta.color }}
+                      className="flex h-8 items-center rounded-md px-3 text-xs font-semibold transition-all"
+                      style={{
+                        width: `${Math.max(rate, 4)}%`,
+                        backgroundColor: meta.color,
+                        color: meta.textColor,
+                      }}
                     >
                       <span className="whitespace-nowrap">
                         {count.toLocaleString()} ({rate}%)
@@ -328,9 +375,14 @@ export function UserAnalyticsPage() {
 
       {/* Section 5: Funnel visualization */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
-          轉換漏斗
-        </h2>
+        <div className="mb-4">
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            轉換漏斗
+          </h2>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            追蹤用戶從註冊到完成核心行為的各階段轉換率，百分比以第一階段為基準（100%）
+          </p>
+        </div>
         {isFunnelLoading ? (
           <p className="text-sm text-muted-foreground">載入中...</p>
         ) : isFunnelError ? (
@@ -372,10 +424,15 @@ export function UserAnalyticsPage() {
 
       {/* Section 6: Checkin retention by day */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
-            打卡留存率（30天）
-          </h2>
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              打卡留存率（30天）
+            </h2>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              用戶首次打卡後，在接下來各天仍持續打卡的比例。第 1 天為 100%，數值越平緩代表留存越好
+            </p>
+          </div>
           {engagementStats && (
             <div className="flex gap-4 text-xs text-muted-foreground">
               <span>平均最長 streak：{engagementStats.checkinStats.avgMaxStreak} 天</span>
@@ -425,9 +482,26 @@ export function UserAnalyticsPage() {
 
       {/* Section 7: Cohort retention heatmap */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
-          Cohort 留存率
-        </h2>
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              Cohort 留存率
+            </h2>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              依加入月份分群，追蹤各群用戶在第 1、7、14、30、60、90
+              天後仍活躍的比例。顏色越深代表留存率越高
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+            <span>低</span>
+            <span className="flex items-center gap-0.5">
+              {[15, 25, 40, 60, 80].map((pct) => (
+                <span key={pct} className={`inline-block h-4 w-6 rounded-sm ${retentionBg(pct)}`} />
+              ))}
+            </span>
+            <span>高</span>
+          </div>
+        </div>
         {isCohortLoading ? (
           <p className="text-sm text-muted-foreground">載入中...</p>
         ) : isCohortError ? (

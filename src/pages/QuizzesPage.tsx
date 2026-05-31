@@ -1,5 +1,6 @@
 import { ClipboardList, FileQuestion, Hash, Percent, Plus } from 'lucide-react'
 import type { Quiz, QuizQuestion } from '@/api/admin-learning'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { useQuizzes } from '@/hooks/useQuizzes'
@@ -13,15 +14,16 @@ export function QuizzesPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          測驗管理
-        </h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          建立測驗
-        </Button>
-      </div>
+      <PageHeader
+        title="測驗管理"
+        description="建立與管理知識測驗題庫，設定通過條件與用戶作答結果查看。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            建立測驗
+          </Button>
+        }
+      />
 
       {/* ── Stats ──────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

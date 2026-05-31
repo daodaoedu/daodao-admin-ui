@@ -1,6 +1,7 @@
 import { Crown, Medal, Settings, Trophy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { LeaderboardUser, LeaderboardWeightConfig } from '@/api/admin-gamification'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLeaderboard, useLeaderboardConfig } from '@/hooks/useLeaderboard'
@@ -55,7 +56,10 @@ export function LeaderboardsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">排行榜</h1>
+      <PageHeader
+        title="排行榜"
+        description="查看積分、貢獻度或學習進度的用戶排名，激發良性競爭。"
+      />
 
       {/* Weight Config */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">

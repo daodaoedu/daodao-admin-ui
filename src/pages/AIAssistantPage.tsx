@@ -17,6 +17,7 @@ import type {
   ConversationListItem,
   KnowledgeEntry,
 } from '@/api/admin-ai-assistant'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { Input, Textarea } from '@/components/ui/input'
@@ -83,9 +84,10 @@ export function AIAssistantPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ──────────────────────────────────────── */}
-      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-        AI 社群助手
-      </h1>
+      <PageHeader
+        title="AI 社群助手"
+        description="透過 AI 即時回應社群問題，設定知識庫範圍、查看對話記錄與使用統計。"
+      />
 
       {/* ── Stats ───────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

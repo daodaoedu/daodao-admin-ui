@@ -1,4 +1,5 @@
 import { AlertTriangle, Bell, Clock, Plus, ShieldCheck } from 'lucide-react'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useAlertHistory, useAlertRules } from '@/hooks/useAlerts'
 import { cn } from '@/lib/utils'
@@ -11,16 +12,16 @@ export function AnomalyAlertsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          異常警報
-        </h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          新增規則
-        </Button>
-      </div>
+      <PageHeader
+        title="異常警報"
+        description="監控系統異常事件，設定告警規則與通知條件，快速定位問題根源。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            新增規則
+          </Button>
+        }
+      />
 
       {/* Alert Rules */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">

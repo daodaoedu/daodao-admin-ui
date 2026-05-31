@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Edit2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { deleteTag, deleteTagRule } from '@/api/admin-users'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useTagRules, useUserTags } from '@/hooks/useUserTags'
 
@@ -52,15 +53,16 @@ export function UserTagsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          用戶標籤管理
-        </h1>
-        <Button type="button" onClick={() => alert('功能開發中')}>
-          <Plus className="mr-1.5 h-4 w-4" />
-          新增標籤
-        </Button>
-      </div>
+      <PageHeader
+        title="用戶標籤管理"
+        description="建立與管理用戶分群標籤，作為精準通知與內容推播的依據。"
+        actions={
+          <Button type="button" onClick={() => alert('功能開發中')}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            新增標籤
+          </Button>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Manual Tags */}

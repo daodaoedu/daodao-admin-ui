@@ -1,5 +1,6 @@
 import { Award, CheckCircle, ExternalLink, FileText, Plus, XCircle } from 'lucide-react'
 import type { CertificateTemplate, IssuedCertificate } from '@/api/admin-learning'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useCertificateTemplates, useIssuedCertificates } from '@/hooks/useCertificates'
 import { cn } from '@/lib/utils'
@@ -13,15 +14,16 @@ export function CertificatesPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          證書管理
-        </h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          建立模板
-        </Button>
-      </div>
+      <PageHeader
+        title="證書管理"
+        description="管理課程修業證書的樣板、發放條件與歷史記錄。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            建立模板
+          </Button>
+        }
+      />
 
       {/* ── Certificate templates ──────────────────────── */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">

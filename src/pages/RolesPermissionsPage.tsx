@@ -14,6 +14,7 @@ import {
   updateRole,
 } from '@/api/admin-server'
 import type { Permission, Role } from '@/api/types'
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -153,9 +154,10 @@ export function RolesPermissionsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-        角色權限
-      </h1>
+      <PageHeader
+        title="角色權限"
+        description="定義管理員角色與存取權限，確保不同職能人員只能操作授權範圍。"
+      />
 
       <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
         {(['roles', 'permissions'] as Tab[]).map((t) => (

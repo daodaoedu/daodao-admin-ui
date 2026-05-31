@@ -10,6 +10,7 @@ import {
   getQuizStats,
 } from '@/api/admin-community'
 import type { LearningStyleType, OnboardingEmailType } from '@/api/types'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { useOnboardingFlowAnalytics, useOnboardingFlows } from '@/hooks/useOnboardingFlows'
@@ -526,16 +527,16 @@ export function OnboardingFlowsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          Onboarding 流程
-        </h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          建立流程
-        </Button>
-      </div>
+      <PageHeader
+        title="Onboarding 流程"
+        description="設計新用戶入門體驗步驟，追蹤各步驟完成率並優化引導流程。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            建立流程
+          </Button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

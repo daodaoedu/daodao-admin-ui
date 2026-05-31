@@ -1,5 +1,6 @@
 import { AlertTriangle, BookOpen, Eye, Percent } from 'lucide-react'
 import { useState } from 'react'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { useLearningCourses, useStalledUsers } from '@/hooks/useLearningCourses'
@@ -25,9 +26,10 @@ export function LearningProgressPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
-      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-        課程進度追蹤
-      </h1>
+      <PageHeader
+        title="課程進度追蹤"
+        description="查看成員的學習完成率、停滯點與整體進度，找出需要輔助的對象。"
+      />
 
       {/* ── Stats ──────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

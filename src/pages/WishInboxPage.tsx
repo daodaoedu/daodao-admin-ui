@@ -9,6 +9,7 @@ import {
   promoteWish,
 } from '@/api/admin-roadmap'
 import type { AdminWishItem, RoadmapStatus, WishCategory, WishStatus } from '@/api/types'
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -189,7 +190,10 @@ export function WishInboxPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">許願池</h1>
+      <PageHeader
+        title="許願池"
+        description="查看用戶提交的功能需求與改善建議，回覆狀態並轉為路線圖項目。"
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-40">

@@ -1,4 +1,5 @@
 import { Bell, Clock, Eye, Loader2, Megaphone, Plus } from 'lucide-react'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { useAdminNotificationStats, useAdminNotifications } from '@/hooks/useNotifications'
 import { cn } from '@/lib/utils'
@@ -29,20 +30,20 @@ export function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          站內通知
-        </h1>
-        <button
-          type="button"
-          onClick={() => alert('功能開發中')}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" />
-          建立通知
-        </button>
-      </div>
+      <PageHeader
+        title="站內通知"
+        description="向全體或特定用戶發送站內通知，管理通知類型與已讀狀態。"
+        actions={
+          <button
+            type="button"
+            onClick={() => alert('功能開發中')}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" />
+            建立通知
+          </button>
+        }
+      />
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

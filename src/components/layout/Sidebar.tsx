@@ -3,6 +3,7 @@ import {
   Bell,
   BookOpen,
   Bot,
+  Brain,
   Calendar,
   ChevronDown,
   ClipboardList,
@@ -82,8 +83,8 @@ const navGroups: NavGroup[] = [
     title: '社群',
     items: [
       { to: '/onboarding-flows', label: 'Onboarding', icon: UserPlus },
-      { to: '/content-performance', label: '內容績效', icon: TrendingUp },
-      { to: '/member-directory', label: '會員名錄', icon: Users },
+      { to: '/content-performance', label: '內容分析', icon: TrendingUp },
+      { to: '/community-map', label: '社群地圖', icon: Users },
       { to: '/ai-assistant', label: 'AI 助手', icon: Bot },
     ],
   },
@@ -105,7 +106,10 @@ const navGroups: NavGroup[] = [
   },
   {
     title: '問卷',
-    items: [{ to: '/surveys', label: '問卷管理', icon: ClipboardList }],
+    items: [
+      { to: '/surveys', label: '問卷管理', icon: ClipboardList },
+      { to: '/persona-questions', label: '人物誌題目', icon: Brain },
+    ],
   },
   {
     title: '溝通',
@@ -155,7 +159,7 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: '遲戲化',
+    title: '遊戲化',
     items: [
       { to: '/badges', label: '徽章', icon: Trophy },
       { to: '/challenges', label: '挑戰', icon: Target },

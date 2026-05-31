@@ -26,6 +26,7 @@ import type {
 const SURVEY_PUBLIC_BASE =
   import.meta.env.VITE_SURVEY_PUBLIC_BASE ?? 'https://app.daodao.so/survey/r'
 
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -174,20 +175,23 @@ export function SurveyManagementPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="heading-lg">問卷管理</h1>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => {
-            setActiveSurveyId(null)
-            setDrawerMode('create')
-          }}
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          新增問卷
-        </Button>
-      </div>
+      <PageHeader
+        title="問卷管理"
+        description="建立與發布問卷調查，收集用戶回饋並統計分析作答結果。"
+        actions={
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setActiveSurveyId(null)
+              setDrawerMode('create')
+            }}
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            新增問卷
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-36">
@@ -796,8 +800,8 @@ function QuestionStatBlock({ q }: { q: AdminSurveyPerQuestion }) {
   if (stats.sample_answers && stats.sample_answers.length > 0) {
     return (
       <div className="space-y-1 text-sm">
-        {stats.sample_answers.filter(Boolean).map((a, i) => (
-          <p key={i} className="rounded bg-muted px-2 py-1 text-xs">
+        {stats.sample_answers.filter(Boolean).map((a) => (
+          <p key={a} className="rounded bg-muted px-2 py-1 text-xs">
             「{a}」
           </p>
         ))}
@@ -905,7 +909,10 @@ function SurveyFormPanel({
 }) {
   const { data: existingData, isLoading: loadingExisting } = useQuery({
     queryKey: ['admin-survey-detail', surveyId],
-    queryFn: () => getAdminSurvey(surveyId!).then((r) => r.data.data),
+    queryFn: () => {
+      if (surveyId === undefined) throw new Error('Survey id is required')
+      return getAdminSurvey(surveyId).then((r) => r.data.data)
+    },
     enabled: mode === 'edit' && surveyId !== undefined,
   })
 
@@ -1216,7 +1223,10 @@ function SurveyFormInner({
             {OPTION_TYPES.has(q.question_type) && (
               <div className="space-y-1.5 pl-2">
                 {q.options.map((o, oi) => (
-                  <div key={oi} className="flex items-center gap-1.5">
+                  <div
+                    key={o.option_text || `option-${o.position}`}
+                    className="flex items-center gap-1.5"
+                  >
                     <span className="shrink-0 text-xs text-muted-foreground">{oi + 1}.</span>
                     <Input
                       value={o.option_text}

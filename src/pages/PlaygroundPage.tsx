@@ -16,6 +16,7 @@ import {
 } from '@/api/admin-ai'
 import type { ChatMessage, PlaygroundChatResponse, PlaygroundInsightResponse } from '@/api/types'
 import { useAuth } from '@/auth/AuthContext'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
@@ -1010,6 +1011,10 @@ export function PlaygroundPage() {
 
   return (
     <div className="flex min-h-0 flex-col">
+      <PageHeader
+        title="Playground"
+        description="直接測試 AI 模型回應，調整 system prompt 與參數，驗證設定效果。"
+      />
       {/* Tab bar */}
       <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">
         {(['chat', 'insight'] as const).map((tab) => (

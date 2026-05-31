@@ -16,6 +16,7 @@ import type {
   LLMModel,
   SystemPrompt,
 } from '@/api/types'
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
@@ -163,23 +164,24 @@ export function AIServiceConfigsPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          AI 服務設定
-        </h1>
-        <Button
-          type="button"
-          size="xs"
-          onClick={() => {
-            setForm(EMPTY_FORM)
-            setCreateError(null)
-            setShowCreate(true)
-          }}
-          className="px-3"
-        >
-          + 新增設定
-        </Button>
-      </div>
+      <PageHeader
+        title="AI 服務設定"
+        description="管理 LLM 模型供應商、API 金鑰與服務參數，設定各功能使用的預設模型。"
+        actions={
+          <Button
+            type="button"
+            size="xs"
+            onClick={() => {
+              setForm(EMPTY_FORM)
+              setCreateError(null)
+              setShowCreate(true)
+            }}
+            className="px-3"
+          >
+            + 新增設定
+          </Button>
+        }
+      />
 
       {/* Service tab bar */}
       <div className="inline-flex rounded-lg border border-[var(--admin-panel-border)] bg-background/65 p-1">

@@ -45,7 +45,10 @@ export function useDeleteEmailTemplate() {
 export function useEmailTemplate(id: number | null) {
   return useQuery({
     queryKey: ['email-template', id],
-    queryFn: () => getEmailTemplate(id!).then((r) => r.data.data),
+    queryFn: () => {
+      if (id === null) throw new Error('Email template id is required')
+      return getEmailTemplate(id).then((r) => r.data.data)
+    },
     enabled: id !== null,
   })
 }

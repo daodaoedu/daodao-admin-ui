@@ -49,6 +49,80 @@ export interface MemberDirectoryAnalytics {
   [key: string]: unknown
 }
 
+export interface CommunityMapStats {
+  totalMembers: number
+  completedProfiles: number
+  averageFillRate: number
+}
+
+export interface CommunityMapAnalytics {
+  fieldFillRates: Array<{ fieldId: number; fieldName: string; fillRate: number }>
+  signupTrend: Array<{ date: string; count: number }>
+}
+
+export interface CommunityInteractionPeriodStats {
+  reactions: number
+  comments: number
+  follows: number
+  connects: number
+}
+
+export interface CommunityInteractionStats {
+  current: CommunityInteractionPeriodStats
+  changes: {
+    reactions: number
+    comments: number
+    follows: number
+    connects: number
+  }
+  trend: Array<{
+    date: string
+    reactions: number
+    comments: number
+    follows: number
+    connects: number
+  }>
+}
+
+export interface InteractionDetails {
+  reactionTypes: Array<{ type: string; count: number }>
+  commentReplyRate: number
+  connectionFunnel: {
+    requests: number
+    accepted: number
+    rejected: number
+    pending: number
+    acceptRate: number
+  }
+  topContent: Array<{
+    targetType: string
+    targetId: number
+    targetName: string
+    reactions: number
+    comments: number
+    total: number
+  }>
+  topActiveUsers: Array<{
+    userId: number
+    name: string
+    avatarUrl: string | null
+    interactions: number
+  }>
+  topFollowedUsers: Array<{
+    userId: number
+    name: string
+    avatarUrl: string | null
+    followers: number
+  }>
+  heatmap: Array<{ dow: number; hour: number; count: number }>
+  engagementFunnel: {
+    reactors: number
+    commenters: number
+    followers: number
+    connectors: number
+  }
+}
+
 export const listMemberDirectoryFields = () =>
   apiClient.get<ApiResponse<ProfileField[]>>('/daodao-server/api/v1/admin/member-directory/fields')
 
@@ -82,6 +156,34 @@ export const getMemberDirectoryStats = () =>
 
 export const getMemberDirectoryAnalytics = () =>
   apiClient.get<ApiResponse<MemberDirectoryAnalytics>>(
+    '/daodao-server/api/v1/admin/member-directory/analytics',
+  )
+
+export const getCommunityInteractionStats = (params?: { period?: '7d' | '30d' | '90d' }) =>
+  apiClient.get<ApiResponse<CommunityInteractionStats>>(
+    '/daodao-server/api/v1/admin/community/interaction-stats',
+    { params },
+  )
+
+export const getInteractionDetails = (params?: { period?: '7d' | '30d' | '90d' }) =>
+  apiClient.get<ApiResponse<InteractionDetails>>(
+    '/daodao-server/api/v1/admin/community/interaction-details',
+    { params },
+  )
+
+export const listCommunityMapFields = listMemberDirectoryFields
+export const createCommunityMapField = createMemberDirectoryField
+export const updateCommunityMapField = updateMemberDirectoryField
+export const deleteCommunityMapField = deleteMemberDirectoryField
+export const reorderCommunityMapFields = reorderMemberDirectoryFields
+
+export const getCommunityMapStats = () =>
+  apiClient.get<ApiResponse<CommunityMapStats>>(
+    '/daodao-server/api/v1/admin/member-directory/stats',
+  )
+
+export const getCommunityMapAnalytics = () =>
+  apiClient.get<ApiResponse<CommunityMapAnalytics>>(
     '/daodao-server/api/v1/admin/member-directory/analytics',
   )
 

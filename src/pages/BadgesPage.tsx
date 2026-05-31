@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { Award, Plus, Target } from 'lucide-react'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useBadges } from '@/hooks/useBadges'
 import { cn } from '@/lib/utils'
@@ -12,16 +13,16 @@ export function BadgesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          徽章管理
-        </h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          建立徽章
-        </Button>
-      </div>
+      <PageHeader
+        title="徽章管理"
+        description="設計與發放會員成就徽章，激勵用戶完成學習目標與社群參與。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            建立徽章
+          </Button>
+        }
+      />
 
       {/* Badge Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

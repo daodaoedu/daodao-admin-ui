@@ -14,6 +14,7 @@ import type {
   RoadmapStatus,
   WishCategory,
 } from '@/api/types'
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -208,14 +209,15 @@ export function RoadmapItemsPage() {
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-            路線圖項目
-          </h1>
-          <Button type="button" onClick={openCreate}>
-            + 新增項目
-          </Button>
-        </div>
+        <PageHeader
+          title="路線圖項目"
+          description="管理公開路線圖的功能項目，讓用戶了解平台未來發展方向。"
+          actions={
+            <Button type="button" onClick={openCreate}>
+              + 新增項目
+            </Button>
+          }
+        />
 
         <div className="flex gap-2">
           <Select

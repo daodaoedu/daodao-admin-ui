@@ -1,5 +1,6 @@
 import { ArrowRight, BookOpen, GraduationCap, Plus, Users } from 'lucide-react'
 import type { LearningPath } from '@/api/admin-learning'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useLearningPaths } from '@/hooks/useLearningPaths'
 import { cn } from '@/lib/utils'
@@ -11,15 +12,16 @@ export function LearningPathsPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          學習路徑
-        </h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          建立路徑
-        </Button>
-      </div>
+      <PageHeader
+        title="學習路徑"
+        description="規劃結構化課程地圖，將多個學習單元串連成完整的成長旅程。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            建立路徑
+          </Button>
+        }
+      />
 
       {/* ── Path cards ─────────────────────────────────── */}
       {paths.map((path) => (

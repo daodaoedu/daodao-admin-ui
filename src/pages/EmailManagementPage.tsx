@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { retryFailedEmails, sendCustomEmail } from '@/api/admin-system'
 import { EmailHistoryTable } from '@/components/EmailHistoryTable'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { useEmailHealth, useEmailStats } from '@/hooks/useEmailManagement'
 import { useEmailTemplates } from '@/hooks/useEmailTemplates'
@@ -121,29 +122,25 @@ export function EmailManagementPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-            郵件管理
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            查看寄送狀態、手動發信與處理失敗佇列。
-          </p>
-        </div>
-        <div
-          className={cn(
-            'inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium',
-            isConnected
-              ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-300'
-              : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300',
-          )}
-        >
-          <span
-            className={cn('h-2 w-2 rounded-full', isConnected ? 'bg-green-500' : 'bg-red-500')}
-          />
-          {healthLoading ? '檢查 SMTP...' : isConnected ? 'SMTP 已連線' : 'SMTP 已斷線'}
-        </div>
-      </div>
+      <PageHeader
+        title="郵件管理"
+        description="查看郵件發送歷史、退信狀態與佇列，手動重試失敗任務。"
+        actions={
+          <div
+            className={cn(
+              'inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium',
+              isConnected
+                ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-300'
+                : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300',
+            )}
+          >
+            <span
+              className={cn('h-2 w-2 rounded-full', isConnected ? 'bg-green-500' : 'bg-red-500')}
+            />
+            {healthLoading ? '檢查 SMTP...' : isConnected ? 'SMTP 已連線' : 'SMTP 已斷線'}
+          </div>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

@@ -2,6 +2,7 @@ import { FileText, Search, Trash2, Upload, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { runCustomReportQuery } from '@/api/admin-reports'
 import { ExportButton } from '@/components/ExportButton'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useCustomReportFields, useSavedReports } from '@/hooks/useCustomReports'
@@ -61,12 +62,13 @@ export function CustomReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl leading-none font-semibold tracking-tight text-foreground">
-          自訂報表
-        </h1>
-        <ExportButton data={exportData} columns={exportColumns} fileName="custom-report" />
-      </div>
+      <PageHeader
+        title="自訂報表"
+        description="依需求組合指標、篩選條件與時間區間，匯出專屬數據報表。"
+        actions={
+          <ExportButton data={exportData} columns={exportColumns} fileName="custom-report" />
+        }
+      />
 
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
