@@ -99,7 +99,13 @@ export const getSystemMonitor = () =>
     .get<ApiResponse<SystemMonitorBackendData>>('/daodao-server/api/v1/admin/system/monitor')
     .then((res) => ({
       ...res,
-      data: { ...res.data, data: mapSystemMonitor(res.data.data) },
+      data: {
+        ...res.data,
+        data:
+          res.data.data != null
+            ? mapSystemMonitor(res.data.data)
+            : mapSystemMonitor({} as SystemMonitorBackendData),
+      },
     }))
 
 export const getDbInfo = () =>

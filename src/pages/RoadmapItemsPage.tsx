@@ -356,7 +356,7 @@ export function RoadmapItemsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   placeholder="請輸入描述"
                   rows={3}
-                  className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 resize-none"
+                  className="w-full resize-none"
                 />
               </div>
               <div>

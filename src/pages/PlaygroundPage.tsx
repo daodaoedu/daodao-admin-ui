@@ -459,7 +459,7 @@ function InsightTab() {
               placeholder="預設 2000"
               value={insightMaxTokens ?? ''}
               onChange={(e) => setInsightMaxTokens(e.target.value ? Number(e.target.value) : null)}
-              className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 tabular-nums"
+              className="tabular-nums"
             />
           </div>
           <div className="space-y-1">
@@ -530,7 +530,7 @@ function InsightTab() {
               placeholder="預設"
               value={insightTopK ?? ''}
               onChange={(e) => setInsightTopK(e.target.value ? Number(e.target.value) : null)}
-              className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 tabular-nums"
+              className="tabular-nums"
             />
           </div>
         </div>
@@ -1088,7 +1088,7 @@ export function PlaygroundPage() {
                   placeholder="預設"
                   value={chatMaxTokens ?? ''}
                   onChange={(e) => setChatMaxTokens(e.target.value ? Number(e.target.value) : null)}
-                  className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 tabular-nums"
+                  className="tabular-nums"
                 />
               </div>
               <div className="space-y-1">
@@ -1159,7 +1159,7 @@ export function PlaygroundPage() {
                   placeholder="預設"
                   value={chatTopK ?? ''}
                   onChange={(e) => setChatTopK(e.target.value ? Number(e.target.value) : null)}
-                  className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 tabular-nums"
+                  className="tabular-nums"
                 />
               </div>
             </div>

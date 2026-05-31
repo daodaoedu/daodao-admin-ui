@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { EmailTemplate } from '@/api/types'
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import { Input, Textarea } from '@/components/ui/input'
 import {
   useCreateEmailTemplate,
   useDeleteEmailTemplate,
@@ -27,7 +28,7 @@ function TemplateDialog({
 }: {
   trigger: React.ReactNode
   initial?: EmailTemplate
-  onSave: (data: TemplateFormData) => void
+  onSave: (data: TemplateFormData) => Promise<void> | void
   isSaving: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -58,10 +59,14 @@ function TemplateDialog({
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    onSave(form)
-    setOpen(false)
+    try {
+      await onSave(form)
+      setOpen(false)
+    } catch {
+      // keep dialog open on error
+    }
   }
 
   function field(id: keyof TemplateFormData) {
@@ -91,7 +96,7 @@ function TemplateDialog({
             <label htmlFor="tpl-name" className="mb-1 block text-sm font-medium">
               模板名稱 <span className="text-red-500">*</span>
             </label>
-            <input
+            <Input
               id="tpl-name"
               type="text"
               required
@@ -99,7 +104,7 @@ function TemplateDialog({
               placeholder="例：歡迎信"
               value={form.name}
               onChange={field('name')}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full"
             />
           </div>
 
@@ -107,7 +112,7 @@ function TemplateDialog({
             <label htmlFor="tpl-subject" className="mb-1 block text-sm font-medium">
               主旨 <span className="text-red-500">*</span>
             </label>
-            <input
+            <Input
               id="tpl-subject"
               type="text"
               required
@@ -115,7 +120,7 @@ function TemplateDialog({
               placeholder="例：歡迎加入島島！"
               value={form.subject}
               onChange={field('subject')}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full"
             />
           </div>
 
@@ -127,14 +132,14 @@ function TemplateDialog({
               支援 HTML，變數請以 <code className="rounded bg-muted px-1">{'{{variable}}'}</code>{' '}
               格式書寫
             </p>
-            <textarea
+            <Textarea
               id="tpl-body"
               required
               rows={10}
               placeholder={'<p>Hi {{nickname}}，</p>\n<p>...</p>'}
               value={form.body}
               onChange={field('body')}
-              className="w-full resize-y rounded-md border border-border bg-background px-3 py-2 font-mono text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full resize-y font-mono"
             />
           </div>
 
@@ -145,13 +150,13 @@ function TemplateDialog({
             <p className="mb-1 text-xs text-muted-foreground">
               以逗號分隔，例：<code className="rounded bg-muted px-1">nickname, email, link</code>
             </p>
-            <input
+            <Input
               id="tpl-vars"
               type="text"
               placeholder="nickname, email, link"
               value={form.variablesRaw}
               onChange={field('variablesRaw')}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full"
             />
           </div>
 
@@ -247,8 +252,8 @@ export function EmailTemplatesPage() {
   const createMutation = useCreateEmailTemplate()
   const deleteMutation = useDeleteEmailTemplate()
 
-  function handleCreate(form: TemplateFormData) {
-    createMutation.mutate({
+  async function handleCreate(form: TemplateFormData) {
+    await createMutation.mutateAsync({
       name: form.name,
       subject: form.subject,
       body: form.body,

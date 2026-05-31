@@ -186,7 +186,7 @@ export function AIAssistantPage() {
                 </label>
                 <Textarea
                   id="ai-persona"
-                  className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                  className="w-full"
                   rows={3}
                   value={aiPersona}
                   onChange={(e) => setAiPersona(e.target.value)}

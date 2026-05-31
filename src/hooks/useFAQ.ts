@@ -20,6 +20,7 @@ export function useFaqItems(categoryId?: number) {
   return useQuery({
     queryKey: ['admin', 'faq', 'items', categoryId],
     queryFn: () => listFaqItems({ categoryId }).then((r) => r.data.data),
+    enabled: categoryId !== undefined,
   })
 }
 

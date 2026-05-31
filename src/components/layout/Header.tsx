@@ -45,6 +45,8 @@ const ROUTE_TITLES: Record<string, string> = {
   '/member-directory': '會員名錄',
   '/ai-assistant': 'AI 助手',
   '/events': '活動管理',
+  '/email-templates': 'Email 模板',
+  '/email-templates/:id/edit': 'Email 模板編輯',
 }
 
 export function Header() {
@@ -57,6 +59,8 @@ export function Header() {
 
   const pageTitle = (() => {
     if (location.pathname.startsWith('/users/')) return ROUTE_TITLES['/users/:userId']
+    if (/^\/email-templates\/.+\/edit$/.test(location.pathname))
+      return ROUTE_TITLES['/email-templates/:id/edit']
 
     return ROUTE_TITLES[location.pathname] || location.pathname.replace('/', '') || 'Dashboard'
   })()

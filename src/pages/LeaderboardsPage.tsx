@@ -1,6 +1,6 @@
 import { Crown, Medal, Settings, Trophy } from 'lucide-react'
-import { useState } from 'react'
-import type { LeaderboardUser } from '@/api/admin-gamification'
+import { useEffect, useState } from 'react'
+import type { LeaderboardUser, LeaderboardWeightConfig } from '@/api/admin-gamification'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLeaderboard, useLeaderboardConfig } from '@/hooks/useLeaderboard'
@@ -41,8 +41,12 @@ export function LeaderboardsPage() {
   const { data: configData } = useLeaderboardConfig()
   const { data: leaderboardData } = useLeaderboard(period)
 
-  const defaultWeights = Object.fromEntries(WEIGHT_CONFIG.map((w) => [w.key, w.value]))
-  const [weights, setWeights] = useState(configData?.weights ?? defaultWeights)
+  const defaultWeights = Object.fromEntries(WEIGHT_CONFIG.map((w) => [w.key, w.value])) as unknown as LeaderboardWeightConfig
+  const [weights, setWeights] = useState<LeaderboardWeightConfig>(defaultWeights)
+
+  useEffect(() => {
+    if (configData?.weights) setWeights(configData.weights)
+  }, [configData])
 
   const users = (leaderboardData?.items ?? []) as LeaderboardUser[]
 

@@ -161,14 +161,41 @@ export function EventsPage() {
       )}
 
       {activeTab === 'past' && (
-        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
-          <p className="text-muted-foreground">已結束活動列表（{displayPastEvents.length} 筆）</p>
-        </div>
-      )}
-
-      {activeTab === 'recurring' && (
-        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
-          <p className="text-muted-foreground">週期性活動列表（{displayTemplates.length} 筆）</p>
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+          {displayPastEvents.length === 0 ? (
+            <p className="text-muted-foreground">暫無已結束活動</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="pb-3 font-medium text-muted-foreground">活動名稱</th>
+                    <th className="pb-3 font-medium text-muted-foreground">日期</th>
+                    <th className="pb-3 font-medium text-muted-foreground">地點</th>
+                    <th className="pb-3 font-medium text-muted-foreground">出席 / 報名</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayPastEvents.map((event) => (
+                    <tr
+                      key={event.id}
+                      className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                    >
+                      <td className="py-3 font-medium text-foreground">{event.name}</td>
+                      <td className="py-3 text-muted-foreground">
+                        {event.date} {event.time}
+                      </td>
+                      <td className="py-3 text-muted-foreground">{event.location}</td>
+                      <td className="py-3 text-muted-foreground">
+                        {event.rsvp}
+                        {event.capacity != null ? `/${event.capacity}` : ''}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -214,39 +241,41 @@ export function EventsPage() {
       )}
 
       {/* ── 週期性模板 card ─────────────────────────────── */}
-      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
-        <div className="mb-4 flex items-center gap-2">
-          <RefreshCw className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
-            週期性模板
-          </h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="pb-3 font-medium text-muted-foreground">模板名稱</th>
-                <th className="pb-3 font-medium text-muted-foreground">頻率</th>
-                <th className="pb-3 font-medium text-muted-foreground">下次場次</th>
-                <th className="pb-3 font-medium text-muted-foreground">已生成場次數</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayTemplates.map((tpl) => (
-                <tr
-                  key={tpl.id}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                >
-                  <td className="py-3 font-medium text-foreground">{tpl.name}</td>
-                  <td className="py-3 text-muted-foreground">{tpl.frequency}</td>
-                  <td className="py-3 text-foreground">{tpl.nextSession}</td>
-                  <td className="py-3 text-muted-foreground">{tpl.totalGenerated} 場</td>
+      {activeTab === 'recurring' && (
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              週期性模板
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+                  <th className="pb-3 font-medium text-muted-foreground">模板名稱</th>
+                  <th className="pb-3 font-medium text-muted-foreground">頻率</th>
+                  <th className="pb-3 font-medium text-muted-foreground">下次場次</th>
+                  <th className="pb-3 font-medium text-muted-foreground">已生成場次數</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {displayTemplates.map((tpl) => (
+                  <tr
+                    key={tpl.id}
+                    className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                  >
+                    <td className="py-3 font-medium text-foreground">{tpl.name}</td>
+                    <td className="py-3 text-muted-foreground">{tpl.frequency}</td>
+                    <td className="py-3 text-foreground">{tpl.nextSession}</td>
+                    <td className="py-3 text-muted-foreground">{tpl.totalGenerated} 場</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

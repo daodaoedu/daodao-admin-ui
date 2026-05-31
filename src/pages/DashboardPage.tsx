@@ -121,9 +121,7 @@ export function DashboardPage() {
       serviceStatus.db === 'healthy' &&
       serviceStatus.redis === 'healthy'
         ? ('healthy' as const)
-        : emailHealth || dbInfo || redisInfo
-          ? ('degraded' as const)
-          : ('degraded' as const),
+        : ('degraded' as const),
     services: [
       {
         name: 'SMTP',
