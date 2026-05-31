@@ -74,6 +74,7 @@ const exportColumns = [
   { key: 'participants', header: '打卡次數' },
   { key: 'views', header: '瀏覽數' },
   { key: 'likes', header: '迴響數' },
+  { key: 'comments', header: '留言數' },
 ]
 
 const PAGE_SIZE_OPTIONS = [
@@ -706,6 +707,7 @@ export function PracticesPage() {
     participants: p.checkInCount,
     views: p.stats.viewCount,
     likes: p.stats.likeCount,
+    comments: p.stats.commentCount,
   }))
 
   const completionRateDisplay =
@@ -909,6 +911,7 @@ export function PracticesPage() {
                   onSort={handleSort}
                   align="right"
                 />
+                <th className="px-4 py-3 font-medium text-muted-foreground text-right">留言數</th>
                 <th className="px-4 py-3 font-medium text-muted-foreground">操作</th>
               </tr>
             </thead>
@@ -988,6 +991,9 @@ export function PracticesPage() {
                     <td className="px-4 py-3 text-right">
                       {practice.stats.likeCount.toLocaleString()}
                     </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {practice.stats.commentCount.toLocaleString()}
+                    </td>
                     <td className="px-4 py-3">
                       <Button
                         type="button"
@@ -1003,7 +1009,7 @@ export function PracticesPage() {
               })}
               {practices.length === 0 && (
                 <tr>
-                  <td className="px-5 py-10 text-center text-muted-foreground" colSpan={9}>
+                  <td className="px-5 py-10 text-center text-muted-foreground" colSpan={10}>
                     {isFetching ? '載入中...' : '沒有符合條件的實踐'}
                   </td>
                 </tr>
