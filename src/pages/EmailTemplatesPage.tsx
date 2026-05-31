@@ -10,16 +10,16 @@ import {
   useDeleteEmailTemplate,
   useEmailTemplates,
 } from '@/hooks/useEmailTemplates'
+import { detectVariables } from '@/lib/email-preview'
 import { cn } from '@/lib/utils'
 
 interface TemplateFormData {
   name: string
   subject: string
   body: string
-  variablesRaw: string
 }
 
-const emptyForm: TemplateFormData = { name: '', subject: '', body: '', variablesRaw: '' }
+const emptyForm: TemplateFormData = { name: '', subject: '', body: '' }
 
 function TemplateDialog({
   trigger,
@@ -39,10 +39,35 @@ function TemplateDialog({
           name: initial.name,
           subject: initial.subject,
           body: initial.body,
-          variablesRaw: initial.variables.join(', '),
         }
       : emptyForm,
   )
+  const [copySearch, setCopySearch] = useState('')
+  const [showCopyDropdown, setShowCopyDropdown] = useState(false)
+  const { data: allTemplates } = useEmailTemplates()
+
+  const copyOptions = !initial
+    ? (allTemplates ?? []).filter(
+        (t) =>
+          t.name.toLowerCase().includes(copySearch.toLowerCase()) ||
+          t.subject.toLowerCase().includes(copySearch.toLowerCase()),
+      )
+    : []
+
+  function applyTemplate(tpl: EmailTemplate) {
+    setForm((prev) => ({
+      ...prev,
+      subject: tpl.subject,
+      body: tpl.body,
+    }))
+    setCopySearch(tpl.name)
+    setShowCopyDropdown(false)
+  }
+
+  function clearCopy() {
+    setCopySearch('')
+    setForm(emptyForm)
+  }
 
   function handleOpen(v: boolean) {
     setOpen(v)
@@ -53,10 +78,11 @@ function TemplateDialog({
               name: initial.name,
               subject: initial.subject,
               body: initial.body,
-              variablesRaw: initial.variables.join(', '),
             }
           : emptyForm,
       )
+      setCopySearch('')
+      setShowCopyDropdown(false)
     }
   }
 
@@ -93,6 +119,70 @@ function TemplateDialog({
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 overflow-y-auto px-5 py-4">
+          {!initial && (
+            <div>
+              <label
+                htmlFor="tpl-copy"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
+                從現有模板帶入（可選）
+              </label>
+              <div className="relative">
+                <input
+                  id="tpl-copy"
+                  type="text"
+                  value={copySearch}
+                  onChange={(e) => {
+                    setCopySearch(e.target.value)
+                    setShowCopyDropdown(true)
+                  }}
+                  onFocus={() => setShowCopyDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowCopyDropdown(false), 150)}
+                  placeholder="搜尋模板名稱或主旨…"
+                  className="w-full rounded border border-border bg-background px-3 py-1.5 pr-8 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                {copySearch && (
+                  <button
+                    type="button"
+                    onClick={clearCopy}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="清除"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                {showCopyDropdown && copyOptions.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-border bg-background shadow-md">
+                    {copyOptions.map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        onMouseDown={() => applyTemplate(tpl)}
+                        className="flex w-full flex-col px-3 py-2 text-left hover:bg-muted"
+                      >
+                        <span className="text-sm font-medium text-foreground">{tpl.name}</span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {tpl.subject}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showCopyDropdown && copySearch && copyOptions.length === 0 && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground shadow-md">
+                    找不到符合的模板
+                  </div>
+                )}
+              </div>
+              {copySearch && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  已帶入「{copySearch}」的內容，可自由修改下方欄位。
+                </p>
+              )}
+              <div className="mt-4 border-t border-border" />
+            </div>
+          )}
+
           <div>
             <label htmlFor="tpl-name" className="mb-1 block text-sm font-medium">
               模板名稱 <span className="text-red-500">*</span>
@@ -144,22 +234,21 @@ function TemplateDialog({
             />
           </div>
 
-          <div>
-            <label htmlFor="tpl-vars" className="mb-1 block text-sm font-medium">
-              可用變數
-            </label>
-            <p className="mb-1 text-xs text-muted-foreground">
-              以逗號分隔，例：<code className="rounded bg-muted px-1">nickname, email, link</code>
-            </p>
-            <Input
-              id="tpl-vars"
-              type="text"
-              placeholder="nickname, email, link"
-              value={form.variablesRaw}
-              onChange={field('variablesRaw')}
-              className="w-full"
-            />
-          </div>
+          {detectVariables(form.body).length > 0 && (
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-muted-foreground">偵測到的變數</p>
+              <div className="flex flex-wrap gap-1.5">
+                {detectVariables(form.body).map((v) => (
+                  <span
+                    key={v}
+                    className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                  >
+                    {`{{${v}}}`}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 border-t border-border pt-3">
             <DialogClose asChild>
@@ -258,10 +347,7 @@ export function EmailTemplatesPage() {
       name: form.name,
       subject: form.subject,
       body: form.body,
-      variables: form.variablesRaw
-        .split(',')
-        .map((v) => v.trim())
-        .filter(Boolean),
+      variables: detectVariables(form.body),
     })
   }
 

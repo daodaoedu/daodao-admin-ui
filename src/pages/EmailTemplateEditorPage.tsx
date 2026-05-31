@@ -312,7 +312,7 @@ export default function EmailTemplateEditorPage() {
                 srcDoc={previewHtml}
                 title="email-preview"
                 className="h-[800px] w-full border-0"
-                sandbox=""
+                sandbox="allow-same-origin"
               />
             </div>
           </div>
