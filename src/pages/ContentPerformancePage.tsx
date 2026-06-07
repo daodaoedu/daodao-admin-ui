@@ -153,6 +153,10 @@ export function ContentPerformancePage() {
               data={sorted as unknown as Record<string, unknown>[]}
               columns={[
                 { key: 'title', header: '標題' },
+                { key: 'creatorName', header: '建立者' },
+                { key: 'creatorEmail', header: 'Email' },
+                { key: 'copyCount', header: '被複製次數' },
+                { key: 'copiedFromTitle', header: '複製來源' },
                 { key: 'views', header: '瀏覽數' },
                 { key: 'depth', header: '閱讀深度%' },
                 { key: 'avgTime', header: '平均停留(分)' },
@@ -239,6 +243,7 @@ export function ContentPerformancePage() {
                       <thead>
                         <tr className="border-b border-border text-left">
                           <th className="px-4 py-3 font-medium text-muted-foreground">標題</th>
+                          <th className="px-4 py-3 font-medium text-muted-foreground">建立者</th>
                           {SORT_COLUMNS.map((col) => (
                             <th key={col.key} className="px-4 py-3">
                               <div className="flex flex-col gap-0.5">
@@ -262,7 +267,9 @@ export function ContentPerformancePage() {
                               </div>
                             </th>
                           ))}
-                          <th className="px-4 py-3 font-medium text-muted-foreground">精選</th>
+                          <th className="px-4 py-3 font-medium text-muted-foreground">被複製</th>
+                          <th className="px-4 py-3 font-medium text-muted-foreground">複製來源</th>
+                          <th className="px-4 py-3 font-medium text-muted-foreground cursor-help" title="精選內容會顯示在首頁推薦區與探索頁精選輪播">精選</th>
                           <th className="px-4 py-3 font-medium text-muted-foreground">操作</th>
                         </tr>
                       </thead>
@@ -279,6 +286,12 @@ export function ContentPerformancePage() {
                           >
                             <td className="px-4 py-3 font-medium max-w-[220px] truncate">
                               {item.title}
+                            </td>
+                            <td className="px-4 py-3 max-w-[160px]">
+                              <div className="truncate text-sm">{item.creatorName ?? '—'}</div>
+                              {item.creatorEmail && (
+                                <div className="truncate text-xs text-muted-foreground">{item.creatorEmail}</div>
+                              )}
                             </td>
                             <td className="px-4 py-3 tabular-nums">
                               {item.views.toLocaleString()}
@@ -314,6 +327,12 @@ export function ContentPerformancePage() {
                               ) : (
                                 <span className="text-warning/70 font-medium">0%</span>
                               )}
+                            </td>
+                            <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                              {item.copyCount > 0 ? item.copyCount : '—'}
+                            </td>
+                            <td className="px-4 py-3 max-w-[140px] truncate text-muted-foreground text-xs">
+                              {item.copiedFromTitle ?? '—'}
                             </td>
                             <td className="px-4 py-3">
                               {item.featured && (

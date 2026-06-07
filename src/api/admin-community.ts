@@ -258,27 +258,32 @@ export const getOnboardingFlowAnalytics = (id: number) =>
 
 // ── Onboarding Analytics ──────────────────────────────────────────────────────
 
-export const getOnboardingStats = () =>
-  apiClient.get<ApiResponse<OnboardingStats>>('/daodao-server/api/v1/admin/onboarding/stats')
+export const getOnboardingStats = (params?: { days?: number }) =>
+  apiClient.get<ApiResponse<OnboardingStats>>('/daodao-server/api/v1/admin/onboarding/stats', {
+    params,
+  })
 
 export const getUserOnboardingDetail = (userId: string) =>
   apiClient.get<ApiResponse<UserOnboardingDetail>>(
     `/daodao-server/api/v1/admin/users/${userId}/onboarding`,
   )
 
-export const getQuizStats = () =>
-  apiClient.get<ApiResponse<QuizStats>>('/daodao-server/api/v1/admin/quiz/stats')
+export const getQuizStats = (params?: { days?: number }) =>
+  apiClient.get<ApiResponse<QuizStats>>('/daodao-server/api/v1/admin/quiz/stats', { params })
 
-export const getPersonaStats = () =>
-  apiClient.get<ApiResponse<PersonaStats>>('/daodao-server/api/v1/admin/persona/stats')
+export const getPersonaStats = (params?: { days?: number }) =>
+  apiClient.get<ApiResponse<PersonaStats>>('/daodao-server/api/v1/admin/persona/stats', { params })
 
-export const getEmailOnboardingStats = () =>
+export const getEmailOnboardingStats = (params?: { days?: number }) =>
   apiClient.get<ApiResponse<EmailOnboardingStats>>(
     '/daodao-server/api/v1/admin/email/onboarding-stats',
+    { params },
   )
 
-export const getEngagementStats = () =>
-  apiClient.get<ApiResponse<EngagementStats>>('/daodao-server/api/v1/admin/engagement/stats')
+export const getEngagementStats = (params?: { days?: number }) =>
+  apiClient.get<ApiResponse<EngagementStats>>('/daodao-server/api/v1/admin/engagement/stats', {
+    params,
+  })
 
 export const getUserPersonaProfile = (userUuid: string) =>
   apiClient.get<ApiResponse<PersonaUserProfile>>(

@@ -259,6 +259,7 @@ export interface SendCustomEmailPayload {
   to: string
   subject: string
   htmlContent: string
+  scheduledAt?: string
 }
 
 export const sendCustomEmail = (data: SendCustomEmailPayload) =>
@@ -268,6 +269,27 @@ export const sendCustomEmail = (data: SendCustomEmailPayload) =>
       to: data.to,
       subject: data.subject,
       body: data.htmlContent,
+      ...(data.scheduledAt ? { scheduledAt: data.scheduledAt } : {}),
+    },
+  )
+
+export interface SendBulkEmailPayload {
+  subject: string
+  htmlContent: string
+  tagIds?: number[]
+  userIds?: number[]
+  scheduledAt?: string
+}
+
+export const sendBulkEmail = (data: SendBulkEmailPayload) =>
+  apiClient.post<ApiResponse<{ sent: number; scheduled: boolean }>>(
+    '/daodao-server/api/v1/admin/email/send-bulk',
+    {
+      subject: data.subject,
+      body: data.htmlContent,
+      ...(data.tagIds?.length ? { tagIds: data.tagIds } : {}),
+      ...(data.userIds?.length ? { userIds: data.userIds } : {}),
+      ...(data.scheduledAt ? { scheduledAt: data.scheduledAt } : {}),
     },
   )
 

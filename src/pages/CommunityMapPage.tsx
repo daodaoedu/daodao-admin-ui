@@ -16,10 +16,12 @@ import {
 } from 'recharts'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
+import { Select } from '@/components/ui/select'
 import {
   useCommunityInteractionDetails,
   useCommunityInteractionStats,
 } from '@/hooks/useCommunityMap'
+import { useUserTags } from '@/hooks/useUserTags'
 
 type Period = '7d' | '30d' | '90d'
 
@@ -417,6 +419,8 @@ function TopUsersList({
 
 export function CommunityMapPage() {
   const [period, setPeriod] = useState<Period>('30d')
+  const [tagFilter, setTagFilter] = useState('all')
+  const { data: availableTags = [] } = useUserTags()
   const { data, isLoading } = useCommunityInteractionStats(period)
   const { data: details, isLoading: detailsLoading } = useCommunityInteractionDetails(period)
 
@@ -435,21 +439,32 @@ export function CommunityMapPage() {
         title="社群互動分析"
         description="追蹤社群成員的互動行為，包含迴響、留言、追蹤與連結。"
         actions={
-          <div className="flex items-center rounded-lg border border-[var(--admin-card-border)] bg-muted/40 p-0.5">
-            {PERIODS.map(({ value, label }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setPeriod(value)}
-                className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                  period === value
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <Select
+              value={tagFilter}
+              onValueChange={setTagFilter}
+              options={[
+                { value: 'all', label: '全部標籤' },
+                ...availableTags.map((t) => ({ value: String(t.id), label: t.name })),
+              ]}
+              triggerClassName="min-w-[120px]"
+            />
+            <div className="flex items-center rounded-lg border border-[var(--admin-card-border)] bg-muted/40 p-0.5">
+              {PERIODS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setPeriod(value)}
+                  className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                    period === value
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         }
       />
