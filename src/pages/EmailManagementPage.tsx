@@ -12,10 +12,10 @@ import {
   Send,
   Timer,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { retryFailedEmails, sendBulkEmail, sendCustomEmail } from '@/api/admin-system'
 import { listAdminUsers } from '@/api/admin'
+import { retryFailedEmails, sendBulkEmail, sendCustomEmail } from '@/api/admin-system'
 import { EmailHistoryTable } from '@/components/EmailHistoryTable'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
@@ -68,9 +68,16 @@ export function EmailManagementPage() {
   const [formData, setFormData] = useState({ to: '', subject: '', body: '', scheduledAt: '' })
   const [recipientMode, setRecipientMode] = useState<RecipientMode>('email')
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+  const [userSearchInput, setUserSearchInput] = useState('')
   const [userSearch, setUserSearch] = useState('')
-  const [selectedUsers, setSelectedUsers] = useState<Array<{ id: number; name: string; email: string }>>([])
+  const [selectedUsers, setSelectedUsers] = useState<
+    Array<{ id: number; name: string; email: string }>
+  >([])
   const { data: tags = [] } = useUserTags()
+  useEffect(() => {
+    const timer = setTimeout(() => setUserSearch(userSearchInput), 300)
+    return () => clearTimeout(timer)
+  }, [userSearchInput])
   const { data: searchedUsers } = useQuery({
     queryKey: ['admin-user-search', userSearch],
     queryFn: () => listAdminUsers({ search: userSearch, limit: 10 }).then((r) => r.data.data ?? []),
@@ -112,7 +119,7 @@ export function EmailManagementPage() {
         htmlContent: isFullHtml
           ? data.body
           : `<div style="font-family: sans-serif; line-height: 1.6;">${data.body.replace(/\n/g, '<br />')}</div>`,
-        scheduledAt: data.scheduledAt || undefined,
+        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt).toISOString() : undefined,
       })
     },
     onSuccess: () => {
@@ -131,7 +138,13 @@ export function EmailManagementPage() {
   })
 
   const bulkMutation = useMutation({
-    mutationFn: (data: { subject: string; body: string; tagIds?: number[]; userIds?: number[]; scheduledAt?: string }) => {
+    mutationFn: (data: {
+      subject: string
+      body: string
+      tagIds?: number[]
+      userIds?: number[]
+      scheduledAt?: string
+    }) => {
       const isFullHtml =
         data.body.trimStart().startsWith('<!DOCTYPE') || data.body.trimStart().startsWith('<html')
       return sendBulkEmail({
@@ -141,7 +154,7 @@ export function EmailManagementPage() {
           : `<div style="font-family: sans-serif; line-height: 1.6;">${data.body.replace(/\n/g, '<br />')}</div>`,
         tagIds: data.tagIds,
         userIds: data.userIds,
-        scheduledAt: data.scheduledAt,
+        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt).toISOString() : undefined,
       })
     },
     onSuccess: () => {
@@ -320,13 +333,13 @@ export function EmailManagementPage() {
                 )}
                 <div className="space-y-3">
                   <div>
-                    <label className="mb-1 block text-sm font-medium">收件對象</label>
+                    <span className="mb-1 block text-sm font-medium">收件對象</span>
                     <div className="inline-flex rounded-lg bg-muted p-0.5 gap-0.5">
-                      {([
+                      {[
                         { value: 'email' as const, label: '指定 Email' },
                         { value: 'tag' as const, label: '依標籤' },
                         { value: 'users' as const, label: '搜尋用戶' },
-                      ]).map((opt) => (
+                      ].map((opt) => (
                         <button
                           key={opt.value}
                           type="button"
@@ -371,7 +384,9 @@ export function EmailManagementPage() {
                               type="button"
                               onClick={() =>
                                 setSelectedTagIds((prev) =>
-                                  isSelected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id],
+                                  isSelected
+                                    ? prev.filter((id) => id !== tag.id)
+                                    : [...prev, tag.id],
                                 )
                               }
                               className={cn(
@@ -409,8 +424,8 @@ export function EmailManagementPage() {
                       <input
                         type="text"
                         placeholder="搜尋用戶名稱或 Email（至少 2 字）..."
-                        value={userSearch}
-                        onChange={(e) => setUserSearch(e.target.value)}
+                        value={userSearchInput}
+                        onChange={(e) => setUserSearchInput(e.target.value)}
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
                       />
                       {searchedUsers && searchedUsers.length > 0 && (

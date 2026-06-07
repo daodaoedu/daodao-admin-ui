@@ -1,21 +1,24 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Edit2, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
-import { createTag, deleteTag, deleteTagRule, updateTag } from '@/api/admin-users'
 import type { TagItem } from '@/api/admin-users'
+import { createTag, deleteTag, deleteTagRule, updateTag } from '@/api/admin-users'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useTagRules, useUserTags } from '@/hooks/useUserTags'
 
-const DEFAULT_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
+const DEFAULT_COLORS = [
+  '#3b82f6',
+  '#ef4444',
+  '#22c55e',
+  '#f59e0b',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#f97316',
+]
 
-function TagFormModal({
-  tag,
-  onClose,
-}: {
-  tag: TagItem | null
-  onClose: () => void
-}) {
+function TagFormModal({ tag, onClose }: { tag: TagItem | null; onClose: () => void }) {
   const queryClient = useQueryClient()
   const isEdit = tag !== null
   const [name, setName] = useState(tag?.name ?? '')
@@ -60,7 +63,9 @@ function TagFormModal({
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="tag-name" className="mb-1 block text-sm font-medium">標籤名稱</label>
+            <label htmlFor="tag-name" className="mb-1 block text-sm font-medium">
+              標籤名稱
+            </label>
             <input
               id="tag-name"
               type="text"
@@ -72,7 +77,7 @@ function TagFormModal({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">顏色</label>
+            <span className="mb-1 block text-sm font-medium">顏色</span>
             <div className="flex gap-2">
               {DEFAULT_COLORS.map((c) => (
                 <button
@@ -86,7 +91,9 @@ function TagFormModal({
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="secondary" onClick={onClose}>取消</Button>
+            <Button type="button" variant="secondary" onClick={onClose}>
+              取消
+            </Button>
             <Button type="submit" disabled={isPending || !name.trim()}>
               {isPending ? '儲存中...' : isEdit ? '更新' : '建立'}
             </Button>

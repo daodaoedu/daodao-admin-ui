@@ -269,7 +269,12 @@ export function ContentPerformancePage() {
                           ))}
                           <th className="px-4 py-3 font-medium text-muted-foreground">被複製</th>
                           <th className="px-4 py-3 font-medium text-muted-foreground">複製來源</th>
-                          <th className="px-4 py-3 font-medium text-muted-foreground cursor-help" title="精選內容會顯示在首頁推薦區與探索頁精選輪播">精選</th>
+                          <th
+                            className="px-4 py-3 font-medium text-muted-foreground cursor-help"
+                            title="精選內容會顯示在首頁推薦區與探索頁精選輪播"
+                          >
+                            精選
+                          </th>
                           <th className="px-4 py-3 font-medium text-muted-foreground">操作</th>
                         </tr>
                       </thead>
@@ -290,7 +295,9 @@ export function ContentPerformancePage() {
                             <td className="px-4 py-3 max-w-[160px]">
                               <div className="truncate text-sm">{item.creatorName ?? '—'}</div>
                               {item.creatorEmail && (
-                                <div className="truncate text-xs text-muted-foreground">{item.creatorEmail}</div>
+                                <div className="truncate text-xs text-muted-foreground">
+                                  {item.creatorEmail}
+                                </div>
                               )}
                             </td>
                             <td className="px-4 py-3 tabular-nums">
