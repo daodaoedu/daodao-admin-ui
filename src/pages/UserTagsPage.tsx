@@ -33,6 +33,7 @@ function TagFormModal({ tag, onClose }: { tag: TagItem | null; onClose: () => vo
   })
 
   const updateMutation = useMutation({
+    // biome-ignore lint/style/noNonNullAssertion: tag is non-null when isEdit is true
     mutationFn: (data: { name?: string; color?: string }) => updateTag(tag!.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'tags'] })
