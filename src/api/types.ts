@@ -336,6 +336,7 @@ export interface UserRoleInfo {
 export interface AdminUserListItem {
   id: string
   internalId: number
+  customId: string | null
   name: string | null
   email: string | null
   photoURL: string | null
@@ -349,6 +350,7 @@ export interface AdminUserListItem {
   personaType: 'L' | 'C' | 'A' | 'D' | 'O' | null
   badgeGranted: boolean | null
   userSource: string | null
+  tags: Array<{ id: number; name: string }>
 }
 
 // ── Admin User Detail ─────────────────────────────────────────────────

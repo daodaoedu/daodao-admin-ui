@@ -13,8 +13,17 @@ import type { LearningStyleType, OnboardingEmailType } from '@/api/types'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/select'
 import { useOnboardingFlowAnalytics, useOnboardingFlows } from '@/hooks/useOnboardingFlows'
 import { cn } from '@/lib/utils'
+
+const PERIOD_OPTIONS = [
+  { value: '0', label: '全部期間' },
+  { value: '7', label: '近 7 天' },
+  { value: '14', label: '近 14 天' },
+  { value: '30', label: '近 30 天' },
+  { value: '90', label: '近 90 天' },
+]
 
 const QUESTION_TYPE_LABEL: Record<string, string> = {
   single: '單選',
@@ -108,10 +117,10 @@ function MiniStat({ label, value }: { label: string; value: string | number }) {
 
 // ─── Section A + B + C + D (Onboarding Stats) ────────────────────────────────
 
-function OnboardingStatsSection() {
+function OnboardingStatsSection({ days }: { days?: number }) {
   const { data } = useQuery({
-    queryKey: ['admin', 'onboarding-stats'],
-    queryFn: () => getOnboardingStats().then((r) => r.data.data),
+    queryKey: ['admin', 'onboarding-stats', days],
+    queryFn: () => getOnboardingStats(days ? { days } : undefined).then((r) => r.data.data),
   })
 
   if (!data) return null
@@ -218,11 +227,11 @@ function OnboardingStatsSection() {
 
 // ─── Section E: 學習風格測驗分布 ──────────────────────────────────────────────
 
-function QuizStatsSection() {
+function QuizStatsSection({ days }: { days?: number }) {
   const [crossTab, setCrossTab] = useState<'badge' | 'source'>('badge')
   const { data } = useQuery({
-    queryKey: ['admin', 'quiz-stats'],
-    queryFn: () => getQuizStats().then((r) => r.data.data),
+    queryKey: ['admin', 'quiz-stats', days],
+    queryFn: () => getQuizStats(days ? { days } : undefined).then((r) => r.data.data),
   })
 
   if (!data) return null
@@ -354,10 +363,10 @@ function QuizStatsSection() {
 
 // ─── Section F: 人物誌填寫狀況 ────────────────────────────────────────────────
 
-function PersonaStatsSection() {
+function PersonaStatsSection({ days }: { days?: number }) {
   const { data } = useQuery({
-    queryKey: ['admin', 'persona-stats'],
-    queryFn: () => getPersonaStats().then((r) => r.data.data),
+    queryKey: ['admin', 'persona-stats', days],
+    queryFn: () => getPersonaStats(days ? { days } : undefined).then((r) => r.data.data),
   })
 
   if (!data) return null
@@ -429,10 +438,10 @@ function PersonaStatsSection() {
 
 // ─── Section G: Email 序列開信率 ──────────────────────────────────────────────
 
-function EmailStatsSection() {
+function EmailStatsSection({ days }: { days?: number }) {
   const { data } = useQuery({
-    queryKey: ['admin', 'email-onboarding-stats'],
-    queryFn: () => getEmailOnboardingStats().then((r) => r.data.data),
+    queryKey: ['admin', 'email-onboarding-stats', days],
+    queryFn: () => getEmailOnboardingStats(days ? { days } : undefined).then((r) => r.data.data),
   })
 
   if (!data) return null
@@ -468,10 +477,10 @@ function EmailStatsSection() {
 
 // ─── Section H: 參與度指標 ────────────────────────────────────────────────────
 
-function EngagementSection() {
+function EngagementSection({ days }: { days?: number }) {
   const { data } = useQuery({
-    queryKey: ['admin', 'engagement-stats'],
-    queryFn: () => getEngagementStats().then((r) => r.data.data),
+    queryKey: ['admin', 'engagement-stats', days],
+    queryFn: () => getEngagementStats(days ? { days } : undefined).then((r) => r.data.data),
   })
 
   if (!data) return null
@@ -507,6 +516,9 @@ function EngagementSection() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function OnboardingFlowsPage() {
+  const [periodDays, setPeriodDays] = useState(0)
+  const days = periodDays > 0 ? periodDays : undefined
+
   const { data: flows } = useOnboardingFlows()
   const activeFlow = flows?.find((f) => f.isEnabled) ?? null
   const { data: analytics } = useOnboardingFlowAnalytics(activeFlow?.id ?? 0)
@@ -531,10 +543,18 @@ export function OnboardingFlowsPage() {
         title="Onboarding 流程"
         description="設計新用戶入門體驗步驟，追蹤各步驟完成率並優化引導流程。"
         actions={
-          <Button type="button">
-            <Plus className="h-4 w-4" />
-            建立流程
-          </Button>
+          <div className="flex items-center gap-2">
+            <Select
+              value={String(periodDays)}
+              onValueChange={(v) => setPeriodDays(Number(v))}
+              options={PERIOD_OPTIONS}
+              triggerClassName="min-w-[120px]"
+            />
+            <Button type="button">
+              <Plus className="h-4 w-4" />
+              建立流程
+            </Button>
+          </div>
         }
       />
 
@@ -669,11 +689,11 @@ export function OnboardingFlowsPage() {
         </h2>
       </div>
 
-      <OnboardingStatsSection />
-      <QuizStatsSection />
-      <PersonaStatsSection />
-      <EmailStatsSection />
-      <EngagementSection />
+      <OnboardingStatsSection days={days} />
+      <QuizStatsSection days={days} />
+      <PersonaStatsSection days={days} />
+      <EmailStatsSection days={days} />
+      <EngagementSection days={days} />
     </div>
   )
 }

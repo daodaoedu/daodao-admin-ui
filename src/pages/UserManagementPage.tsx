@@ -60,7 +60,7 @@ const SELECT_CLASS =
   'rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20'
 
 const LIMIT = 20
-const TABLE_COLS = 9
+const TABLE_COLS = 11
 
 function SkeletonRow() {
   return (
@@ -305,10 +305,12 @@ export function UserManagementPage() {
           fileName="user-management"
           columns={[
             { key: 'internalId', header: 'ID' },
+            { key: 'customId', header: 'Custom ID' },
             { key: 'name', header: '名稱' },
             { key: 'email', header: 'Email' },
             { key: 'isActive', header: '狀態' },
             { key: 'userSource', header: '來源' },
+            { key: 'tags', header: '標籤' },
             { key: 'personaType', header: '學習風格' },
             { key: 'badgeGranted', header: 'Badge' },
             { key: 'lastLoginAt', header: '最後登入' },
@@ -464,10 +466,12 @@ export function UserManagementPage() {
             <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
               {[
                 'ID',
+                'Custom ID',
                 '名稱',
                 'Email',
                 '狀態',
                 '角色',
+                '標籤',
                 '學習風格',
                 'Onboarding',
                 '最後登入',
@@ -500,6 +504,9 @@ export function UserManagementPage() {
                   <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
                     {user.internalId}
                   </td>
+                  <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
+                    {user.customId ? `@${user.customId}` : '-'}
+                  </td>
                   <td className="px-4 py-2 font-medium">
                     <UserLink userId={user.internalId} name={user.name ?? '-'} showAvatar={false} />
                   </td>
@@ -519,6 +526,19 @@ export function UserManagementPage() {
                         ))
                       ) : (
                         <span className="text-xs text-muted-foreground">無角色</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {user.tags.length > 0 ? (
+                        user.tags.map((tag) => (
+                          <Badge key={tag.id} variant="default">
+                            {tag.name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </div>
                   </td>
