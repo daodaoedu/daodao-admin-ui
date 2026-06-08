@@ -352,10 +352,10 @@ export function MobileHeader({ children }: { children?: ReactNode }) {
           <button
             type="button"
             aria-label="Close sidebar"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm cursor-default p-0"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm cursor-default p-0"
             onClick={() => setOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-72 flex-col bg-sidebar backdrop-blur-xl animate-in slide-in-from-left duration-200">
+          <aside className="absolute inset-y-0 left-0 z-10 flex w-72 flex-col bg-sidebar backdrop-blur-xl animate-in slide-in-from-left duration-200">
             <div className="h-14 border-b border-sidebar-border/70" />
             <div className="absolute right-3 top-3.5 z-10">
               <Button
