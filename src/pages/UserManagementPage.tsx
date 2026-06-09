@@ -60,14 +60,15 @@ const SELECT_CLASS =
   'rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20'
 
 const LIMIT = 20
-const TABLE_COLS = 11
+const TABLE_COLS = 8
+const MAX_VISIBLE_TAGS = 2
 
 function SkeletonRow() {
   return (
     <tr className="border-b border-border/80">
       {Array.from({ length: TABLE_COLS }).map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
-        <td key={i} className="px-4 py-3">
+        <td key={i} className="px-3 py-3">
           <div
             className="h-4 animate-pulse rounded bg-muted"
             style={{ width: `${60 + (i % 3) * 20}%` }}
@@ -75,6 +76,29 @@ function SkeletonRow() {
         </td>
       ))}
     </tr>
+  )
+}
+
+function TagList({ items, max }: { items: Array<{ id: number; name: string }>; max: number }) {
+  if (items.length === 0) return <span className="text-xs text-muted-foreground">—</span>
+  const visible = items.slice(0, max)
+  const remaining = items.length - max
+  return (
+    <div className="flex flex-wrap gap-1">
+      {visible.map((item) => (
+        <Badge key={item.id} variant="default" className="max-w-[7rem] truncate">
+          {item.name}
+        </Badge>
+      ))}
+      {remaining > 0 && (
+        <span
+          className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+          title={items.map((t) => t.name).join(', ')}
+        >
+          +{remaining}
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -97,7 +121,6 @@ export function UserManagementPage() {
   const [selectedRoleId, setSelectedRoleId] = useState<string>('')
   const [confirmDisableUser, setConfirmDisableUser] = useState<AdminUserListItem | null>(null)
 
-  // Debounce search input → search state
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput)
@@ -106,7 +129,6 @@ export function UserManagementPage() {
     return () => clearTimeout(timer)
   }, [searchInput])
 
-  // Sync filter state → URL params
   useEffect(() => {
     const params: Record<string, string> = {}
     if (search) params.search = search
@@ -232,7 +254,6 @@ export function UserManagementPage() {
     setSelectedRoleId(userRoles[0] ? String(userRoles[0].id) : '')
   }
 
-  // Build active filter chips
   const activeChips: { label: string; onRemove: () => void }[] = []
   if (statusFilter) {
     const opt = STATUS_OPTIONS.find((o) => o.value === statusFilter)
@@ -284,7 +305,8 @@ export function UserManagementPage() {
     })
   }
 
-  const totalPages = pagination?.total_count ? Math.ceil(pagination.total_count / LIMIT) : 0
+  const totalPages = pagination?.totalPages ?? 0
+  const totalItems = pagination?.totalItems ?? 0
 
   return (
     <div className="space-y-4">
@@ -296,7 +318,7 @@ export function UserManagementPage() {
           </h1>
           {pagination && (
             <p className="mt-1 text-sm text-muted-foreground">
-              共 {(pagination.total_count ?? 0).toLocaleString()} 位用戶
+              共 {totalItems.toLocaleString()} 位用戶
             </p>
           )}
         </div>
@@ -328,7 +350,6 @@ export function UserManagementPage() {
             onChange={(e) => setSearchInput(e.target.value)}
           />
 
-          {/* Filter panel toggle */}
           <Button
             type="button"
             variant="secondary"
@@ -345,7 +366,6 @@ export function UserManagementPage() {
             )}
           </Button>
 
-          {/* Quick presets */}
           <Button
             type="button"
             variant={badgeFilter === 'false' ? 'primary' : 'secondary'}
@@ -376,7 +396,6 @@ export function UserManagementPage() {
           )}
         </div>
 
-        {/* Collapsible filter panel */}
         {filterPanelOpen && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
             <Select
@@ -436,7 +455,6 @@ export function UserManagementPage() {
           </div>
         )}
 
-        {/* Active filter chips */}
         {activeChips.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {activeChips.map((chip) => (
@@ -464,23 +482,14 @@ export function UserManagementPage() {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-              {[
-                'ID',
-                'Custom ID',
-                '名稱',
-                'Email',
-                '狀態',
-                '角色',
-                '標籤',
-                '學習風格',
-                'Onboarding',
-                '最後登入',
-                '操作',
-              ].map((h) => (
-                <th key={h} className="px-4 py-3 text-left font-medium">
-                  {h}
-                </th>
-              ))}
+              <th className="w-16 px-3 py-3 text-left font-medium">ID</th>
+              <th className="min-w-[10rem] px-3 py-3 text-left font-medium">用戶</th>
+              <th className="w-16 px-3 py-3 text-left font-medium">狀態</th>
+              <th className="min-w-[7rem] px-3 py-3 text-left font-medium">角色</th>
+              <th className="min-w-[8rem] px-3 py-3 text-left font-medium">標籤</th>
+              <th className="w-20 px-3 py-3 text-left font-medium">島嶼</th>
+              <th className="w-24 px-3 py-3 text-left font-medium">最後登入</th>
+              <th className="w-28 px-3 py-3 text-left font-medium">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -491,7 +500,7 @@ export function UserManagementPage() {
               ))
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={TABLE_COLS} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={TABLE_COLS} className="px-3 py-6 text-center text-muted-foreground">
                   無符合條件的用戶
                 </td>
               </tr>
@@ -501,69 +510,87 @@ export function UserManagementPage() {
                   key={user.id}
                   className="border-b border-border/80 transition-colors hover:bg-muted/45"
                 >
-                  <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
-                    {user.internalId}
+                  {/* ID */}
+                  <td className="px-3 py-2 align-top">
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {user.internalId}
+                    </span>
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
-                    {user.customId ? `@${user.customId}` : '-'}
+
+                  {/* User: name + email + customId + onboarding */}
+                  <td className="px-3 py-2 align-top">
+                    <div className="flex flex-col gap-0.5">
+                      <UserLink
+                        userId={user.internalId}
+                        name={user.name ?? '-'}
+                        showAvatar={false}
+                      />
+                      <span className="max-w-[14rem] truncate text-xs text-muted-foreground">
+                        {user.email ?? '-'}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {user.customId && (
+                          <span className="font-mono text-[11px] text-muted-foreground/70">
+                            @{user.customId}
+                          </span>
+                        )}
+                        {user.badgeGranted === true && (
+                          <Badge variant="success" className="text-[10px] px-1.5 py-0">
+                            已完成
+                          </Badge>
+                        )}
+                        {user.badgeGranted === false && (
+                          <Badge variant="default" className="text-[10px] px-1.5 py-0">
+                            未完成
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-4 py-2 font-medium">
-                    <UserLink userId={user.internalId} name={user.name ?? '-'} showAvatar={false} />
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">{user.email ?? '-'}</td>
-                  <td className="px-4 py-2">
+
+                  {/* Status */}
+                  <td className="px-3 py-2 align-top">
                     <Badge variant={user.isActive ? 'success' : 'error'}>
                       {user.isActive ? '啟用' : '停用'}
                     </Badge>
                   </td>
-                  <td className="px-4 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {(Array.isArray(user.roles) ? user.roles : []).length > 0 ? (
-                        user.roles.map((r) => (
-                          <Badge key={r.id} variant="primary">
-                            {r.name}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">無角色</span>
-                      )}
-                    </div>
+
+                  {/* Roles */}
+                  <td className="px-3 py-2 align-top">
+                    <TagList
+                      items={Array.isArray(user.roles) ? user.roles : []}
+                      max={MAX_VISIBLE_TAGS}
+                    />
                   </td>
-                  <td className="px-4 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {user.tags.length > 0 ? (
-                        user.tags.map((tag) => (
-                          <Badge key={tag.id} variant="default">
-                            {tag.name}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </div>
+
+                  {/* Tags */}
+                  <td className="px-3 py-2 align-top">
+                    <TagList items={user.tags} max={MAX_VISIBLE_TAGS} />
                   </td>
-                  <td className="px-4 py-2">
+
+                  {/* Persona / Learning Style */}
+                  <td className="px-3 py-2 align-top whitespace-nowrap">
                     {user.personaType ? (
                       <Badge variant="primary">
                         {user.personaType} {PERSONA_LABELS[user.personaType as PersonaType]}
                       </Badge>
                     ) : (
-                      <span className="text-xs text-muted-foreground">未測驗</span>
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-2">
-                    {user.badgeGranted === null ? (
-                      <span className="text-xs text-muted-foreground">-</span>
-                    ) : user.badgeGranted ? (
-                      <Badge variant="success">已完成</Badge>
-                    ) : (
-                      <Badge variant="default">未完成</Badge>
-                    )}
+
+                  {/* Last Login */}
+                  <td className="px-3 py-2 align-top whitespace-nowrap text-xs text-muted-foreground">
+                    {user.lastLoginAt
+                      ? new Date(user.lastLoginAt).toLocaleDateString('zh-TW', {
+                          month: 'numeric',
+                          day: 'numeric',
+                        })
+                      : '-'}
                   </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">
-                    {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-'}
-                  </td>
-                  <td className="px-4 py-2">
+
+                  {/* Actions */}
+                  <td className="px-3 py-2 align-top">
                     <div className="flex gap-1">
                       <Button
                         type="button"
@@ -601,7 +628,7 @@ export function UserManagementPage() {
       {pagination && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            共 {(pagination.total_count ?? 0).toLocaleString()} 位 · 第 {page} / {totalPages} 頁
+            共 {totalItems.toLocaleString()} 位 · 第 {page} / {totalPages} 頁
           </span>
           <div className="flex gap-2">
             <Button
@@ -618,7 +645,7 @@ export function UserManagementPage() {
               type="button"
               variant="secondary"
               size="xs"
-              disabled={!pagination.has_next}
+              disabled={!pagination.hasNext}
               onClick={() => setPage((p) => p + 1)}
               className="px-3 disabled:opacity-40"
             >
@@ -628,7 +655,7 @@ export function UserManagementPage() {
         </div>
       )}
 
-      {/* Assign Role Modal — auto-saves on select */}
+      {/* Assign Role Modal */}
       {assigningUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-6 shadow-lg">
