@@ -1,6 +1,11 @@
 import apiClient from './client'
 import type {
   AdminPingData,
+  AgentApprovalRequest,
+  AgentThread,
+  AgentThreadDetail,
+  AgentTurnRequest,
+  AgentTurnResponse,
   AIQueryLog,
   ApiResponse,
   DashboardStats,
@@ -99,3 +104,28 @@ export const upsertUserQuota = (
     quota_month?: number
   },
 ) => apiClient.put<ApiResponse<UserQuota>>(`/api/v1/admin/users/${userId}/quota`, data)
+
+// ── Agent ─────────────────────────────────────────────────
+export const createAgentThread = (title?: string) =>
+  apiClient.post<ApiResponse<AgentThread>>('/api/v1/admin/agent/threads', { title: title ?? null })
+
+export const listAgentThreads = () =>
+  apiClient.get<ApiResponse<AgentThread[]>>('/api/v1/admin/agent/threads')
+
+export const getAgentThread = (threadId: string) =>
+  apiClient.get<ApiResponse<AgentThreadDetail>>(`/api/v1/admin/agent/threads/${threadId}`)
+
+export const sendAgentMessage = (threadId: string, data: AgentTurnRequest) =>
+  apiClient.post<ApiResponse<AgentTurnResponse>>(
+    `/api/v1/admin/agent/threads/${threadId}/turns`,
+    data,
+  )
+
+export const respondToApproval = (threadId: string, data: AgentApprovalRequest) =>
+  apiClient.post<ApiResponse<AgentTurnResponse>>(
+    `/api/v1/admin/agent/threads/${threadId}/approve`,
+    data,
+  )
+
+export const deleteAgentThread = (threadId: string) =>
+  apiClient.delete<ApiResponse<{ deleted: boolean }>>(`/api/v1/admin/agent/threads/${threadId}`)

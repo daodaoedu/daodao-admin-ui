@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { ProtectedRoute } from '@/auth/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
+import { AgentPage } from '@/pages/AgentPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { ModelManagementPage } from '@/pages/ModelManagementPage'
@@ -73,6 +74,14 @@ export function App() {
           element={
             <AppShell>
               <PlaygroundPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/agent"
+          element={
+            <AppShell>
+              <AgentPage />
             </AppShell>
           }
         />

@@ -181,3 +181,56 @@ export interface UserWithQuota {
   current_month_tokens_used: number
   quota: UserQuota | null
 }
+
+// ── Agent ─────────────────────────────────────────────────
+export type AgentItemType =
+  | 'user_message'
+  | 'agent_message'
+  | 'tool_call'
+  | 'approval_request'
+  | 'result'
+
+export interface AgentItem {
+  type: AgentItemType
+  content?: string
+  tool?: string
+  args?: Record<string, unknown>
+  result?: unknown
+  action?: string
+  description?: string
+  preview?: Record<string, unknown>[]
+  summary?: string
+  timestamp: string
+}
+
+export interface AgentThread {
+  id: string
+  title: string
+  created_at: string
+  message_count: number
+  approval_pending: boolean
+  state?: {
+    provider: string
+    dry_run: boolean
+  }
+}
+
+export interface AgentThreadDetail extends AgentThread {
+  history: AgentItem[]
+}
+
+export interface AgentTurnRequest {
+  message: string
+  provider?: string
+  model_override?: string
+  dry_run?: boolean
+}
+
+export interface AgentTurnResponse {
+  thread_id: string
+  items: AgentItem[]
+}
+
+export interface AgentApprovalRequest {
+  action: 'allow' | 'deny'
+}

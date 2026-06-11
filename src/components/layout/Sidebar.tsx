@@ -1,4 +1,4 @@
-import { BarChart3, Cpu, FileText, List, LogOut, MessageSquare, Users } from 'lucide-react'
+import { BarChart3, Bot, Cpu, FileText, List, LogOut, MessageSquare, Users } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 
@@ -9,6 +9,7 @@ const navItems = [
   { to: '/models', label: '模型管理', icon: Cpu },
   { to: '/user-quotas', label: 'Token 配額', icon: Users },
   { to: '/playground', label: 'Playground', icon: MessageSquare },
+  { to: '/agent', label: 'Agent', icon: Bot },
 ]
 
 export function Sidebar() {

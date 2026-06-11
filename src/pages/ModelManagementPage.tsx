@@ -10,6 +10,7 @@ export function ModelManagementPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['llm-models'],
     queryFn: () => listLLMModels().then((r) => r.data.data),
+    refetchInterval: 15_000,
   })
 
   const costFields = [
