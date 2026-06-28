@@ -225,7 +225,16 @@ export const listAdminUsers = (params?: {
   personaType?: 'L' | 'C' | 'A' | 'D' | 'O'
   badgeGranted?: boolean
   userSource?: 'S1' | 'S2' | 'S3'
-  sortBy?: 'createdAt' | 'lastLoginAt' | 'name' | 'email'
+  registrationFlow?: 'landing_page' | 'quiz' | 'action_maker'
+  creationMethod?: 'self_created' | 'copied' | 'action_generator'
+  sortBy?:
+    | 'createdAt'
+    | 'lastLoginAt'
+    | 'name'
+    | 'email'
+    | 'registrationFlow'
+    | 'creationMethod'
+    | 'daysToComplete'
   sortOrder?: 'asc' | 'desc'
 }) =>
   apiClient.get<ApiResponse<AdminUserListItem[]>>('/daodao-server/api/v1/admin/users', { params })

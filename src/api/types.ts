@@ -351,6 +351,9 @@ export interface AdminUserListItem {
   badgeGranted: boolean | null
   userSource: string | null
   tags: Array<{ id: number; name: string }>
+  registrationFlow: 'landing_page' | 'quiz' | 'action_maker' | null
+  creationMethod: 'self_created' | 'copied' | 'action_generator' | null
+  daysToComplete: number | null
 }
 
 // ── Admin User Detail ─────────────────────────────────────────────────

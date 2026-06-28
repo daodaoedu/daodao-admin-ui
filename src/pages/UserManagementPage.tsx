@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { SlidersHorizontal, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin-server'
-import type { AdminUserListItem } from '@/api/types'
+import type { AdminUserListItem, CreationMethod, RegistrationFlow } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
 import { UserLink } from '@/components/UserLink'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,32 @@ const PERSONA_LABELS: Record<PersonaType, string> = {
   L: '跨跨島',
   C: '連連島',
 }
+
+const REGISTRATION_FLOW_LABEL: Record<RegistrationFlow, string> = {
+  landing_page: 'Landing Page',
+  quiz: '測驗',
+  action_maker: 'Action Maker',
+}
+
+const CREATION_METHOD_LABEL: Record<CreationMethod, string> = {
+  self_created: '自建',
+  copied: '複製',
+  action_generator: '產生器',
+}
+
+const REGISTRATION_FLOW_OPTIONS = [
+  { value: '', label: '全部註冊來源' },
+  { value: 'landing_page', label: 'Landing Page' },
+  { value: 'quiz', label: '測驗' },
+  { value: 'action_maker', label: 'Action Maker' },
+]
+
+const CREATION_METHOD_OPTIONS = [
+  { value: '', label: '全部實踐建立方式' },
+  { value: 'self_created', label: '自建' },
+  { value: 'copied', label: '複製' },
+  { value: 'action_generator', label: '產生器' },
+]
 
 const PERSONA_OPTIONS = [
   { value: '', label: '全部學習風格' },
@@ -54,13 +80,72 @@ const SORT_OPTIONS = [
   { value: 'createdAt_asc', label: '最早註冊' },
   { value: 'lastLoginAt_desc', label: '最近登入' },
   { value: 'name_asc', label: '名稱 A-Z' },
+  { value: 'registrationFlow_asc', label: '註冊來源 A-Z' },
+  { value: 'registrationFlow_desc', label: '註冊來源 Z-A' },
+  { value: 'creationMethod_asc', label: '實踐建立方式 A-Z' },
+  { value: 'creationMethod_desc', label: '實踐建立方式 Z-A' },
+  { value: 'daysToComplete_desc', label: '完成天數高到低' },
+  { value: 'daysToComplete_asc', label: '完成天數低到高' },
 ]
 
 const SELECT_CLASS =
   'rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20'
 
 const LIMIT = 20
-const TABLE_COLS = 11
+const TABLE_COLS = 14
+const USER_MANAGEMENT_SORT_FIELDS: UserManagementSortBy[] = [
+  'createdAt',
+  'lastLoginAt',
+  'name',
+  'email',
+  'registrationFlow',
+  'creationMethod',
+  'daysToComplete',
+]
+
+function getRegistrationFlowLabel(flow: RegistrationFlow | null | undefined) {
+  if (!flow) return '-'
+  return REGISTRATION_FLOW_LABEL[flow] ?? '-'
+}
+
+function getCreationMethodLabel(method: CreationMethod | null | undefined) {
+  if (!method) return '-'
+  return CREATION_METHOD_LABEL[method] ?? '-'
+}
+
+function getDaysToCompleteLabel(daysToComplete: number | null) {
+  return daysToComplete == null ? '-' : `${daysToComplete} 天`
+}
+
+function getBadgeLabel(user: AdminUserListItem) {
+  return user.badgeGranted == null ? '-' : user.badgeGranted ? '已完成' : '未完成'
+}
+
+type UserManagementSortBy =
+  | 'createdAt'
+  | 'lastLoginAt'
+  | 'name'
+  | 'email'
+  | 'registrationFlow'
+  | 'creationMethod'
+  | 'daysToComplete'
+
+const TABLE_HEADERS = [
+  'ID',
+  'Custom ID',
+  '名稱',
+  'Email',
+  '狀態',
+  '角色',
+  '標籤',
+  '學習風格',
+  '註冊來源',
+  '實踐建立方式',
+  'Onboarding',
+  '完成天數',
+  '最後登入',
+  '操作',
+]
 
 function SkeletonRow() {
   return (
@@ -90,6 +175,12 @@ export function UserManagementPage() {
   const [personaFilter, setPersonaFilter] = useState(searchParams.get('persona') ?? '')
   const [badgeFilter, setBadgeFilter] = useState(searchParams.get('badge') ?? '')
   const [sourceFilter, setSourceFilter] = useState(searchParams.get('source') ?? '')
+  const [registrationFlowFilter, setRegistrationFlowFilter] = useState(
+    searchParams.get('registrationFlow') ?? '',
+  )
+  const [creationMethodFilter, setCreationMethodFilter] = useState(
+    searchParams.get('creationMethod') ?? '',
+  )
   const [sortValue, setSortValue] = useState(searchParams.get('sort') ?? 'createdAt_desc')
 
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
@@ -116,6 +207,8 @@ export function UserManagementPage() {
     if (personaFilter) params.persona = personaFilter
     if (badgeFilter) params.badge = badgeFilter
     if (sourceFilter) params.source = sourceFilter
+    if (registrationFlowFilter) params.registrationFlow = registrationFlowFilter
+    if (creationMethodFilter) params.creationMethod = creationMethodFilter
     if (sortValue !== 'createdAt_desc') params.sort = sortValue
     setSearchParams(params, { replace: true })
   }, [
@@ -126,14 +219,29 @@ export function UserManagementPage() {
     personaFilter,
     badgeFilter,
     sourceFilter,
+    registrationFlowFilter,
+    creationMethodFilter,
     sortValue,
     setSearchParams,
   ])
 
-  const [sortBy, sortOrder] = sortValue.split('_') as [
-    'createdAt' | 'lastLoginAt' | 'name' | 'email',
-    'asc' | 'desc',
-  ]
+  const [sortField, sortOrder] = useMemo(() => {
+    const match = sortValue.match(/^(?<field>[^_]+)_(?<order>asc|desc)$/)
+
+    if (!match?.groups) {
+      return ['createdAt', 'desc'] as const
+    }
+
+    const fieldValue = match.groups.field
+    const orderValue = match.groups.order
+
+    const field = USER_MANAGEMENT_SORT_FIELDS.includes(fieldValue as UserManagementSortBy)
+      ? (fieldValue as UserManagementSortBy)
+      : 'createdAt'
+
+    const order = orderValue === 'asc' ? 'asc' : 'desc'
+    return [field, order] as [UserManagementSortBy, 'asc' | 'desc']
+  }, [sortValue])
 
   const { data: usersData, isLoading } = useQuery({
     queryKey: [
@@ -145,7 +253,10 @@ export function UserManagementPage() {
       personaFilter,
       badgeFilter,
       sourceFilter,
-      sortValue,
+      registrationFlowFilter,
+      creationMethodFilter,
+      sortField,
+      sortOrder,
     ],
     queryFn: () =>
       listAdminUsers({
@@ -157,7 +268,11 @@ export function UserManagementPage() {
         personaType: (personaFilter as PersonaType) || undefined,
         badgeGranted: badgeFilter === '' ? undefined : badgeFilter === 'true',
         userSource: (sourceFilter as 'S1' | 'S2' | 'S3') || undefined,
-        sortBy,
+        registrationFlow:
+          (registrationFlowFilter as 'landing_page' | 'quiz' | 'action_maker') || undefined,
+        creationMethod:
+          (creationMethodFilter as 'self_created' | 'copied' | 'action_generator') || undefined,
+        sortBy: sortField,
         sortOrder,
       }).then((r) => r.data),
   })
@@ -166,6 +281,26 @@ export function UserManagementPage() {
     ...user,
     roles: Array.isArray(user.roles) ? user.roles : [],
   }))
+
+  const exportData = useMemo(
+    () =>
+      users.map((user) => ({
+        internalId: user.internalId,
+        name: user.name,
+        email: user.email,
+        isActive: user.isActive ? '啟用' : '停用',
+        userSource: user.userSource,
+        registrationFlow: getRegistrationFlowLabel(user.registrationFlow ?? null),
+        creationMethod: getCreationMethodLabel(user.creationMethod ?? null),
+        personaType: user.personaType
+          ? `${user.personaType} ${PERSONA_LABELS[user.personaType as PersonaType]}`
+          : '未測驗',
+        badgeGranted: getBadgeLabel(user),
+        daysToComplete: getDaysToCompleteLabel(user.daysToComplete ?? null),
+        lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-',
+      })),
+    [users],
+  )
   const pagination = usersData?.pagination
 
   const { data: rolesData } = useQuery({
@@ -188,6 +323,8 @@ export function UserManagementPage() {
     personaFilter,
     badgeFilter,
     sourceFilter,
+    registrationFlowFilter,
+    creationMethodFilter,
   ].filter(Boolean).length
   const hasActiveFilters = activeFilterCount > 0
 
@@ -197,6 +334,8 @@ export function UserManagementPage() {
     setPersonaFilter('')
     setBadgeFilter('')
     setSourceFilter('')
+    setRegistrationFlowFilter('')
+    setCreationMethodFilter('')
     setPage(1)
   }
 
@@ -283,6 +422,28 @@ export function UserManagementPage() {
       },
     })
   }
+  if (registrationFlowFilter) {
+    const opt = REGISTRATION_FLOW_OPTIONS.find((o) => o.value === registrationFlowFilter)
+    const label = opt?.label ?? `未識別來源：${registrationFlowFilter}`
+    activeChips.push({
+      label: `註冊來源: ${label}`,
+      onRemove: () => {
+        setRegistrationFlowFilter('')
+        setPage(1)
+      },
+    })
+  }
+  if (creationMethodFilter) {
+    const opt = CREATION_METHOD_OPTIONS.find((o) => o.value === creationMethodFilter)
+    const label = opt?.label ?? `未識別建立方式：${creationMethodFilter}`
+    activeChips.push({
+      label: `實踐建立方式: ${label}`,
+      onRemove: () => {
+        setCreationMethodFilter('')
+        setPage(1)
+      },
+    })
+  }
 
   const totalPages = pagination?.total_count ? Math.ceil(pagination.total_count / LIMIT) : 0
 
@@ -301,7 +462,7 @@ export function UserManagementPage() {
           )}
         </div>
         <ExportButton
-          data={users as unknown as Record<string, unknown>[]}
+          data={exportData as unknown as Record<string, unknown>[]}
           fileName="user-management"
           columns={[
             { key: 'internalId', header: 'ID' },
@@ -311,8 +472,11 @@ export function UserManagementPage() {
             { key: 'isActive', header: '狀態' },
             { key: 'userSource', header: '來源' },
             { key: 'tags', header: '標籤' },
+            { key: 'registrationFlow', header: '註冊來源' },
+            { key: 'creationMethod', header: '實踐建立方式' },
             { key: 'personaType', header: '學習風格' },
             { key: 'badgeGranted', header: 'Badge' },
+            { key: 'daysToComplete', header: '完成天數' },
             { key: 'lastLoginAt', header: '最後登入' },
           ]}
         />
@@ -425,6 +589,24 @@ export function UserManagementPage() {
               triggerClassName={SELECT_CLASS}
             />
             <Select
+              value={registrationFlowFilter}
+              onValueChange={(v) => {
+                setRegistrationFlowFilter(v)
+                setPage(1)
+              }}
+              options={REGISTRATION_FLOW_OPTIONS}
+              triggerClassName={SELECT_CLASS}
+            />
+            <Select
+              value={creationMethodFilter}
+              onValueChange={(v) => {
+                setCreationMethodFilter(v)
+                setPage(1)
+              }}
+              options={CREATION_METHOD_OPTIONS}
+              triggerClassName={SELECT_CLASS}
+            />
+            <Select
               value={sortValue}
               onValueChange={(v) => {
                 setSortValue(v)
@@ -464,19 +646,7 @@ export function UserManagementPage() {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-              {[
-                'ID',
-                'Custom ID',
-                '名稱',
-                'Email',
-                '狀態',
-                '角色',
-                '標籤',
-                '學習風格',
-                'Onboarding',
-                '最後登入',
-                '操作',
-              ].map((h) => (
+              {TABLE_HEADERS.map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium">
                   {h}
                 </th>
@@ -496,102 +666,118 @@ export function UserManagementPage() {
                 </td>
               </tr>
             ) : (
-              users.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-border/80 transition-colors hover:bg-muted/45"
-                >
-                  <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
-                    {user.internalId}
-                  </td>
-                  <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
-                    {user.customId ? `@${user.customId}` : '-'}
-                  </td>
-                  <td className="px-4 py-2 font-medium">
-                    <UserLink userId={user.internalId} name={user.name ?? '-'} showAvatar={false} />
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">{user.email ?? '-'}</td>
-                  <td className="px-4 py-2">
-                    <Badge variant={user.isActive ? 'success' : 'error'}>
-                      {user.isActive ? '啟用' : '停用'}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {(Array.isArray(user.roles) ? user.roles : []).length > 0 ? (
-                        user.roles.map((r) => (
-                          <Badge key={r.id} variant="primary">
-                            {r.name}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">無角色</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {user.tags.length > 0 ? (
-                        user.tags.map((tag) => (
-                          <Badge key={tag.id} variant="default">
-                            {tag.name}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2">
-                    {user.personaType ? (
-                      <Badge variant="primary">
-                        {user.personaType} {PERSONA_LABELS[user.personaType as PersonaType]}
+              users.map((user) => {
+                const badgeLabel = getBadgeLabel(user)
+                return (
+                  <tr
+                    key={user.id}
+                    className="border-b border-border/80 transition-colors hover:bg-muted/45"
+                  >
+                    <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
+                      {user.internalId}
+                    </td>
+                    <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
+                      {user.customId ? `@${user.customId}` : '-'}
+                    </td>
+                    <td className="px-4 py-2 font-medium">
+                      <UserLink
+                        userId={user.internalId}
+                        name={user.name ?? '-'}
+                        showAvatar={false}
+                      />
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground">{user.email ?? '-'}</td>
+                    <td className="px-4 py-2">
+                      <Badge variant={user.isActive ? 'success' : 'error'}>
+                        {user.isActive ? '啟用' : '停用'}
                       </Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">未測驗</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2">
-                    {user.badgeGranted === null ? (
-                      <span className="text-xs text-muted-foreground">-</span>
-                    ) : user.badgeGranted ? (
-                      <Badge variant="success">已完成</Badge>
-                    ) : (
-                      <Badge variant="default">未完成</Badge>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">
-                    {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-'}
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="xs"
-                        onClick={() => openAssignRole(user)}
-                      >
-                        設定角色
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="xs"
-                        disabled={updateStatusMut.isPending}
-                        onClick={() => {
-                          if (user.isActive) {
-                            setConfirmDisableUser(user)
-                          } else {
-                            updateStatusMut.mutate({ userId: user.internalId, isActive: true })
-                          }
-                        }}
-                      >
-                        {user.isActive ? '停用' : '啟用'}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {(Array.isArray(user.roles) ? user.roles : []).length > 0 ? (
+                          user.roles.map((r) => (
+                            <Badge key={r.id} variant="primary">
+                              {r.name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">無角色</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {(Array.isArray(user.tags) ? user.tags : []).length > 0 ? (
+                          user.tags.map((tag) => (
+                            <Badge key={tag.id} variant="default">
+                              {tag.name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      {user.personaType ? (
+                        <Badge variant="primary">
+                          {user.personaType} {PERSONA_LABELS[user.personaType as PersonaType]}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">未測驗</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                      {getRegistrationFlowLabel(user.registrationFlow ?? null)}
+                    </td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                      {getCreationMethodLabel(user.creationMethod ?? null)}
+                    </td>
+                    <td className="px-4 py-2">
+                      {badgeLabel === '-' ? (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      ) : badgeLabel === '已完成' ? (
+                        <Badge variant="success">已完成</Badge>
+                      ) : (
+                        <Badge variant="default">未完成</Badge>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                      {getDaysToCompleteLabel(user.daysToComplete ?? null)}
+                    </td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-'}
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="xs"
+                          onClick={() => openAssignRole(user)}
+                        >
+                          設定角色
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="xs"
+                          disabled={updateStatusMut.isPending}
+                          onClick={() => {
+                            if (user.isActive) {
+                              setConfirmDisableUser(user)
+                            } else {
+                              updateStatusMut.mutate({ userId: user.internalId, isActive: true })
+                            }
+                          }}
+                        >
+                          {user.isActive ? '停用' : '啟用'}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
