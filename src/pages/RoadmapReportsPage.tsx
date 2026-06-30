@@ -12,6 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import { getRoadmapReport } from '@/api/admin-roadmap'
+import { PageHeader } from '@/components/PageHeader'
 import { Select } from '@/components/ui/select'
 import { CATEGORY_LABELS, ROADMAP_STATUS_LABELS } from '@/constants/wishpool'
 
@@ -50,16 +51,19 @@ export function RoadmapReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="heading-lg">許願池趨勢報表</h1>
-        <div className="w-40">
-          <Select
-            value={range}
-            onValueChange={(v) => setRange(v as Range)}
-            options={RANGE_OPTIONS}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="許願池趨勢報表"
+        description="統計用戶功能需求投票，分析熱門需求排行與票數變化趨勢。"
+        actions={
+          <div className="w-40">
+            <Select
+              value={range}
+              onValueChange={(v) => setRange(v as Range)}
+              options={RANGE_OPTIONS}
+            />
+          </div>
+        }
+      />
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">載入中...</p>
@@ -80,7 +84,9 @@ export function RoadmapReportsPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="mb-4 heading-sm">熱門分類（許願量）</h2>
+            <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+              熱門分類（許願量）
+            </h2>
             {categoryChart.length === 0 ? (
               <p className="text-sm text-muted-foreground">期間內無資料</p>
             ) : (
@@ -97,7 +103,9 @@ export function RoadmapReportsPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="mb-4 heading-sm">許願量趨勢</h2>
+            <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+              許願量趨勢
+            </h2>
             {trendChart.length === 0 ? (
               <p className="text-sm text-muted-foreground">期間內無資料</p>
             ) : (
@@ -114,7 +122,9 @@ export function RoadmapReportsPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="mb-4 heading-sm">熱門項目（依票數）</h2>
+            <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
+              熱門項目（依票數）
+            </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

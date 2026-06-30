@@ -1,4 +1,5 @@
 import { AlertTriangle, Bell, Clock, Plus, ShieldCheck } from 'lucide-react'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useAlertHistory, useAlertRules } from '@/hooks/useAlerts'
 import { cn } from '@/lib/utils'
@@ -11,25 +12,29 @@ export function AnomalyAlertsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="heading-lg">異常警報</h1>
-        <Button type="button">
-          <Plus className="h-4 w-4" />
-          新增規則
-        </Button>
-      </div>
+      <PageHeader
+        title="異常警報"
+        description="監控系統異常事件，設定告警規則與通知條件，快速定位問題根源。"
+        actions={
+          <Button type="button">
+            <Plus className="h-4 w-4" />
+            新增規則
+          </Button>
+        }
+      />
 
       {/* Alert Rules */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-muted-foreground" />
-          <h2 className="heading-sm">警報規則</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            警報規則
+          </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">規則名稱</th>
                 <th className="pb-3 pr-4 font-medium">監控指標</th>
                 <th className="pb-3 pr-4 font-medium">條件</th>
@@ -40,7 +45,10 @@ export function AnomalyAlertsPage() {
             </thead>
             <tbody>
               {alertRules.map((rule) => (
-                <tr key={rule.id ?? rule.name} className="admin-table-row last:border-0">
+                <tr
+                  key={rule.id ?? rule.name}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground">{rule.name}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{rule.metric}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{rule.condition}</td>
@@ -70,15 +78,17 @@ export function AnomalyAlertsPage() {
       </div>
 
       {/* Alert History */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <Clock className="h-5 w-5 text-muted-foreground" />
-          <h2 className="heading-sm">觸發歷史</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            觸發歷史
+          </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">規則</th>
                 <th className="pb-3 pr-4 font-medium">觸發時間</th>
                 <th className="pb-3 pr-4 font-medium">指標值</th>
@@ -90,7 +100,7 @@ export function AnomalyAlertsPage() {
               {alertHistory.map((h) => (
                 <tr
                   key={h.id ?? `${h.rule}-${h.triggeredAt}`}
-                  className="admin-table-row last:border-0"
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
                 >
                   <td className="py-3 pr-4 font-medium text-foreground">
                     <span className="inline-flex items-center gap-1.5">

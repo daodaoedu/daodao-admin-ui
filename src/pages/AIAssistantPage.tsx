@@ -17,6 +17,7 @@ import type {
   ConversationListItem,
   KnowledgeEntry,
 } from '@/api/admin-ai-assistant'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { Input, Textarea } from '@/components/ui/input'
@@ -83,7 +84,10 @@ export function AIAssistantPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ──────────────────────────────────────── */}
-      <h1 className="heading-lg">AI 社群助手</h1>
+      <PageHeader
+        title="AI 社群助手"
+        description="透過 AI 即時回應社群問題，設定知識庫範圍、查看對話記錄與使用統計。"
+      />
 
       {/* ── Stats ───────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -106,15 +110,17 @@ export function AIAssistantPage() {
         {/* ── Left column ──────────────────────────────── */}
         <div className="space-y-6">
           {/* 知識庫 */}
-          <div className="admin-panel-card p-5">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
             <div className="mb-4 flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
-              <h2 className="heading-sm">知識庫</h2>
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                知識庫
+              </h2>
             </div>
             <div className="overflow-x-auto">
-              <table className="admin-table-shell text-sm">
+              <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="admin-table-head">
+                  <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                     <th className="pb-3 font-medium text-muted-foreground">檔案名稱</th>
                     <th className="pb-3 font-medium text-muted-foreground">類型</th>
                     <th className="pb-3 font-medium text-muted-foreground">大小</th>
@@ -124,7 +130,10 @@ export function AIAssistantPage() {
                 </thead>
                 <tbody>
                   {displayKbFiles.map((file) => (
-                    <tr key={file.id} className="admin-table-row last:border-0">
+                    <tr
+                      key={file.id}
+                      className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                    >
                       <td className="py-3 font-medium text-foreground">{file.name}</td>
                       <td className="py-3">
                         <span
@@ -162,10 +171,12 @@ export function AIAssistantPage() {
           </div>
 
           {/* AI 設定 */}
-          <div className="admin-panel-card p-5">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
             <div className="mb-4 flex items-center gap-2">
               <Settings className="h-4 w-4 text-muted-foreground" />
-              <h2 className="heading-sm">AI 設定</h2>
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                AI 設定
+              </h2>
             </div>
             <div className="space-y-4">
               <div>
@@ -177,7 +188,7 @@ export function AIAssistantPage() {
                 </label>
                 <Textarea
                   id="ai-persona"
-                  className="w-full admin-control"
+                  className="w-full"
                   rows={3}
                   value={aiPersona}
                   onChange={(e) => setAiPersona(e.target.value)}
@@ -194,7 +205,7 @@ export function AIAssistantPage() {
                   value={aiTone}
                   onValueChange={setAiTone}
                   options={AI_TONE_OPTIONS}
-                  triggerClassName="admin-control"
+                  triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                 />
               </div>
               <div>
@@ -220,10 +231,12 @@ export function AIAssistantPage() {
         {/* ── Right column ─────────────────────────────── */}
         <div className="space-y-6">
           {/* 共享收件匣 */}
-          <div className="admin-panel-card p-5">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
             <div className="mb-4 flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              <h2 className="heading-sm">共享收件匣</h2>
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                共享收件匣
+              </h2>
             </div>
 
             <div className="space-y-1">
@@ -265,7 +278,7 @@ export function AIAssistantPage() {
 
                   {/* Expanded conversation thread */}
                   {selectedConversationId === conv.id && selectedConversation && (
-                    <div className="ml-11 mt-1 admin-card-soft">
+                    <div className="ml-11 mt-1 rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm">
                       <div className="space-y-3">
                         {selectedConversation.messages.map((msg) => (
                           <div
@@ -314,7 +327,7 @@ export function AIAssistantPage() {
                       {/* Reply area */}
                       <div className="mt-4 space-y-2">
                         <Textarea
-                          className="w-full admin-control"
+                          className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                           value={replyMessage}
                           onChange={(e) => setReplyMessage(e.target.value)}
                           rows={2}

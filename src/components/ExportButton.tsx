@@ -80,7 +80,7 @@ export function ExportButton({ data, columns, fileName, disabled }: ExportButton
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full z-10 mt-1 w-40 admin-card-soft p-1 shadow-md">
+        <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-[var(--admin-panel-border)] bg-card/90 p-4 shadow-sm p-1 shadow-md">
           <Button
             type="button"
             variant="ghost"

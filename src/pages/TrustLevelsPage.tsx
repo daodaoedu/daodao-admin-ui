@@ -4,20 +4,17 @@ import type {
   TrustLevelDistributionItem,
   TrustLevelHistoryItem,
 } from '@/api/admin-trust'
+import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
+  useDeleteUserGroup,
   useTrustLevelConfig,
   useTrustLevelDistribution,
   useTrustLevelHistory,
+  useUserGroups,
 } from '@/hooks/useTrustLevels'
-
-const groups = [
-  { name: 'content_team', members: 12, override: '編輯所有內容' },
-  { name: 'beta_testers', members: 45, override: '存取測試功能' },
-  { name: 'mentors', members: 8, override: '管理社群空間' },
-]
 
 const levelIcons = [Users, Star, Shield, UserPlus]
 const levelNames = ['Lv0 新手', 'Lv1 基本', 'Lv2 成員', 'Lv3 常客']
@@ -26,13 +23,24 @@ export function TrustLevelsPage() {
   const { data: configData } = useTrustLevelConfig()
   const { data: distributionData } = useTrustLevelDistribution()
   const { data: historyData } = useTrustLevelHistory()
+  const { data: groups = [], isLoading: groupsLoading } = useUserGroups()
+  const deleteGroupMut = useDeleteUserGroup()
 
   const trustLevelConfig: TrustLevelConfigItem[] = configData?.levels ?? []
   const distribution: TrustLevelDistributionItem[] = distributionData?.items ?? []
   const recentChanges: TrustLevelHistoryItem[] = historyData?.items ?? []
+
+  function handleDeleteGroup(id: number, name: string) {
+    if (!confirm(`確定刪除群組 ${name}？`)) return
+    deleteGroupMut.mutate(id)
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="heading-lg">信任等級</h1>
+      <PageHeader
+        title="信任等級"
+        description="設定用戶信任等級的晉升條件與對應權限，建立社群貢獻激勵機制。"
+      />
 
       {/* Stats row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -49,12 +57,14 @@ export function TrustLevelsPage() {
       </div>
 
       {/* Trust level config */}
-      <div className="admin-panel-card p-5">
-        <h2 className="heading-sm mb-4">等級設定</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          等級設定
+        </h2>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['等級', '名稱', '升級條件', '解鎖能力', '操作'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -64,7 +74,10 @@ export function TrustLevelsPage() {
             </thead>
             <tbody>
               {trustLevelConfig.map((row) => (
-                <tr key={row.level} className="admin-table-row transition-colors">
+                <tr
+                  key={row.level}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                >
                   <td className="px-4 py-2">
                     <Badge variant="primary">{row.level}</Badge>
                   </td>
@@ -89,12 +102,14 @@ export function TrustLevelsPage() {
       </div>
 
       {/* Recent promotions/demotions */}
-      <div className="admin-panel-card p-5">
-        <h2 className="heading-sm mb-4">近期升降級</h2>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
+          近期升降級
+        </h2>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['用戶', '變更', '原因', '時間'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -104,7 +119,10 @@ export function TrustLevelsPage() {
             </thead>
             <tbody>
               {recentChanges.map((row) => (
-                <tr key={`${row.user}-${row.time}`} className="admin-table-row transition-colors">
+                <tr
+                  key={`${row.user}-${row.time}`}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                >
                   <td className="px-4 py-2 font-medium">{row.user}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-1">
@@ -124,17 +142,19 @@ export function TrustLevelsPage() {
       </div>
 
       {/* Groups */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="heading-sm">群組管理</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            群組管理
+          </h2>
           <Button type="button" size="sm" onClick={() => alert('新增群組')}>
             新增群組
           </Button>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['群組名稱', '成員數', '權限覆寫', '操作'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -143,35 +163,53 @@ export function TrustLevelsPage() {
               </tr>
             </thead>
             <tbody>
-              {groups.map((g) => (
-                <tr key={g.name} className="admin-table-row transition-colors">
-                  <td className="px-4 py-2">
-                    <Badge variant="primary">{g.name}</Badge>
-                  </td>
-                  <td className="px-4 py-2 font-medium">{g.members}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{g.override}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="xs"
-                        onClick={() => alert(`編輯群組 ${g.name}`)}
-                      >
-                        編輯
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="xs"
-                        onClick={() => alert(`刪除群組 ${g.name}`)}
-                      >
-                        刪除
-                      </Button>
-                    </div>
+              {groupsLoading ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                    載入中...
                   </td>
                 </tr>
-              ))}
+              ) : groups.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                    尚無群組
+                  </td>
+                </tr>
+              ) : (
+                groups.map((g) => (
+                  <tr
+                    key={g.id}
+                    className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                  >
+                    <td className="px-4 py-2">
+                      <Badge variant="primary">{g.name}</Badge>
+                    </td>
+                    <td className="px-4 py-2 font-medium">{g.members}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{g.override}</td>
+                    <td className="px-4 py-2">
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="xs"
+                          onClick={() => alert(`編輯群組 ${g.name}`)}
+                        >
+                          編輯
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="xs"
+                          onClick={() => handleDeleteGroup(g.id, g.name)}
+                          disabled={deleteGroupMut.isPending}
+                        >
+                          刪除
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

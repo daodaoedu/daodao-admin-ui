@@ -1,6 +1,7 @@
 import { Calendar, Clock, Lock, Unlock } from 'lucide-react'
 import { useState } from 'react'
 import type { DripSchedule } from '@/api/admin-learning'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { useDripSchedules } from '@/hooks/useDripSchedules'
@@ -38,18 +39,23 @@ export function DripContentPage() {
   return (
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────── */}
-      <h1 className="heading-lg">內容滴灌排程</h1>
+      <PageHeader
+        title="內容滴灌排程"
+        description="設定依加入天數自動推送的內容序列，引導新成員逐步探索島島。"
+      />
 
       {/* ── Schedule list ──────────────────────────────── */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <Clock className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">排程列表</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            排程列表
+          </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="admin-table-shell text-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">課程</th>
                 <th className="pb-3 pr-4 font-medium">Module</th>
                 <th className="pb-3 pr-4 font-medium">解鎖條件</th>
@@ -59,7 +65,10 @@ export function DripContentPage() {
             </thead>
             <tbody>
               {schedules.map((row) => (
-                <tr key={`${row.course}-${row.module}`} className="admin-table-row last:border-0">
+                <tr
+                  key={`${row.course}-${row.module}`}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
+                >
                   <td className="py-3 pr-4 font-medium text-foreground">{row.course}</td>
                   <td className="py-3 pr-4 text-foreground">{row.module}</td>
                   <td className="py-3 pr-4">
@@ -98,10 +107,12 @@ export function DripContentPage() {
       </div>
 
       {/* ── Manual unlock ──────────────────────────────── */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="mb-4 flex items-center gap-2">
           <Unlock className="h-4 w-4 text-muted-foreground" />
-          <h2 className="heading-sm">手動解鎖</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            手動解鎖
+          </h2>
         </div>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex-1">

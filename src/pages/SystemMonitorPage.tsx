@@ -1,5 +1,6 @@
 import { Activity, Cpu, Database, HardDrive, MemoryStick, RefreshCw } from 'lucide-react'
 import type { DbInfo, RedisInfo, SystemMonitorData } from '@/api/admin-system'
+import { PageHeader } from '@/components/PageHeader'
 import { useDbInfo, useRedisInfo, useSystemMonitor } from '@/hooks/useSystemMonitor'
 import { cn } from '@/lib/utils'
 
@@ -76,21 +77,25 @@ export function SystemMonitorPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="heading-lg">系統監控</h1>
-        <span className="admin-chip">
-          <RefreshCw className="h-3 w-3 animate-spin" />每 30 秒自動刷新
-        </span>
-      </div>
+      <PageHeader
+        title="系統監控"
+        description="即時查看資料庫、快取與服務的健康狀態、效能指標與連線數。"
+        actions={
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+            <RefreshCw className="h-3 w-3 animate-spin" />每 30 秒自動刷新
+          </span>
+        }
+      />
 
       {/* Resource Gauges */}
       <div className="grid gap-4 sm:grid-cols-3">
         {/* CPU */}
-        <div className="admin-panel-card p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <Cpu className="h-4 w-4 text-muted-foreground" />
-            <h2 className="heading-sm">CPU</h2>
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              CPU
+            </h2>
           </div>
           <div className="mb-2 text-center">
             <span className="text-3xl font-bold">{monitor.cpu.percent}</span>
@@ -100,10 +105,12 @@ export function SystemMonitorPage() {
         </div>
 
         {/* Memory */}
-        <div className="admin-panel-card p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <MemoryStick className="h-4 w-4 text-muted-foreground" />
-            <h2 className="heading-sm">記憶體</h2>
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              記憶體
+            </h2>
           </div>
           <div className="mb-2 text-center">
             <span className="text-3xl font-bold">{monitor.memory.percent}</span>
@@ -116,10 +123,12 @@ export function SystemMonitorPage() {
         </div>
 
         {/* Disk */}
-        <div className="admin-panel-card p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <HardDrive className="h-4 w-4 text-muted-foreground" />
-            <h2 className="heading-sm">磁碟</h2>
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              磁碟
+            </h2>
           </div>
           <div className="mb-2 text-center">
             <span className="text-3xl font-bold">{monitor.disk.percent}</span>
@@ -135,10 +144,12 @@ export function SystemMonitorPage() {
       {/* Database cards */}
       <div className="grid gap-4 sm:grid-cols-2">
         {/* PostgreSQL */}
-        <div className="admin-panel-card p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <Database className="h-4 w-4 text-muted-foreground" />
-            <h2 className="heading-sm">PostgreSQL</h2>
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              PostgreSQL
+            </h2>
             <span
               className={cn(
                 'ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
@@ -168,10 +179,12 @@ export function SystemMonitorPage() {
         </div>
 
         {/* Redis */}
-        <div className="admin-panel-card p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="h-4 w-4 text-muted-foreground" />
-            <h2 className="heading-sm">Redis</h2>
+            <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+              Redis
+            </h2>
             <span
               className={cn(
                 'ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',

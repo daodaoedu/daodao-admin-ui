@@ -1,5 +1,5 @@
-import * as SelectPrimitive from '@radix-ui/react-select'
 import { Check, ChevronDown } from 'lucide-react'
+import { Select as SelectPrimitive } from 'radix-ui'
 import { cn } from '@/lib/utils'
 
 export const SelectRoot = SelectPrimitive.Root
@@ -14,11 +14,12 @@ export function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        'admin-select',
+        'rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20',
+        'inline-flex items-center justify-between gap-2 whitespace-nowrap',
         'placeholder:text-muted-foreground',
         'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
         'disabled:cursor-not-allowed disabled:opacity-50',
-        '[&>span]:truncate',
+        '[&>span]:min-w-0 [&>span]:truncate',
         className,
       )}
       {...props}
@@ -42,7 +43,7 @@ export function SelectContent({
         position="popper"
         sideOffset={4}
         className={cn(
-          'admin-popover relative z-[300] min-w-[8rem] overflow-hidden',
+          'rounded-md border border-border bg-card/90 py-1 shadow-lg relative z-[300] min-w-[8rem] overflow-hidden',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
           'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
@@ -92,7 +93,6 @@ export interface SelectOption {
 }
 
 interface SelectProps {
-  /** 對應 <label htmlFor> 的 id，套用於 trigger button */
   id?: string
   value: string
   onValueChange: (value: string) => void
@@ -102,6 +102,8 @@ interface SelectProps {
   className?: string
   triggerClassName?: string
 }
+
+const EMPTY_SENTINEL = '__empty__'
 
 export function Select({
   id,
@@ -113,17 +115,23 @@ export function Select({
   className,
   triggerClassName,
 }: SelectProps) {
+  const internalValue = value === '' ? EMPTY_SENTINEL : value
+  const handleChange = (v: string) => onValueChange(v === EMPTY_SENTINEL ? '' : v)
+
   return (
-    <SelectRoot value={value || undefined} onValueChange={onValueChange} disabled={disabled}>
+    <SelectRoot value={internalValue} onValueChange={handleChange} disabled={disabled}>
       <SelectTrigger id={id} className={cn('w-full', triggerClassName)}>
         <SelectValue placeholder={placeholder ?? '選擇…'} />
       </SelectTrigger>
       <SelectContent className={className}>
-        {options.map((opt) => (
-          <SelectItem key={opt.value} value={opt.value} disabled={opt.disabled}>
-            {opt.label}
-          </SelectItem>
-        ))}
+        {options.map((opt) => {
+          const itemValue = opt.value === '' ? EMPTY_SENTINEL : opt.value
+          return (
+            <SelectItem key={itemValue} value={itemValue} disabled={opt.disabled}>
+              {opt.label}
+            </SelectItem>
+          )
+        })}
       </SelectContent>
     </SelectRoot>
   )

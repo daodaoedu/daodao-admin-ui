@@ -1,161 +1,156 @@
 import apiClient from './client'
 import type { ApiResponse } from './types'
 
-// ── Notifications, Triggered Emails ──────────────────────
+// ── Admin Notifications ─────────────────────────────────
 
-export interface NotificationItem {
+export interface AdminNotification {
+  id: number
   title: string
+  content: string | null
   type: string
   target: string
-  sentAt: string
-  readRate: number
   status: string
+  sent_at: string | null
+  read_count: number
+  total_sent: number
+  created_at: string
+  updated_at: string
+  created_by: number | null
 }
 
-export interface NotificationListResponse {
-  items: NotificationItem[]
-  stats: {
-    totalSent: number
-    avgReadRate: number
-    scheduled: number
-    sentChange: number
-    readRateChange: number
-  }
+export interface AdminNotificationListResponse {
+  items: AdminNotification[]
+  total: number
 }
 
-export const listNotifications = (params?: { limit?: number; offset?: number }) =>
-  apiClient.get<ApiResponse<NotificationListResponse>>(
-    '/daodao-server/api/v1/admin/notifications',
-    { params },
-  )
+export interface AdminNotificationStats {
+  totalSent: number
+  avgReadRate: number
+  scheduled: number
+}
 
-export interface NotificationCreate {
+export interface CreateAdminNotificationPayload {
   title: string
+  content?: string
   type: string
   target: string
-  content?: string
-  scheduledAt?: string
+  status?: 'draft' | 'scheduled' | 'sent'
 }
 
-export const createNotification = (data: NotificationCreate) =>
-  apiClient.post<ApiResponse<NotificationItem>>('/daodao-server/api/v1/admin/notifications', data)
+export const listAdminNotifications = (params?: {
+  limit?: number
+  offset?: number
+  status?: string
+  type?: string
+}) =>
+  apiClient.get<ApiResponse<AdminNotificationListResponse>>('/api/v1/admin/notifications', {
+    params,
+  })
 
-export const sendNotification = (id: string) =>
-  apiClient.post<ApiResponse<null>>(`/daodao-server/api/v1/admin/notifications/${id}/send`)
+export const getAdminNotificationStats = () =>
+  apiClient.get<ApiResponse<AdminNotificationStats>>('/api/v1/admin/notifications/stats')
 
-export interface NotificationStats {
-  sent: number
-  read: number
-  readRate: number
-}
+export const createAdminNotification = (data: CreateAdminNotificationPayload) =>
+  apiClient.post<ApiResponse<AdminNotification>>('/api/v1/admin/notifications', data)
 
-export const getNotificationStats = (id: string) =>
-  apiClient.get<ApiResponse<NotificationStats>>(
-    `/daodao-server/api/v1/admin/notifications/${id}/stats`,
-  )
+export const updateAdminNotification = (
+  id: number,
+  data: Partial<CreateAdminNotificationPayload>,
+) => apiClient.put<ApiResponse<AdminNotification>>(`/api/v1/admin/notifications/${id}`, data)
 
-// ── Email Triggers ────────────────────────────────────────
+export const sendAdminNotification = (id: number) =>
+  apiClient.post<ApiResponse<AdminNotification>>(`/api/v1/admin/notifications/${id}/send`)
+
+export const deleteAdminNotification = (id: number) =>
+  apiClient.delete<ApiResponse<null>>(`/api/v1/admin/notifications/${id}`)
+
+// ── Triggered Email Rules ───────────────────────────────
 
 export interface EmailTriggerRule {
-  id: string
+  id: number
   name: string
-  trigger: string
+  description: string | null
+  trigger_type: string
+  trigger_config: Record<string, unknown>
   template: string
-  sent: number
-  openRate: number
+  subject: string
   enabled: boolean
+  sent_count: number
+  open_rate: number
+  created_at: string
+  updated_at: string
+  created_by: number | null
+}
+
+export interface EmailTriggerRuleListResponse {
+  items: EmailTriggerRule[]
+  total: number
 }
 
 export interface EmailTriggerLog {
-  id: string
-  rule: string
+  id: number
+  rule_id: number
+  rule_name: string
   recipient: string
-  sentAt: string
   status: string
+  sent_at: string
+}
+
+export interface EmailTriggerLogListResponse {
+  items: EmailTriggerLog[]
+  total: number
 }
 
 export interface EmailTriggerStats {
-  totalSent: number
-  openRate: number
-  activeRules: number
-  sentChange: number
-  openRateChange: number
+  totalRules: number
+  enabledRules: number
+  monthlySent: number
+  monthlySuccess: number
+  avgOpenRate: number
 }
 
-export interface EmailTriggerCreate {
+export interface CreateEmailTriggerRulePayload {
   name: string
-  trigger: string
+  description?: string
+  trigger_type: string
+  trigger_config: Record<string, unknown>
   template: string
+  subject: string
   enabled?: boolean
 }
 
-export interface EmailTriggerUpdate {
-  name?: string
-  trigger?: string
-  template?: string
+export const listEmailTriggerRules = (params?: {
+  limit?: number
+  offset?: number
   enabled?: boolean
-}
+}) =>
+  apiClient.get<ApiResponse<EmailTriggerRuleListResponse>>('/api/v1/admin/email/trigger-rules', {
+    params,
+  })
 
-export const listEmailTriggers = () =>
-  apiClient.get<ApiResponse<EmailTriggerRule[]>>('/daodao-server/api/v1/admin/email-triggers')
+export const getEmailTriggerStats = () =>
+  apiClient.get<ApiResponse<EmailTriggerStats>>('/api/v1/admin/email/trigger-rules/stats')
 
-export const createEmailTrigger = (data: EmailTriggerCreate) =>
-  apiClient.post<ApiResponse<EmailTriggerRule>>('/daodao-server/api/v1/admin/email-triggers', data)
+export const createEmailTriggerRule = (data: CreateEmailTriggerRulePayload) =>
+  apiClient.post<ApiResponse<EmailTriggerRule>>('/api/v1/admin/email/trigger-rules', data)
 
-export const updateEmailTrigger = (id: string, data: EmailTriggerUpdate) =>
-  apiClient.put<ApiResponse<EmailTriggerRule>>(
-    `/daodao-server/api/v1/admin/email-triggers/${id}`,
-    data,
-  )
+export const updateEmailTriggerRule = (id: number, data: Partial<CreateEmailTriggerRulePayload>) =>
+  apiClient.put<ApiResponse<EmailTriggerRule>>(`/api/v1/admin/email/trigger-rules/${id}`, data)
 
-export const deleteEmailTrigger = (id: string) =>
-  apiClient.delete<ApiResponse<null>>(`/daodao-server/api/v1/admin/email-triggers/${id}`)
+export const toggleEmailTriggerRule = (id: number, enabled: boolean) =>
+  apiClient.patch<ApiResponse<EmailTriggerRule>>(`/api/v1/admin/email/trigger-rules/${id}/toggle`, {
+    enabled,
+  })
 
-export const getEmailTriggerLog = (id: string, params?: { limit?: number; offset?: number }) =>
-  apiClient.get<ApiResponse<EmailTriggerLog[]>>(
-    `/daodao-server/api/v1/admin/email-triggers/${id}/log`,
-    { params },
-  )
+export const deleteEmailTriggerRule = (id: number) =>
+  apiClient.delete<ApiResponse<null>>(`/api/v1/admin/email/trigger-rules/${id}`)
 
-export const getEmailTriggerStats = (id: string) =>
-  apiClient.get<ApiResponse<EmailTriggerStats>>(
-    `/daodao-server/api/v1/admin/email-triggers/${id}/stats`,
-  )
-
-// ── Email Templates ───────────────────────────────────────
-
-export interface EmailTemplate {
-  id: string
-  name: string
-  subject: string
-  body: string
-  createdAt: string
-  updatedAt: string | null
-}
-
-export interface EmailTemplateCreate {
-  name: string
-  subject: string
-  body: string
-}
-
-export interface EmailTemplateUpdate {
-  name?: string
-  subject?: string
-  body?: string
-}
-
-export const listEmailTemplates = () =>
-  apiClient.get<ApiResponse<EmailTemplate[]>>('/daodao-server/api/v1/admin/email-templates')
-
-export const createEmailTemplate = (data: EmailTemplateCreate) =>
-  apiClient.post<ApiResponse<EmailTemplate>>('/daodao-server/api/v1/admin/email-templates', data)
-
-export const updateEmailTemplate = (id: string, data: EmailTemplateUpdate) =>
-  apiClient.put<ApiResponse<EmailTemplate>>(
-    `/daodao-server/api/v1/admin/email-templates/${id}`,
-    data,
-  )
-
-export const deleteEmailTemplate = (id: string) =>
-  apiClient.delete<ApiResponse<null>>(`/daodao-server/api/v1/admin/email-templates/${id}`)
+export const listEmailTriggerLogs = (params?: {
+  limit?: number
+  offset?: number
+  rule_id?: number
+  status?: string
+}) =>
+  apiClient.get<ApiResponse<EmailTriggerLogListResponse>>('/api/v1/admin/email/trigger-logs', {
+    params,
+  })

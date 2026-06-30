@@ -14,6 +14,7 @@ import type {
   RoadmapStatus,
   WishCategory,
 } from '@/api/types'
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -68,7 +69,7 @@ const EMPTY_FORM: CreateRoadmapItemPayload = {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="admin-panel-card p-4">
+    <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-semibold truncate">{value}</p>
     </div>
@@ -208,12 +209,15 @@ export function RoadmapItemsPage() {
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="heading-lg">路線圖項目</h1>
-          <Button type="button" onClick={openCreate}>
-            + 新增項目
-          </Button>
-        </div>
+        <PageHeader
+          title="路線圖項目"
+          description="管理公開路線圖的功能項目，讓用戶了解平台未來發展方向。"
+          actions={
+            <Button type="button" onClick={openCreate}>
+              + 新增項目
+            </Button>
+          }
+        />
 
         <div className="flex gap-2">
           <Select
@@ -222,20 +226,20 @@ export function RoadmapItemsPage() {
               handleFilterChange(value as RoadmapStatus | '', categoryFilter)
             }
             options={[{ value: '', label: '全部狀態' }, ...STATUS_OPTIONS]}
-            triggerClassName="admin-control"
+            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           />
           <Select
             value={categoryFilter}
             onValueChange={(value) => handleFilterChange(statusFilter, value as WishCategory | '')}
             options={[{ value: '', label: '全部分類' }, ...CATEGORY_OPTIONS]}
-            triggerClassName="admin-control"
+            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           />
         </div>
 
-        <div className="overflow-x-auto admin-panel-card">
-          <table className="admin-table-shell text-sm">
+        <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="admin-table-head">
+              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
                 {['標題', '分類', '狀態', '支持數', '公開', '建立時間', '操作'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">
                     {h}
@@ -329,8 +333,8 @@ export function RoadmapItemsPage() {
       </div>
 
       {dialogOpen && (
-        <div className="admin-modal-overlay">
-          <div className="admin-modal-panel w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-lg w-full max-w-md p-6">
             <h3 className="mb-4 font-semibold">{editingItem ? '編輯項目' : '新增項目'}</h3>
             <div className="space-y-3">
               <div>
@@ -354,7 +358,7 @@ export function RoadmapItemsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   placeholder="請輸入描述"
                   rows={3}
-                  className="w-full admin-control resize-none"
+                  className="w-full resize-none"
                 />
               </div>
               <div>

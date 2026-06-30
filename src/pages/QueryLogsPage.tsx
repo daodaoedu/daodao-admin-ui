@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { listQueryLogs } from '@/api/admin-ai'
 import type { AIQueryLog, QueryLogFilters } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,25 +26,28 @@ export function QueryLogsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="heading-lg">AI 查詢日誌</h1>
-        <ExportButton
-          data={logs as unknown as Record<string, unknown>[]}
-          fileName="query-logs"
-          columns={[
-            { key: 'id', header: 'ID' },
-            { key: 'backend', header: 'Backend' },
-            { key: 'context', header: 'Context' },
-            { key: 'user_id', header: 'User' },
-            { key: 'total_tokens', header: 'Tokens' },
-            { key: 'cost_usd', header: 'Cost (USD)' },
-            { key: 'latency_ms', header: 'Latency (ms)' },
-            { key: 'finish_reason', header: 'Finish' },
-            { key: 'status', header: 'Status' },
-            { key: 'created_at', header: '時間' },
-          ]}
-        />
-      </div>
+      <PageHeader
+        title="AI 查詢日誌"
+        description="瀏覽所有 AI 對話記錄，分析使用模式、查詢品質與異常請求。"
+        actions={
+          <ExportButton
+            data={logs as unknown as Record<string, unknown>[]}
+            fileName="query-logs"
+            columns={[
+              { key: 'id', header: 'ID' },
+              { key: 'backend', header: 'Backend' },
+              { key: 'context', header: 'Context' },
+              { key: 'user_id', header: 'User' },
+              { key: 'total_tokens', header: 'Tokens' },
+              { key: 'cost_usd', header: 'Cost (USD)' },
+              { key: 'latency_ms', header: 'Latency (ms)' },
+              { key: 'finish_reason', header: 'Finish' },
+              { key: 'status', header: 'Status' },
+              { key: 'created_at', header: '時間' },
+            ]}
+          />
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
@@ -83,10 +87,10 @@ export function QueryLogsPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto admin-panel-card">
-        <table className="admin-table-shell text-sm">
+      <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="admin-table-head">
+            <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
               {[
                 'ID',
                 'Backend',
@@ -122,7 +126,7 @@ export function QueryLogsPage() {
               logs.map((log) => (
                 <tr
                   key={log.id}
-                  className="admin-table-row cursor-pointer transition-colors"
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors cursor-pointer transition-colors"
                   onClick={() => setSelected(selected?.id === log.id ? null : log)}
                 >
                   <td className="px-4 py-2 font-mono text-xs">{log.id}</td>
@@ -162,7 +166,7 @@ export function QueryLogsPage() {
 
       {/* Detail panel */}
       {selected && (
-        <div className="admin-panel-card p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
           <h3 className="mb-3 font-semibold">Log #{selected.id} 詳情</h3>
           <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
             {JSON.stringify(selected, null, 2)}

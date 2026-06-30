@@ -1,5 +1,14 @@
 import apiClient from './client'
-import type { ApiResponse } from './types'
+import type {
+  ApiResponse,
+  EmailOnboardingStats,
+  EngagementStats,
+  OnboardingStats,
+  PersonaStats,
+  PersonaUserProfile,
+  QuizStats,
+  UserOnboardingDetail,
+} from './types'
 
 // ── Member Directory ──────────────────────────────────────
 
@@ -40,6 +49,80 @@ export interface MemberDirectoryAnalytics {
   [key: string]: unknown
 }
 
+export interface CommunityMapStats {
+  totalMembers: number
+  completedProfiles: number
+  averageFillRate: number
+}
+
+export interface CommunityMapAnalytics {
+  fieldFillRates: Array<{ fieldId: number; fieldName: string; fillRate: number }>
+  signupTrend: Array<{ date: string; count: number }>
+}
+
+export interface CommunityInteractionPeriodStats {
+  reactions: number
+  comments: number
+  follows: number
+  connects: number
+}
+
+export interface CommunityInteractionStats {
+  current: CommunityInteractionPeriodStats
+  changes: {
+    reactions: number
+    comments: number
+    follows: number
+    connects: number
+  }
+  trend: Array<{
+    date: string
+    reactions: number
+    comments: number
+    follows: number
+    connects: number
+  }>
+}
+
+export interface InteractionDetails {
+  reactionTypes: Array<{ type: string; count: number }>
+  commentReplyRate: number
+  connectionFunnel: {
+    requests: number
+    accepted: number
+    rejected: number
+    pending: number
+    acceptRate: number
+  }
+  topContent: Array<{
+    targetType: string
+    targetId: number
+    targetName: string
+    reactions: number
+    comments: number
+    total: number
+  }>
+  topActiveUsers: Array<{
+    userId: number
+    name: string
+    avatarUrl: string | null
+    interactions: number
+  }>
+  topFollowedUsers: Array<{
+    userId: number
+    name: string
+    avatarUrl: string | null
+    followers: number
+  }>
+  heatmap: Array<{ dow: number; hour: number; count: number }>
+  engagementFunnel: {
+    reactors: number
+    commenters: number
+    followers: number
+    connectors: number
+  }
+}
+
 export const listMemberDirectoryFields = () =>
   apiClient.get<ApiResponse<ProfileField[]>>('/daodao-server/api/v1/admin/member-directory/fields')
 
@@ -76,44 +159,79 @@ export const getMemberDirectoryAnalytics = () =>
     '/daodao-server/api/v1/admin/member-directory/analytics',
   )
 
+export const getCommunityInteractionStats = (params?: { period?: '7d' | '30d' | '90d' }) =>
+  apiClient.get<ApiResponse<CommunityInteractionStats>>(
+    '/daodao-server/api/v1/admin/community/interaction-stats',
+    { params },
+  )
+
+export const getInteractionDetails = (params?: { period?: '7d' | '30d' | '90d' }) =>
+  apiClient.get<ApiResponse<InteractionDetails>>(
+    '/daodao-server/api/v1/admin/community/interaction-details',
+    { params },
+  )
+
+export const listCommunityMapFields = listMemberDirectoryFields
+export const createCommunityMapField = createMemberDirectoryField
+export const updateCommunityMapField = updateMemberDirectoryField
+export const deleteCommunityMapField = deleteMemberDirectoryField
+export const reorderCommunityMapFields = reorderMemberDirectoryFields
+
+export const getCommunityMapStats = () =>
+  apiClient.get<ApiResponse<CommunityMapStats>>(
+    '/daodao-server/api/v1/admin/member-directory/stats',
+  )
+
+export const getCommunityMapAnalytics = () =>
+  apiClient.get<ApiResponse<CommunityMapAnalytics>>(
+    '/daodao-server/api/v1/admin/member-directory/analytics',
+  )
+
 // ── Onboarding Flows ─────────────────────────────────────
 
 export interface OnboardingFlow {
   id: number
   name: string
-  isActive: boolean
+  isEnabled: boolean
   steps: OnboardingStep[]
-  completionRate?: number
-  avgDurationMinutes?: number
-  newUsersThisMonth?: number
+  completionRate: number
+  createdAt: string
 }
 
 export interface OnboardingStep {
   id: number
-  question: string
-  type: string
-  topAnswer?: string
-  topPercent?: number
-  completionRate?: number
+  questionText: string
+  questionType: 'single' | 'multi' | 'text'
+  options?: string[]
+  completionRate: number
 }
 
 export interface OnboardingFlowCreate {
   name: string
-  steps?: Omit<OnboardingStep, 'id'>[]
+  isEnabled?: boolean
+  steps?: Array<{
+    questionText: string
+    questionType: 'single' | 'multi' | 'text'
+    options?: string[]
+  }>
 }
 
 export interface OnboardingFlowUpdate {
   name?: string
-  isActive?: boolean
-  steps?: Omit<OnboardingStep, 'id'>[]
+  isEnabled?: boolean
+  steps?: Array<{
+    questionText: string
+    questionType: 'single' | 'multi' | 'text'
+    options?: string[]
+  }>
 }
 
 export interface OnboardingFlowAnalytics {
-  completionRate: number
-  avgDurationMinutes: number
-  newUsersThisMonth: number
-  funnelSteps: Array<{ label: string; value: number }>
-  [key: string]: unknown
+  flowId: number
+  totalStarted: number
+  totalCompleted: number
+  averageTimeMinutes: number
+  dropOffSteps: Array<{ stepId: number; dropRate: number }>
 }
 
 export const listOnboardingFlows = () =>
@@ -136,4 +254,38 @@ export const deleteOnboardingFlow = (id: number) =>
 export const getOnboardingFlowAnalytics = (id: number) =>
   apiClient.get<ApiResponse<OnboardingFlowAnalytics>>(
     `/daodao-server/api/v1/admin/onboarding/flows/${id}/analytics`,
+  )
+
+// ── Onboarding Analytics ──────────────────────────────────────────────────────
+
+export const getOnboardingStats = (params?: { days?: number }) =>
+  apiClient.get<ApiResponse<OnboardingStats>>('/daodao-server/api/v1/admin/onboarding/stats', {
+    params,
+  })
+
+export const getUserOnboardingDetail = (userId: string) =>
+  apiClient.get<ApiResponse<UserOnboardingDetail>>(
+    `/daodao-server/api/v1/admin/users/${userId}/onboarding`,
+  )
+
+export const getQuizStats = (params?: { days?: number }) =>
+  apiClient.get<ApiResponse<QuizStats>>('/daodao-server/api/v1/admin/quiz/stats', { params })
+
+export const getPersonaStats = (params?: { days?: number }) =>
+  apiClient.get<ApiResponse<PersonaStats>>('/daodao-server/api/v1/admin/persona/stats', { params })
+
+export const getEmailOnboardingStats = (params?: { days?: number }) =>
+  apiClient.get<ApiResponse<EmailOnboardingStats>>(
+    '/daodao-server/api/v1/admin/email/onboarding-stats',
+    { params },
+  )
+
+export const getEngagementStats = (params?: { days?: number }) =>
+  apiClient.get<ApiResponse<EngagementStats>>('/daodao-server/api/v1/admin/engagement/stats', {
+    params,
+  })
+
+export const getUserPersonaProfile = (userUuid: string) =>
+  apiClient.get<ApiResponse<PersonaUserProfile>>(
+    `/daodao-server/api/v1/persona/profile/${userUuid}`,
   )

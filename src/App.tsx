@@ -1,10 +1,11 @@
-import { lazy, Suspense } from 'react'
+import { lazy, type ReactNode, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { ProtectedRoute } from '@/auth/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
 
 // Existing pages (eager load)
+import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 
@@ -111,8 +112,8 @@ const OnboardingFlowsPage = lazy(() =>
 const ContentPerformancePage = lazy(() =>
   import('@/pages/ContentPerformancePage').then((m) => ({ default: m.ContentPerformancePage })),
 )
-const MemberDirectoryPage = lazy(() =>
-  import('@/pages/MemberDirectoryPage').then((m) => ({ default: m.MemberDirectoryPage })),
+const CommunityMapPage = lazy(() =>
+  import('@/pages/CommunityMapPage').then((m) => ({ default: m.CommunityMapPage })),
 )
 const AIAssistantPage = lazy(() =>
   import('@/pages/AIAssistantPage').then((m) => ({ default: m.AIAssistantPage })),
@@ -129,11 +130,16 @@ const RoadmapItemsPage = lazy(() =>
 const RoadmapReportsPage = lazy(() =>
   import('@/pages/RoadmapReportsPage').then((m) => ({ default: m.RoadmapReportsPage })),
 )
-
-// Survey pages
 const SurveyManagementPage = lazy(() =>
   import('@/pages/SurveyManagementPage').then((m) => ({ default: m.SurveyManagementPage })),
 )
+const PersonaQuestionsPage = lazy(() =>
+  import('@/pages/PersonaQuestionsPage').then((m) => ({ default: m.PersonaQuestionsPage })),
+)
+const EmailTemplatesPage = lazy(() =>
+  import('@/pages/EmailTemplatesPage').then((m) => ({ default: m.EmailTemplatesPage })),
+)
+const EmailTemplateEditorPage = lazy(() => import('@/pages/EmailTemplateEditorPage'))
 
 function PageLoader() {
   return (
@@ -143,7 +149,7 @@ function PageLoader() {
   )
 }
 
-function LazyPage({ children }: { children: React.ReactNode }) {
+function LazyPage({ children }: { children: ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>
 }
 
@@ -156,6 +162,7 @@ export function App() {
         path="/login"
         element={isLoading ? null : isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
       />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           {/* Dashboard (eager) */}
@@ -352,6 +359,22 @@ export function App() {
             }
           />
           <Route
+            path="/email-templates"
+            element={
+              <LazyPage>
+                <EmailTemplatesPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/email-templates/:id/edit"
+            element={
+              <LazyPage>
+                <EmailTemplateEditorPage />
+              </LazyPage>
+            }
+          />
+          <Route
             path="/audit-log"
             element={
               <LazyPage>
@@ -420,7 +443,7 @@ export function App() {
             }
           />
 
-          {/* 遲戲化 */}
+          {/* 遊戲化 */}
           <Route
             path="/badges"
             element={
@@ -456,10 +479,10 @@ export function App() {
             }
           />
           <Route
-            path="/member-directory"
+            path="/community-map"
             element={
               <LazyPage>
-                <MemberDirectoryPage />
+                <CommunityMapPage />
               </LazyPage>
             }
           />
@@ -514,6 +537,14 @@ export function App() {
             element={
               <LazyPage>
                 <SurveyManagementPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/persona-questions"
+            element={
+              <LazyPage>
+                <PersonaQuestionsPage />
               </LazyPage>
             }
           />

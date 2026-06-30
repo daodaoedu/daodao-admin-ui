@@ -1,5 +1,6 @@
 import apiClient from './client'
 import type {
+  AdminSurveyAnalytics,
   AdminSurveyCreatePayload,
   AdminSurveyDetail,
   AdminSurveyListItem,
@@ -68,4 +69,9 @@ export const updateAdminSurvey = (id: number, data: AdminSurveyUpdatePayload) =>
 export const getAdminSurveyResponseDetail = (surveyId: number, responseId: number) =>
   apiClient.get<ApiResponse<AdminSurveyResponseDetail>>(
     `/daodao-server/api/v1/admin/surveys/${surveyId}/responses/${responseId}`,
+  )
+
+export const getAdminSurveyAnalytics = (id: number) =>
+  apiClient.get<ApiResponse<AdminSurveyAnalytics>>(
+    `/daodao-server/api/v1/admin/surveys/${id}/analytics`,
   )

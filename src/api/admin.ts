@@ -9,6 +9,7 @@ import type {
   AIServiceConfigCreate,
   AIServiceConfigUpdate,
   ApiResponse,
+  AuthMeData,
   CursorResponse,
   DashboardStats,
   InsightPractice,
@@ -37,8 +38,17 @@ import type {
   WishStatus,
 } from './types'
 
-// ── Auth ──────────────────────────────────────────────────
+// ── Auth (admin-backend) ─────────────────────────────────
 export const ping = () => apiClient.get<ApiResponse<AdminPingData>>('/api/v1/admin/ping')
+
+// ── Auth (daodao-server) ─────────────────────────────────
+export const getAuthMe = () =>
+  apiClient.get<ApiResponse<AuthMeData>>('/daodao-server/api/v1/auth/me')
+
+export const authLogout = () => apiClient.post('/daodao-server/api/v1/auth/logout')
+
+export const authRefresh = () =>
+  apiClient.post<ApiResponse<{ token: string }>>('/daodao-server/api/v1/auth/refresh')
 
 // ── Dashboard ─────────────────────────────────────────────
 export const getDashboardStats = (dateFrom?: string, dateTo?: string) =>
@@ -205,7 +215,28 @@ export const deletePermission = (id: number) =>
   )
 
 // ── User Management (daodao-server) ──────────────────────
-export const listAdminUsers = (params?: { search?: string; page?: number; limit?: number }) =>
+export const listAdminUsers = (params?: {
+  search?: string
+  page?: number
+  limit?: number
+  roleId?: number
+  isActive?: boolean
+  isVerified?: boolean
+  personaType?: 'L' | 'C' | 'A' | 'D' | 'O'
+  badgeGranted?: boolean
+  userSource?: 'S1' | 'S2' | 'S3'
+  registrationFlow?: 'landing_page' | 'quiz' | 'action_maker'
+  creationMethod?: 'self_created' | 'copied' | 'action_generator'
+  sortBy?:
+    | 'createdAt'
+    | 'lastLoginAt'
+    | 'name'
+    | 'email'
+    | 'registrationFlow'
+    | 'creationMethod'
+    | 'daysToComplete'
+  sortOrder?: 'asc' | 'desc'
+}) =>
   apiClient.get<ApiResponse<AdminUserListItem[]>>('/daodao-server/api/v1/admin/users', { params })
 
 export const getUserRole = (userId: number) =>

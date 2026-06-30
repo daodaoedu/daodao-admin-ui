@@ -3,6 +3,7 @@ import {
   Bell,
   BookOpen,
   Bot,
+  Brain,
   Calendar,
   ChevronDown,
   ClipboardList,
@@ -30,6 +31,7 @@ import {
   UserPlus,
   Users,
   X,
+  Zap,
 } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
@@ -78,11 +80,40 @@ const navGroups: NavGroup[] = [
     items: [{ to: '/practices', label: '主題實踐', icon: Target }],
   },
   {
-    title: '溝通',
+    title: '社群',
     items: [
-      { to: '/notifications', label: '站內通知', icon: Bell },
-      { to: '/triggered-emails', label: '觸發式郵件', icon: Mail },
+      { to: '/onboarding-flows', label: 'Onboarding', icon: UserPlus },
+      { to: '/content-performance', label: '內容分析', icon: TrendingUp },
+      { to: '/community-map', label: '社群地圖', icon: Users },
+      { to: '/ai-assistant', label: 'AI 助手', icon: Bot },
     ],
+  },
+  {
+    title: '信件',
+    items: [
+      { to: '/email-management', label: '信件管理', icon: Mail },
+      { to: '/email-templates', label: '模板管理', icon: FileText },
+      { to: '/triggered-emails', label: '觸發式郵件', icon: Zap },
+    ],
+  },
+  {
+    title: '許願池',
+    items: [
+      { to: '/wishes', label: '許願池', icon: Inbox },
+      { to: '/roadmap-items', label: '路線圖項目', icon: ListTodo },
+      { to: '/roadmap-reports', label: '許願池報表', icon: LineChart },
+    ],
+  },
+  {
+    title: '問卷',
+    items: [
+      { to: '/surveys', label: '問卷管理', icon: ClipboardList },
+      { to: '/persona-questions', label: '人物誌題目', icon: Brain },
+    ],
+  },
+  {
+    title: '溝通',
+    items: [{ to: '/notifications', label: '站內通知', icon: Bell }],
   },
   {
     title: '報表',
@@ -103,7 +134,6 @@ const navGroups: NavGroup[] = [
     title: '系統',
     items: [
       { to: '/system-monitor', label: '系統監控', icon: Monitor },
-      { to: '/email-management', label: '郵件管理', icon: Mail },
       { to: '/audit-log', label: '審計日誌', icon: Folder },
     ],
   },
@@ -113,6 +143,10 @@ const navGroups: NavGroup[] = [
       { to: '/trust-levels', label: '信任等級', icon: Shield },
       { to: '/automod', label: 'AutoMod', icon: Bot },
     ],
+  },
+  {
+    title: '活動',
+    items: [{ to: '/events', label: '活動管理', icon: Calendar }],
   },
   {
     title: '學習',
@@ -125,37 +159,12 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: '遲戲化',
+    title: '遊戲化',
     items: [
       { to: '/badges', label: '徽章', icon: Trophy },
       { to: '/challenges', label: '挑戰', icon: Target },
       { to: '/leaderboards', label: '排行榜', icon: BarChart3 },
     ],
-  },
-  {
-    title: '社群',
-    items: [
-      { to: '/onboarding-flows', label: 'Onboarding', icon: UserPlus },
-      { to: '/content-performance', label: '內容績效', icon: TrendingUp },
-      { to: '/member-directory', label: '會員名錄', icon: Users },
-      { to: '/ai-assistant', label: 'AI 助手', icon: Bot },
-    ],
-  },
-  {
-    title: '活動',
-    items: [{ to: '/events', label: '活動管理', icon: Calendar }],
-  },
-  {
-    title: '許願池',
-    items: [
-      { to: '/wishes', label: '許願收件匚', icon: Inbox },
-      { to: '/roadmap-items', label: '路線圖項目', icon: ListTodo },
-      { to: '/roadmap-reports', label: '許願池報表', icon: LineChart },
-    ],
-  },
-  {
-    title: '問卷',
-    items: [{ to: '/surveys', label: '問卷管理', icon: ClipboardList }],
   },
 ]
 
@@ -189,7 +198,7 @@ function SidebarGroup({
         variant="ghost"
         size="sm"
         onClick={onToggle}
-        className="admin-nav-group w-full justify-between rounded-md border border-transparent px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:border-border hover:text-foreground"
+        className="rounded-lg border border-[var(--admin-panel-border)] bg-background/70 p-2.5 shadow-sm w-full justify-between rounded-md border border-transparent px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:border-border hover:text-foreground"
       >
         {group.title}
         <ChevronDown
@@ -210,7 +219,7 @@ function SidebarGroup({
               to={to}
               onClick={onNavigate}
               className={cn(
-                'admin-nav-group group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
+                'rounded-lg border border-[var(--admin-panel-border)] bg-background/70 p-2.5 shadow-sm group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
                 active
                   ? 'border-primary/35 bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:border-border hover:bg-background/90 hover:text-foreground',
@@ -241,9 +250,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     })
   }, [])
 
-  const initials = adminInfo?.adminNickname
-    ? adminInfo.adminNickname.slice(0, 2).toUpperCase()
-    : 'AD'
+  const initials = adminInfo?.nickname ? adminInfo.nickname.slice(0, 2).toUpperCase() : 'AD'
 
   return (
     <>
@@ -279,7 +286,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground">
-              {adminInfo?.adminNickname ?? 'Admin'}
+              {adminInfo?.nickname ?? 'Admin'}
             </p>
             <p className="truncate text-xs text-muted-foreground">管理員</p>
           </div>
@@ -301,7 +308,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-sidebar/90 lg:backdrop-blur xl:w-80 h-screen border-r border-sidebar-border/80">
+    <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-sidebar/90 lg:backdrop-blur xl:w-80 h-screen sticky top-0 border-r border-sidebar-border/80">
       <SidebarContent />
     </aside>
   )
@@ -345,10 +352,10 @@ export function MobileHeader({ children }: { children?: ReactNode }) {
           <button
             type="button"
             aria-label="Close sidebar"
-            className="admin-modal-overlay cursor-default p-0"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm cursor-default p-0"
             onClick={() => setOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-72 flex-col bg-sidebar backdrop-blur-xl animate-in slide-in-from-left duration-200">
+          <aside className="absolute inset-y-0 left-0 z-10 flex w-72 flex-col bg-sidebar backdrop-blur-xl animate-in slide-in-from-left duration-200">
             <div className="h-14 border-b border-sidebar-border/70" />
             <div className="absolute right-3 top-3.5 z-10">
               <Button

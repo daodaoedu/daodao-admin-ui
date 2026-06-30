@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { Plus, Trash2 } from 'lucide-react'
+import { BarChart2, Copy, ExternalLink, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import {
   createAdminSurvey,
   deleteAdminSurvey,
   deleteAdminSurveyResponse,
   getAdminSurvey,
+  getAdminSurveyAnalytics,
   getAdminSurveyResponseDetail,
   listAdminSurveyResponses,
   listAdminSurveys,
@@ -14,11 +15,18 @@ import {
   updateAdminSurveyStatus,
 } from '@/api/admin-survey'
 import type {
+  AdminSurveyAnalytics,
   AdminSurveyDetail,
   AdminSurveyListItem,
+  AdminSurveyPerQuestion,
   AdminSurveyQuestionForm,
   SurveyStatus,
 } from '@/api/types'
+
+const SURVEY_PUBLIC_BASE =
+  import.meta.env.VITE_SURVEY_PUBLIC_BASE ?? 'https://app.daodao.so/survey/r'
+
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -70,7 +78,7 @@ function statusVariant(status: SurveyStatus): 'success' | 'warning' | 'default' 
 
 const LIMIT = 30
 
-type DrawerMode = 'detail' | 'responses' | 'create' | 'edit' | null
+type DrawerMode = 'detail' | 'responses' | 'create' | 'edit' | 'analytics' | null
 
 export function SurveyManagementPage() {
   const qc = useQueryClient()
@@ -81,6 +89,7 @@ export function SurveyManagementPage() {
 
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
   const [activeSurveyId, setActiveSurveyId] = useState<number | null>(null)
+  const [copiedId, setCopiedId] = useState<number | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-surveys', statusFilter, search, offset],
@@ -141,6 +150,19 @@ export function SurveyManagementPage() {
     setDrawerMode('edit')
   }
 
+  const openAnalytics = (id: number) => {
+    setActiveSurveyId(id)
+    setDrawerMode('analytics')
+  }
+
+  const handleCopyLink = (survey: AdminSurveyListItem) => {
+    const url = `${SURVEY_PUBLIC_BASE}/${survey.external_id}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(survey.id)
+      setTimeout(() => setCopiedId(null), 2000)
+    })
+  }
+
   const closeDrawer = () => {
     setDrawerMode(null)
     setActiveSurveyId(null)
@@ -153,20 +175,23 @@ export function SurveyManagementPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="heading-lg">問卷管理</h1>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => {
-            setActiveSurveyId(null)
-            setDrawerMode('create')
-          }}
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          新增問卷
-        </Button>
-      </div>
+      <PageHeader
+        title="問卷管理"
+        description="建立與發布問卷調查，收集用戶回饋並統計分析作答結果。"
+        actions={
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setActiveSurveyId(null)
+              setDrawerMode('create')
+            }}
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            新增問卷
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-36">
@@ -267,9 +292,44 @@ export function SurveyManagementPage() {
                   type="button"
                   size="xs"
                   variant="secondary"
+                  onClick={() => openAnalytics(survey.id)}
+                >
+                  <BarChart2 className="mr-1 h-3 w-3" />
+                  分析
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="secondary"
                   onClick={() => openEdit(survey.id)}
                 >
                   編輯
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={survey.status !== 'active' ? 'ghost' : 'secondary'}
+                  onClick={() => handleCopyLink(survey)}
+                  title={
+                    survey.status !== 'active' ? '問卷需設為「進行中」才能公開訪問' : undefined
+                  }
+                >
+                  <Copy className="mr-1 h-3 w-3" />
+                  {copiedId === survey.id ? '已複製！' : '複製連結'}
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={survey.status !== 'active' ? 'ghost' : 'secondary'}
+                  onClick={() =>
+                    window.open(`${SURVEY_PUBLIC_BASE}/${survey.external_id}`, '_blank')
+                  }
+                  title={
+                    survey.status !== 'active' ? '問卷需設為「進行中」才能公開訪問' : undefined
+                  }
+                >
+                  <ExternalLink className="mr-1 h-3 w-3" />
+                  預覽
                 </Button>
                 <div className="w-28">
                   <Select
@@ -348,6 +408,9 @@ export function SurveyManagementPage() {
                 closeDrawer()
               }}
             />
+          )}
+          {drawerMode === 'analytics' && activeSurveyId && (
+            <SurveyAnalyticsPanel surveyId={activeSurveyId} onClose={closeDrawer} />
           )}
         </DialogContent>
       </Dialog>
@@ -661,6 +724,156 @@ function ResponseDetailPanel({
   )
 }
 
+// ── SurveyAnalyticsPanel ──────────────────────────────────────────────────
+
+function QuestionStatBlock({ q }: { q: AdminSurveyPerQuestion }) {
+  const { question_type, stats, answer_count } = q
+
+  if (question_type === 'rating' || question_type === 'scale') {
+    return (
+      <div className="flex gap-4 text-sm">
+        <span>
+          平均：<strong>{stats.avg != null ? stats.avg.toFixed(1) : '—'}</strong>
+        </span>
+        <span>
+          最低：<strong>{stats.min ?? '—'}</strong>
+        </span>
+        <span>
+          最高：<strong>{stats.max ?? '—'}</strong>
+        </span>
+        <span className="ml-auto text-muted-foreground">{answer_count} 人作答</span>
+      </div>
+    )
+  }
+
+  if (question_type === 'yesno') {
+    const t = stats.true ?? 0
+    const f = stats.false ?? 0
+    const total = t + f || 1
+    return (
+      <div className="space-y-1 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="w-6 text-right text-muted-foreground">是</span>
+          <div className="flex-1 rounded-full bg-muted h-2 overflow-hidden">
+            <div
+              className="h-2 rounded-full bg-success"
+              style={{ width: `${(t / total) * 100}%` }}
+            />
+          </div>
+          <span className="w-10 text-right">{t}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-6 text-right text-muted-foreground">否</span>
+          <div className="flex-1 rounded-full bg-muted h-2 overflow-hidden">
+            <div
+              className="h-2 rounded-full bg-destructive"
+              style={{ width: `${(f / total) * 100}%` }}
+            />
+          </div>
+          <span className="w-10 text-right">{f}</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (stats.option_counts && stats.option_counts.length > 0) {
+    const max = Math.max(...stats.option_counts.map((o) => o.count), 1)
+    return (
+      <div className="space-y-1.5 text-sm">
+        {stats.option_counts.map((o) => (
+          <div key={o.option_id} className="flex items-center gap-2">
+            <span className="w-32 truncate text-xs text-muted-foreground">{o.option_text}</span>
+            <div className="flex-1 rounded-full bg-muted h-2 overflow-hidden">
+              <div
+                className="h-2 rounded-full bg-primary"
+                style={{ width: `${(o.count / max) * 100}%` }}
+              />
+            </div>
+            <span className="w-8 text-right text-xs">{o.count}</span>
+          </div>
+        ))}
+        <p className="text-xs text-muted-foreground">共 {answer_count} 人作答</p>
+      </div>
+    )
+  }
+
+  if (stats.sample_answers && stats.sample_answers.length > 0) {
+    return (
+      <div className="space-y-1 text-sm">
+        {stats.sample_answers.filter(Boolean).map((a) => (
+          <p key={a} className="rounded bg-muted px-2 py-1 text-xs">
+            「{a}」
+          </p>
+        ))}
+        <p className="text-xs text-muted-foreground">共 {answer_count} 人作答（顯示前 5 筆）</p>
+      </div>
+    )
+  }
+
+  return <p className="text-xs text-muted-foreground">尚無回應資料</p>
+}
+
+function SurveyAnalyticsPanel({ surveyId, onClose }: { surveyId: number; onClose: () => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-survey-analytics', surveyId],
+    queryFn: () =>
+      getAdminSurveyAnalytics(surveyId).then((r) => r.data.data as AdminSurveyAnalytics),
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="heading-sm">問卷分析</h2>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+          關閉
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">載入中...</p>
+      ) : !data ? (
+        <p className="text-sm text-muted-foreground">無法載入分析資料</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-2xl font-bold">{data.response_count}</p>
+              <p className="text-xs text-muted-foreground">回應數</p>
+            </div>
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-2xl font-bold">{data.view_count}</p>
+              <p className="text-xs text-muted-foreground">瀏覽數</p>
+            </div>
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-2xl font-bold">
+                {data.avg_duration_seconds != null
+                  ? `${Math.round(data.avg_duration_seconds)}s`
+                  : '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">平均填寫時長</p>
+            </div>
+          </div>
+
+          {data.per_question.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">各題統計</h3>
+              {data.per_question.map((q, i) => (
+                <div key={q.question_id} className="rounded-lg border border-border p-3 space-y-2">
+                  <div className="flex items-start gap-2 text-sm">
+                    <span className="shrink-0 text-muted-foreground">Q{i + 1}.</span>
+                    <p className="font-medium">{q.question_text}</p>
+                  </div>
+                  <QuestionStatBlock q={q} />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 // ── SurveyFormPanel ────────────────────────────────────────────────────────
 
 interface QuestionDraft extends AdminSurveyQuestionForm {
@@ -696,7 +909,10 @@ function SurveyFormPanel({
 }) {
   const { data: existingData, isLoading: loadingExisting } = useQuery({
     queryKey: ['admin-survey-detail', surveyId],
-    queryFn: () => getAdminSurvey(surveyId!).then((r) => r.data.data),
+    queryFn: () => {
+      if (surveyId === undefined) throw new Error('Survey id is required')
+      return getAdminSurvey(surveyId).then((r) => r.data.data)
+    },
     enabled: mode === 'edit' && surveyId !== undefined,
   })
 
@@ -1007,7 +1223,10 @@ function SurveyFormInner({
             {OPTION_TYPES.has(q.question_type) && (
               <div className="space-y-1.5 pl-2">
                 {q.options.map((o, oi) => (
-                  <div key={oi} className="flex items-center gap-1.5">
+                  <div
+                    key={o.option_text || `option-${o.position}`}
+                    className="flex items-center gap-1.5"
+                  >
                     <span className="shrink-0 text-xs text-muted-foreground">{oi + 1}.</span>
                     <Input
                       value={o.option_text}

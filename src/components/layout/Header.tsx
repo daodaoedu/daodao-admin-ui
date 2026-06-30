@@ -20,7 +20,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/roles-permissions': '角色權限',
   '/user-quotas': 'Token 配額',
   '/practices': '主題實踐',
-  '/content-performance': '內容績效',
+  '/content-performance': '內容分析',
   '/notifications': '站內通知',
   '/triggered-emails': '觸發式郵件',
   '/scheduled-reports': '排程報表',
@@ -42,9 +42,12 @@ const ROUTE_TITLES: Record<string, string> = {
   '/challenges': '挑戰管理',
   '/leaderboards': '排行榜',
   '/onboarding-flows': 'Onboarding 流程',
-  '/member-directory': '會員名錄',
+  '/community-map': '社群地圖',
   '/ai-assistant': 'AI 助手',
   '/events': '活動管理',
+  '/email-templates': 'Email 模板',
+  '/email-templates/:id/edit': 'Email 模板編輯',
+  '/persona-questions': '人物誌題目',
 }
 
 export function Header() {
@@ -53,12 +56,12 @@ export function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const initials = adminInfo?.adminNickname
-    ? adminInfo.adminNickname.slice(0, 2).toUpperCase()
-    : 'AD'
+  const initials = adminInfo?.nickname ? adminInfo.nickname.slice(0, 2).toUpperCase() : 'AD'
 
   const pageTitle = (() => {
     if (location.pathname.startsWith('/users/')) return ROUTE_TITLES['/users/:userId']
+    if (/^\/email-templates\/.+\/edit$/.test(location.pathname))
+      return ROUTE_TITLES['/email-templates/:id/edit']
 
     return ROUTE_TITLES[location.pathname] || location.pathname.replace('/', '') || 'Dashboard'
   })()
@@ -71,7 +74,7 @@ export function Header() {
           <Input
             type="search"
             placeholder="搜尋..."
-            className="admin-control h-9 w-full pl-9 pr-12"
+            className="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 h-9 w-full pl-9 pr-12"
           />
 
           <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 select-none rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-block">
@@ -112,7 +115,7 @@ export function Header() {
           <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-md border border-border bg-popover p-1 shadow-lg">
             <div className="border-b border-border px-3 py-2">
               <p className="text-sm font-medium text-foreground">
-                {adminInfo?.adminNickname ?? 'Admin'}
+                {adminInfo?.nickname ?? 'Admin'}
               </p>
               <p className="text-xs text-muted-foreground">管理員</p>
             </div>

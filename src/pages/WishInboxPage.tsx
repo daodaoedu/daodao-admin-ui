@@ -9,6 +9,7 @@ import {
   promoteWish,
 } from '@/api/admin-roadmap'
 import type { AdminWishItem, RoadmapStatus, WishCategory, WishStatus } from '@/api/types'
+import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -189,7 +190,10 @@ export function WishInboxPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="heading-lg">許願收件匚</h1>
+      <PageHeader
+        title="許願池"
+        description="查看用戶提交的功能需求與改善建議，回覆狀態並轉為路線圖項目。"
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="w-40">
@@ -313,7 +317,9 @@ export function WishInboxPage() {
         <DialogContent className="h-auto max-h-[85vh] max-w-lg overflow-y-auto p-6">
           {mode === 'link' && actionWish && (
             <div className="space-y-4">
-              <h2 className="heading-sm">歸入現有路線圖項目</h2>
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                歸入現有路線圖項目
+              </h2>
               <div>
                 <label htmlFor="link-item" className="mb-1 block text-sm font-medium">
                   選擇項目
@@ -357,7 +363,9 @@ export function WishInboxPage() {
 
           {mode === 'promote' && actionWish && (
             <div className="space-y-4">
-              <h2 className="heading-sm">促成新路線圖項目</h2>
+              <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+                促成新路線圖項目
+              </h2>
               <div>
                 <label htmlFor="promote-title" className="mb-1 block text-sm font-medium">
                   對外標題

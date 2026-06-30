@@ -3,6 +3,7 @@ import { Lock, Search } from 'lucide-react'
 import { useState } from 'react'
 import { createComplianceHold } from '@/api/admin-audit'
 import { ExportButton } from '@/components/ExportButton'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -108,15 +109,17 @@ export function AuditLogPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="heading-lg">審計日誌</h1>
-        <ExportButton
-          data={filtered as unknown as Record<string, unknown>[]}
-          columns={exportColumns}
-          fileName="audit-log"
-        />
-      </div>
+      <PageHeader
+        title="審計日誌"
+        description="追蹤所有管理員操作記錄，確保操作可稽核、可追溯，符合資安合規需求。"
+        actions={
+          <ExportButton
+            data={filtered as unknown as Record<string, unknown>[]}
+            columns={exportColumns}
+            fileName="audit-log"
+          />
+        }
+      />
 
       {/* Filter Bar */}
       <div className="flex flex-wrap items-end gap-3">
@@ -135,7 +138,7 @@ export function AuditLogPage() {
               setPage(1)
             }}
             options={ADMIN_FILTER_OPTIONS}
-            triggerClassName="admin-select"
+            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           />
         </div>
 
@@ -154,7 +157,7 @@ export function AuditLogPage() {
               setPage(1)
             }}
             options={ACTION_FILTER_OPTIONS}
-            triggerClassName="admin-select"
+            triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           />
         </div>
 
@@ -220,10 +223,10 @@ export function AuditLogPage() {
       </div>
 
       {/* Log Table */}
-      <div className="overflow-x-auto admin-panel-card">
-        <table className="admin-table-shell text-sm">
+      <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="admin-table-head">
+            <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
               {['時間', '管理員', '操作類型', '目標', '詳情', 'IP'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium">
                   {h}
@@ -240,7 +243,10 @@ export function AuditLogPage() {
               </tr>
             ) : (
               paginated.map((log) => (
-                <tr key={log.id} className="admin-table-row last:border-0 transition-colors">
+                <tr
+                  key={log.id}
+                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0 transition-colors"
+                >
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">{log.time}</td>
                   <td className="px-4 py-3 font-medium">{log.admin}</td>
                   <td className="px-4 py-3">
@@ -295,10 +301,12 @@ export function AuditLogPage() {
       </div>
 
       {/* Compliance Lock Section */}
-      <div className="admin-panel-card p-5">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
         <div className="flex items-center gap-2">
           <Lock className="h-5 w-5 text-muted-foreground" />
-          <h2 className="heading-sm">合規鎖定</h2>
+          <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
+            合規鎖定
+          </h2>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           鎖定期間內的日誌不會被自動清除，以符合稽核與合規需求。
