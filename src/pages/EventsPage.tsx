@@ -1,5 +1,5 @@
 import { Calendar, Clock, Edit, MapPin, Plus, RefreshCw, Send, Users, Video } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useEventRSVPs, useEvents, useEventTemplates } from '@/hooks/useEvents'
@@ -39,7 +39,7 @@ export function EventsPage() {
   const { data: rsvps } = useEventRSVPs(activeTab === 'upcoming' ? selectedEventId : null)
   const { data: templates } = useEventTemplates()
 
-  const displayUpcomingEvents = upcomingEvents ?? []
+  const displayUpcomingEvents = useMemo(() => upcomingEvents ?? [], [upcomingEvents])
   const displayPastEvents = pastEvents ?? []
   const displayRsvps = rsvps ?? []
   const displayTemplates = templates ?? []

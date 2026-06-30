@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bot, ShieldAlert, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type {
   AutoModFlagQueueItem,
   AutoModLogItem,
@@ -82,9 +82,17 @@ export function AutoModPage() {
   const blacklist: string[] = blocklistData?.items ?? []
   const reportQueue: AutoModFlagQueueItem[] = flagQueueData?.items ?? []
 
-  const [mlEnabled, setMlEnabled] = useState(spamData?.enabled ?? false)
+  const [mlEnabled, setMlEnabled] = useState(false)
   const [newBlacklistWord, setNewBlacklistWord] = useState('')
-  const [threshold, setThreshold] = useState(communityConfigData?.threshold ?? 3)
+  const [threshold, setThreshold] = useState(3)
+
+  useEffect(() => {
+    if (spamData?.enabled !== undefined) setMlEnabled(spamData.enabled)
+  }, [spamData?.enabled])
+
+  useEffect(() => {
+    if (communityConfigData?.threshold !== undefined) setThreshold(communityConfigData.threshold)
+  }, [communityConfigData?.threshold])
 
   const toggleRuleMutation = useMutation({
     mutationFn: (rule: { id: number; enabled: boolean }) =>
