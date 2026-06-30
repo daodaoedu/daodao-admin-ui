@@ -965,3 +965,308 @@ export interface AdminPersonaTranslationUpsert {
   prompt: string
   options?: string[] | null
 }
+
+// ── Admin User Detail ─────────────────────────────────────────────────
+export interface AdminUserDetail {
+  id: string
+  internalId: number
+  name: string | null
+  email: string | null
+  photoURL: string | null
+  emailVerified: boolean
+  isActive: boolean
+  roles: Array<{ id: number; name: string }>
+  permissions: string[]
+  createdAt: string
+  lastLoginAt: string | null
+  activityStats?: {
+    totalCheckins: number
+    totalPosts: number
+    totalComments: number
+    lastActivityAt: string | null
+  }
+}
+
+export interface AdminLoginHistoryItem {
+  id: number
+  loginAt: string
+  ipAddress: string | null
+  userAgent: string | null
+}
+
+export interface AdminActivityStats {
+  totalCheckins: number
+  totalPosts: number
+  totalComments: number
+  totalReactions: number
+  lastActivityAt: string | null
+}
+
+export interface PracticeStats {
+  total: number
+  active: number
+  completed: number
+  totalCheckIns: number
+  avgCheckInsPerPractice: number
+}
+
+export interface ActiveUsersTrendPoint {
+  date: string
+  dau: number
+  wau: number
+  mau: number
+}
+
+export interface ActiveUsersTrendResponse {
+  data: ActiveUsersTrendPoint[]
+  summary: {
+    currentDau: number
+    currentWau: number
+    currentMau: number
+    dauChangePercent: number
+    wauChangePercent: number
+    mauChangePercent: number
+  }
+}
+
+export interface ActiveUsersFunnelStep {
+  label: string
+  value: number
+}
+
+export interface ActiveUsersFunnelResponse {
+  steps: ActiveUsersFunnelStep[]
+}
+
+export interface UserCohortRow {
+  label: string
+  day1: number
+  day7: number
+  day14: number
+  day30: number
+  day60: number
+  day90: number
+}
+
+export interface UserCohortResponse {
+  rows: UserCohortRow[]
+}
+
+export interface EmailHistoryItem {
+  id: number
+  recipient: string
+  subject: string
+  status: string
+  sentAt: string
+  type: string
+}
+
+export interface EmailHistoryResponse {
+  items: EmailHistoryItem[]
+  summary: {
+    totalSent: number
+    successCount: number
+    failedCount: number
+    successRate: number
+  }
+  pagination: OffsetPagination
+}
+
+// ── Wish Pool / Roadmap ──────────────────────────────────────────────
+export type WishCategory =
+  | 'operation'
+  | 'practice'
+  | 'social'
+  | 'explore'
+  | 'challenge'
+  | 'ai'
+  | 'profile'
+  | 'other'
+
+export type WishStatus = 'pending' | 'linked' | 'archived'
+
+export type RoadmapStatus =
+  | 'collected'
+  | 'discussing'
+  | 'planned'
+  | 'in_progress'
+  | 'done'
+  | 'parked'
+
+/** 游標分頁（許願池端點，與 OffsetPagination 不同） */
+export interface CursorPagination {
+  hasMore: boolean
+  nextCursor: string | null
+  count: number
+  limit: number
+}
+
+export interface CursorResponse<T> {
+  success: boolean
+  data: T[]
+  pagination: CursorPagination
+  timestamp: string
+}
+
+export interface AdminWishItem {
+  id: number
+  category: WishCategory
+  situation: string
+  desire: string
+  status: WishStatus
+  contact_email: string | null
+  internal_module_tag: string | null
+  source: 'web' | 'app'
+  linked_roadmap_item_id: number | null
+  created_at: string
+  submitter: {
+    external_id: string | null
+    nickname: string | null
+    email: string | null
+  }
+}
+
+export interface AdminRoadmapItem {
+  id: number
+  external_id: string
+  title: string
+  description: string
+  category: WishCategory
+  status: RoadmapStatus
+  support_count: number
+  is_public: boolean
+  pinned: boolean
+  sort_order: number
+  shipped_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface LinkWishPayload {
+  roadmap_item_id: number
+  internal_module_tag?: string
+}
+
+export interface PromoteWishPayload {
+  title: string
+  description: string
+  category: WishCategory
+  status?: RoadmapStatus
+  internal_module_tag?: string
+}
+
+export interface CreateRoadmapItemPayload {
+  title: string
+  description: string
+  category: WishCategory
+  status?: RoadmapStatus
+  is_public?: boolean
+  pinned?: boolean
+  sort_order?: number
+}
+
+export interface UpdateRoadmapItemPayload {
+  title?: string
+  description?: string
+  category?: WishCategory
+  status?: RoadmapStatus
+  is_public?: boolean
+  pinned?: boolean
+  sort_order?: number
+}
+
+export interface RoadmapReport {
+  popularCategories: Array<{ category: WishCategory; count: number }>
+  popularItems: Array<{
+    external_id: string
+    title: string
+    status: RoadmapStatus
+    support_count: number
+  }>
+  wishTrend: Array<{ period: string; count: number }>
+  backlog: {
+    pendingCount: number
+    oldestPendingWaitingHours: number | null
+  }
+}
+
+// ── Survey (問卷) ─────────────────────────────────────────────────
+export type SurveyStatus = 'draft' | 'active' | 'closed' | 'archived'
+
+export interface AdminSurveyListItem {
+  id: number
+  external_id: string
+  title: string
+  status: SurveyStatus
+  is_anonymous: boolean
+  tags: string[]
+  view_count: number
+  created_at: string
+  response_count: number
+  creator: {
+    id: number | null
+    email: string | null
+    nickname: string | null
+  }
+}
+
+export interface AdminSurveyDetail extends AdminSurveyListItem {
+  description: string | null
+  max_responses: number | null
+  cover_url: string | null
+  updated_at: string
+  questions: Array<{
+    id: number
+    question_text: string
+    question_type: string
+    is_required: boolean
+    position: number
+    options: Array<{ id: number; option_text: string; position: number }>
+  }>
+}
+
+export interface AdminSurveyResponse {
+  id: number
+  user_id: number | null
+  completed_at: string
+  answer_count: number
+}
+
+export interface AdminSurveyQuestionForm {
+  question_text: string
+  question_type: string
+  is_required: boolean
+  position: number
+  options: Array<{ option_text: string; position: number }>
+}
+
+export interface AdminSurveyCreatePayload {
+  title: string
+  description?: string
+  is_anonymous?: boolean
+  tags?: string[]
+  max_responses?: number | null
+  start_time?: string | null
+  end_time?: string | null
+  questions?: AdminSurveyQuestionForm[]
+}
+
+export type AdminSurveyUpdatePayload = Partial<AdminSurveyCreatePayload>
+
+export interface AdminSurveyAnswerItem {
+  question_id: number
+  question_text: string
+  question_type: string
+  answer_text: string | null
+  selected_option_ids: number[]
+  selected_options: string[]
+  rating_value: number | null
+  boolean_value: boolean | null
+}
+
+export interface AdminSurveyResponseDetail {
+  id: number
+  user_id: number | null
+  completed_at: string
+  answers: AdminSurveyAnswerItem[]
+}

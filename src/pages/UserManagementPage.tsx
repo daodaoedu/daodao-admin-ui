@@ -480,6 +480,15 @@ export function UserManagementPage() {
             { key: 'lastLoginAt', header: '最後登入' },
           ]}
         />
+        <Select
+          value={tagFilter}
+          onValueChange={(value) => {
+            setTagFilter(value)
+            setPage(1)
+          }}
+          options={tagOptions}
+          triggerClassName="admin-control"
+        />
       </div>
 
       {/* Toolbar */}

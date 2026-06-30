@@ -154,6 +154,40 @@ export function DashboardPage() {
   }
   const allHealthy = Object.values(serviceStatus).every((s) => s === 'healthy')
 
+  const serviceStatus = {
+    email: getServiceStatus(emailHealth?.status),
+    db: getServiceStatus(dbInfo?.status),
+    redis: getServiceStatus(redisInfo?.status),
+  }
+
+  const systemHealth = {
+    status:
+      serviceStatus.email === 'healthy' &&
+      serviceStatus.db === 'healthy' &&
+      serviceStatus.redis === 'healthy'
+        ? ('healthy' as const)
+        : emailHealth || dbInfo || redisInfo
+          ? ('degraded' as const)
+          : ('degraded' as const),
+    services: [
+      {
+        name: 'SMTP',
+        status: serviceStatus.email,
+        label: '郵件服務',
+      },
+      {
+        name: 'Database',
+        status: serviceStatus.db,
+        label: '資料庫',
+      },
+      {
+        name: 'Redis',
+        status: serviceStatus.redis,
+        label: '快取',
+      },
+    ],
+  }
+
   return (
     <div className="space-y-6">
       {/* ── Header ───────────────────────────────────────── */}
