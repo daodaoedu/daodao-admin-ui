@@ -135,6 +135,8 @@ export const listPractices = (params?: {
   query?: string
   status?: PracticeStatus | 'all'
   privacyStatus?: string
+  durationDays?: number
+  tagId?: number
   startDate?: string
   endDate?: string
   sort?: 'createdAt' | 'updatedAt' | 'likeCount'

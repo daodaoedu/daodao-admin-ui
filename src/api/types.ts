@@ -336,6 +336,7 @@ export interface UserRoleInfo {
 export interface AdminUserListItem {
   id: string
   internalId: number
+  customId: string | null
   name: string | null
   email: string | null
   photoURL: string | null
@@ -349,6 +350,10 @@ export interface AdminUserListItem {
   personaType: 'L' | 'C' | 'A' | 'D' | 'O' | null
   badgeGranted: boolean | null
   userSource: string | null
+  tags: Array<{ id: number; name: string }>
+  registrationFlow: 'landing_page' | 'quiz' | 'action_maker' | null
+  creationMethod: 'self_created' | 'copied' | 'action_generator' | null
+  daysToComplete: number | null
 }
 
 // ── Admin User Detail ─────────────────────────────────────────────────
@@ -959,4 +964,32 @@ export interface AdminPersonaQuestionUpdate {
 export interface AdminPersonaTranslationUpsert {
   prompt: string
   options?: string[] | null
+}
+
+// ── Admin User Detail ─────────────────────────────────────────────────
+export interface AdminUserDetail {
+  id: string
+  internalId: number
+  name: string | null
+  email: string | null
+  photoURL: string | null
+  emailVerified: boolean
+  isActive: boolean
+  roles: Array<{ id: number; name: string }>
+  permissions: string[]
+  createdAt: string
+  lastLoginAt: string | null
+  activityStats?: {
+    totalCheckins: number
+    totalPosts: number
+    totalComments: number
+    lastActivityAt: string | null
+  }
+}
+
+export interface AdminLoginHistoryItem {
+  id: number
+  loginAt: string
+  ipAddress: string | null
+  userAgent: string | null
 }

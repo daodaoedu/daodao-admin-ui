@@ -1,10 +1,109 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Edit2, Plus, Trash2 } from 'lucide-react'
+import { Edit2, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
-import { deleteTag, deleteTagRule } from '@/api/admin-users'
+import type { TagItem } from '@/api/admin-users'
+import { createTag, deleteTag, deleteTagRule, updateTag } from '@/api/admin-users'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useTagRules, useUserTags } from '@/hooks/useUserTags'
+
+const DEFAULT_COLORS = [
+  '#3b82f6',
+  '#ef4444',
+  '#22c55e',
+  '#f59e0b',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#f97316',
+]
+
+function TagFormModal({ tag, onClose }: { tag: TagItem | null; onClose: () => void }) {
+  const queryClient = useQueryClient()
+  const isEdit = tag !== null
+  const [name, setName] = useState(tag?.name ?? '')
+  const [color, setColor] = useState(tag?.color ?? DEFAULT_COLORS[0])
+
+  const createMutation = useMutation({
+    mutationFn: (data: { name: string; color: string }) => createTag(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'tags'] })
+      onClose()
+    },
+  })
+
+  const updateMutation = useMutation({
+    // biome-ignore lint/style/noNonNullAssertion: tag is non-null when isEdit is true
+    mutationFn: (data: { name?: string; color?: string }) => updateTag(tag!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'tags'] })
+      onClose()
+    },
+  })
+
+  const isPending = createMutation.isPending || updateMutation.isPending
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!name.trim()) return
+    if (isEdit) {
+      updateMutation.mutate({ name: name.trim(), color })
+    } else {
+      createMutation.mutate({ name: name.trim(), color })
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold">{isEdit ? '編輯標籤' : '新增標籤'}</h3>
+          <button type="button" onClick={onClose} className="rounded-full p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="tag-name" className="mb-1 block text-sm font-medium">
+              標籤名稱
+            </label>
+            <input
+              id="tag-name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="輸入標籤名稱"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div>
+            <span className="mb-1 block text-sm font-medium">顏色</span>
+            <div className="flex gap-2">
+              {DEFAULT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={`h-7 w-7 rounded-full border-2 transition-all ${color === c ? 'border-foreground scale-110' : 'border-transparent'}`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              取消
+            </Button>
+            <Button type="submit" disabled={isPending || !name.trim()}>
+              {isPending ? '儲存中...' : isEdit ? '更新' : '建立'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 export function UserTagsPage() {
   const queryClient = useQueryClient()
@@ -12,6 +111,7 @@ export function UserTagsPage() {
   const { data: apiRules = [], isLoading: rulesLoading } = useTagRules()
 
   const [localToggles, setLocalToggles] = useState<Record<number, boolean>>({})
+  const [editingTag, setEditingTag] = useState<TagItem | null | 'new'>(null)
 
   const autoRules = apiRules.map((r) => ({
     ...r,
@@ -57,7 +157,7 @@ export function UserTagsPage() {
         title="用戶標籤管理"
         description="建立與管理用戶分群標籤，作為精準通知與內容推播的依據。"
         actions={
-          <Button type="button" onClick={() => alert('功能開發中')}>
+          <Button type="button" onClick={() => setEditingTag('new')}>
             <Plus className="mr-1.5 h-4 w-4" />
             新增標籤
           </Button>
@@ -65,10 +165,10 @@ export function UserTagsPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Manual Tags */}
-        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        {/* All Tags */}
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
           <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
-            手動標籤
+            全部標籤
           </h2>
           {tagsLoading ? (
             <p className="text-sm text-muted-foreground">載入中…</p>
@@ -90,7 +190,7 @@ export function UserTagsPage() {
                   {tags.map((tag) => (
                     <tr
                       key={tag.id}
-                      className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                      className="border-b border-border/80 hover:bg-muted/45 transition-colors"
                     >
                       <td className="px-4 py-2">
                         <span className="inline-flex items-center gap-2">
@@ -109,7 +209,7 @@ export function UserTagsPage() {
                             type="button"
                             variant="secondary"
                             size="xs"
-                            onClick={() => alert('功能開發中')}
+                            onClick={() => setEditingTag(tag)}
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                           </Button>
@@ -133,7 +233,7 @@ export function UserTagsPage() {
         </div>
 
         {/* Auto Tag Rules */}
-        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
           <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
             自動標籤規則
           </h2>
@@ -157,7 +257,7 @@ export function UserTagsPage() {
                   {autoRules.map((rule) => (
                     <tr
                       key={rule.id}
-                      className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
+                      className="border-b border-border/80 hover:bg-muted/45 transition-colors"
                     >
                       <td className="px-4 py-2 font-mono text-xs">{rule.tagId}</td>
                       <td className="px-4 py-2 text-xs">{rule.conditionType}</td>
@@ -186,14 +286,6 @@ export function UserTagsPage() {
                             type="button"
                             variant="secondary"
                             size="xs"
-                            onClick={() => alert('功能開發中')}
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="xs"
                             onClick={() => handleDeleteTagRule(rule.id)}
                             disabled={deleteTagRuleMutation.isPending}
                           >
@@ -209,6 +301,13 @@ export function UserTagsPage() {
           )}
         </div>
       </div>
+
+      {editingTag !== null && (
+        <TagFormModal
+          tag={editingTag === 'new' ? null : editingTag}
+          onClose={() => setEditingTag(null)}
+        />
+      )}
     </div>
   )
 }

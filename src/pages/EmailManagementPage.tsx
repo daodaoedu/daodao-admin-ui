@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   AlertCircle,
   CheckCircle2,
@@ -12,15 +12,19 @@ import {
   Send,
   Timer,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { retryFailedEmails, sendCustomEmail } from '@/api/admin-system'
+import { listAdminUsers } from '@/api/admin'
+import { retryFailedEmails, sendBulkEmail, sendCustomEmail } from '@/api/admin-system'
 import { EmailHistoryTable } from '@/components/EmailHistoryTable'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { useEmailHealth, useEmailStats } from '@/hooks/useEmailManagement'
 import { useEmailTemplates } from '@/hooks/useEmailTemplates'
+import { useUserTags } from '@/hooks/useUserTags'
 import { cn } from '@/lib/utils'
+
+type RecipientMode = 'email' | 'tag' | 'users'
 
 type EmailTab = 'history' | 'compose' | 'retry'
 
@@ -61,7 +65,24 @@ export function EmailManagementPage() {
   function setActiveTab(tab: EmailTab) {
     setSearchParams({ tab }, { replace: true })
   }
-  const [formData, setFormData] = useState({ to: '', subject: '', body: '' })
+  const [formData, setFormData] = useState({ to: '', subject: '', body: '', scheduledAt: '' })
+  const [recipientMode, setRecipientMode] = useState<RecipientMode>('email')
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+  const [userSearchInput, setUserSearchInput] = useState('')
+  const [userSearch, setUserSearch] = useState('')
+  const [selectedUsers, setSelectedUsers] = useState<
+    Array<{ id: number; name: string; email: string }>
+  >([])
+  const { data: tags = [] } = useUserTags()
+  useEffect(() => {
+    const timer = setTimeout(() => setUserSearch(userSearchInput), 300)
+    return () => clearTimeout(timer)
+  }, [userSearchInput])
+  const { data: searchedUsers } = useQuery({
+    queryKey: ['admin-user-search', userSearch],
+    queryFn: () => listAdminUsers({ search: userSearch, limit: 10 }).then((r) => r.data.data ?? []),
+    enabled: recipientMode === 'users' && userSearch.length >= 2,
+  })
   const { data: templates } = useEmailTemplates()
   const [sendResult, setSendResult] = useState<{
     type: 'success' | 'error'
@@ -89,7 +110,7 @@ export function EmailManagementPage() {
   })
 
   const sendMutation = useMutation({
-    mutationFn: (data: { to: string; subject: string; body: string }) => {
+    mutationFn: (data: { to: string; subject: string; body: string; scheduledAt?: string }) => {
       const isFullHtml =
         data.body.trimStart().startsWith('<!DOCTYPE') || data.body.trimStart().startsWith('<html')
       return sendCustomEmail({
@@ -98,11 +119,16 @@ export function EmailManagementPage() {
         htmlContent: isFullHtml
           ? data.body
           : `<div style="font-family: sans-serif; line-height: 1.6;">${data.body.replace(/\n/g, '<br />')}</div>`,
+        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt).toISOString() : undefined,
       })
     },
     onSuccess: () => {
-      setSendResult({ type: 'success', message: '郵件發送成功' })
-      setFormData({ to: '', subject: '', body: '' })
+      const isScheduled = formData.scheduledAt !== ''
+      setSendResult({
+        type: 'success',
+        message: isScheduled ? `郵件已排程於 ${formData.scheduledAt} 發送` : '郵件發送成功',
+      })
+      setFormData({ to: '', subject: '', body: '', scheduledAt: '' })
       setTimeout(() => setSendResult(null), 3000)
     },
     onError: (err: Error) => {
@@ -111,11 +137,69 @@ export function EmailManagementPage() {
     },
   })
 
+  const bulkMutation = useMutation({
+    mutationFn: (data: {
+      subject: string
+      body: string
+      tagIds?: number[]
+      userIds?: number[]
+      scheduledAt?: string
+    }) => {
+      const isFullHtml =
+        data.body.trimStart().startsWith('<!DOCTYPE') || data.body.trimStart().startsWith('<html')
+      return sendBulkEmail({
+        subject: data.subject,
+        htmlContent: isFullHtml
+          ? data.body
+          : `<div style="font-family: sans-serif; line-height: 1.6;">${data.body.replace(/\n/g, '<br />')}</div>`,
+        tagIds: data.tagIds,
+        userIds: data.userIds,
+        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt).toISOString() : undefined,
+      })
+    },
+    onSuccess: () => {
+      setSendResult({ type: 'success', message: '批量郵件已排入佇列' })
+      setFormData({ to: '', subject: '', body: '', scheduledAt: '' })
+      setSelectedTagIds([])
+      setSelectedUsers([])
+      setTimeout(() => setSendResult(null), 3000)
+    },
+    onError: (err: Error) => {
+      setSendResult({ type: 'error', message: err.message || '批量發送失敗' })
+      setTimeout(() => setSendResult(null), 5000)
+    },
+  })
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
-    if (!formData.to || !formData.subject || !formData.body) return
+    if (!formData.subject || !formData.body) return
     setSendResult(null)
-    sendMutation.mutate(formData)
+
+    if (recipientMode === 'email') {
+      if (!formData.to) return
+      sendMutation.mutate({
+        to: formData.to,
+        subject: formData.subject,
+        body: formData.body,
+        scheduledAt: formData.scheduledAt || undefined,
+      })
+    } else if (recipientMode === 'tag') {
+      if (selectedTagIds.length === 0) return
+      bulkMutation.mutate({
+        subject: formData.subject,
+        body: formData.body,
+        tagIds: selectedTagIds,
+        scheduledAt: formData.scheduledAt || undefined,
+      })
+    } else {
+      if (selectedUsers.length === 0) return
+      bulkMutation.mutate({
+        subject: formData.subject,
+        body: formData.body,
+        userIds: selectedUsers.map((u) => u.id),
+        scheduledAt: formData.scheduledAt || undefined,
+      })
+    }
   }
 
   const isConnected = health?.status === 'connected'
@@ -247,37 +331,185 @@ export function EmailManagementPage() {
                     </div>
                   </div>
                 )}
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-3">
                   <div>
-                    <label htmlFor="email-to" className="mb-1 block text-sm font-medium">
-                      收件人
-                    </label>
-                    <input
-                      id="email-to"
-                      type="email"
-                      required
-                      placeholder="user@example.com"
-                      value={formData.to}
-                      onChange={(event) =>
-                        setFormData((prev) => ({ ...prev, to: event.target.value }))
-                      }
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                    />
+                    <span className="mb-1 block text-sm font-medium">收件對象</span>
+                    <div className="inline-flex rounded-lg bg-muted p-0.5 gap-0.5">
+                      {[
+                        { value: 'email' as const, label: '指定 Email' },
+                        { value: 'tag' as const, label: '依標籤' },
+                        { value: 'users' as const, label: '搜尋用戶' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setRecipientMode(opt.value)}
+                          className={cn(
+                            'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                            recipientMode === opt.value
+                              ? 'bg-card text-foreground shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground',
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="email-subject" className="mb-1 block text-sm font-medium">
-                      主旨
-                    </label>
+
+                  {recipientMode === 'email' && (
+                    <div>
+                      <input
+                        id="email-to"
+                        type="email"
+                        required
+                        placeholder="user@example.com"
+                        value={formData.to}
+                        onChange={(event) =>
+                          setFormData((prev) => ({ ...prev, to: event.target.value }))
+                        }
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+                  )}
+
+                  {recipientMode === 'tag' && (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1.5">
+                        {tags.map((tag) => {
+                          const isSelected = selectedTagIds.includes(tag.id)
+                          return (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              onClick={() =>
+                                setSelectedTagIds((prev) =>
+                                  isSelected
+                                    ? prev.filter((id) => id !== tag.id)
+                                    : [...prev, tag.id],
+                                )
+                              }
+                              className={cn(
+                                'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                                isSelected
+                                  ? 'border-primary bg-primary/10 text-primary'
+                                  : 'border-border text-muted-foreground hover:border-primary/50',
+                              )}
+                            >
+                              <span
+                                className="inline-block h-2 w-2 rounded-full"
+                                style={{ backgroundColor: tag.color }}
+                              />
+                              {tag.name}
+                              <span className="text-[10px] opacity-60">{tag.userCount}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {selectedTagIds.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          已選 {selectedTagIds.length} 個標籤，預估{' '}
+                          {tags
+                            .filter((t) => selectedTagIds.includes(t.id))
+                            .reduce((s, t) => s + t.userCount, 0)
+                            .toLocaleString()}{' '}
+                          位收件者
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {recipientMode === 'users' && (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="搜尋用戶名稱或 Email（至少 2 字）..."
+                        value={userSearchInput}
+                        onChange={(e) => setUserSearchInput(e.target.value)}
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                      {searchedUsers && searchedUsers.length > 0 && (
+                        <div className="max-h-40 overflow-y-auto rounded-md border border-border bg-background">
+                          {searchedUsers.map((u) => {
+                            const already = selectedUsers.some((su) => su.id === u.internalId)
+                            return (
+                              <button
+                                key={u.internalId}
+                                type="button"
+                                disabled={already}
+                                onClick={() =>
+                                  setSelectedUsers((prev) => [
+                                    ...prev,
+                                    { id: u.internalId, name: u.name ?? '', email: u.email ?? '' },
+                                  ])
+                                }
+                                className={cn(
+                                  'flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors',
+                                  already ? 'opacity-40' : 'hover:bg-muted/50',
+                                )}
+                              >
+                                <span className="font-medium">{u.name ?? '—'}</span>
+                                <span className="text-xs text-muted-foreground">{u.email}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                      {selectedUsers.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedUsers.map((u) => (
+                            <span
+                              key={u.id}
+                              className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-xs"
+                            >
+                              {u.name || u.email}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedUsers((prev) => prev.filter((su) => su.id !== u.id))
+                                }
+                                className="ml-0.5 rounded-full p-0.5 hover:bg-muted"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="email-subject" className="mb-1 block text-sm font-medium">
+                    主旨
+                  </label>
+                  <input
+                    id="email-subject"
+                    type="text"
+                    required
+                    placeholder="郵件主旨"
+                    value={formData.subject}
+                    onChange={(event) =>
+                      setFormData((prev) => ({ ...prev, subject: event.target.value }))
+                    }
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email-scheduled" className="mb-1 block text-sm font-medium">
+                    預約發送時間（選填）
+                  </label>
+                  <div className="relative">
+                    <Timer className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
-                      id="email-subject"
-                      type="text"
-                      required
-                      placeholder="郵件主旨"
-                      value={formData.subject}
+                      id="email-scheduled"
+                      type="datetime-local"
+                      value={formData.scheduledAt}
                       onChange={(event) =>
-                        setFormData((prev) => ({ ...prev, subject: event.target.value }))
+                        setFormData((prev) => ({ ...prev, scheduledAt: event.target.value }))
                       }
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full rounded-md border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
                 </div>
@@ -299,15 +531,19 @@ export function EmailManagementPage() {
                 </div>
                 <button
                   type="submit"
-                  disabled={sendMutation.isPending}
+                  disabled={sendMutation.isPending || bulkMutation.isPending}
                   className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                 >
-                  {sendMutation.isPending ? (
+                  {sendMutation.isPending || bulkMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
-                  {sendMutation.isPending ? '發送中...' : '發送'}
+                  {sendMutation.isPending || bulkMutation.isPending
+                    ? '發送中...'
+                    : formData.scheduledAt
+                      ? '排程發送'
+                      : '立即發送'}
                 </button>
               </div>
 

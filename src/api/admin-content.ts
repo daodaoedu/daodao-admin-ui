@@ -6,6 +6,10 @@ import type { ApiResponse } from './types'
 export interface ContentPerformanceItem {
   id: number
   title: string
+  creatorName: string | null
+  creatorEmail: string | null
+  copyCount: number
+  copiedFromTitle: string | null
   views: number
   depth: number
   avgTime: number

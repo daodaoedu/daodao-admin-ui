@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { usePracticeStats } from '@/hooks/usePracticeStats'
+import { useUserTags } from '@/hooks/useUserTags'
 import { cn } from '@/lib/utils'
 
 type SortField = 'createdAt' | 'updatedAt' | 'likeCount'
@@ -71,6 +72,7 @@ const exportColumns = [
   { key: 'status', header: '狀態' },
   { key: 'creator', header: '建立者' },
   { key: 'createdAt', header: '建立日期' },
+  { key: 'durationDays', header: '實踐期間' },
   { key: 'participants', header: '打卡次數' },
   { key: 'views', header: '瀏覽數' },
   { key: 'likes', header: '迴響數' },
@@ -557,6 +559,7 @@ export function PracticesPage() {
   const search = searchParams.get('q') ?? ''
   const statusFilter = (searchParams.get('status') ?? 'all') as 'all' | PracticeStatus
   const privacyFilter = searchParams.get('privacy') ?? 'all'
+  const durationFilter = searchParams.get('duration') ?? 'all'
   const startDate = searchParams.get('from') ?? ''
   const endDate = searchParams.get('to') ?? ''
   const sort = (searchParams.get('sort') ?? 'createdAt') as SortField
@@ -570,6 +573,8 @@ export function PracticesPage() {
       const defaults: Record<string, string> = {
         status: 'all',
         privacy: 'all',
+        duration: 'all',
+        tag: 'all',
         sort: 'createdAt',
         order: 'desc',
         limit: '20',
@@ -611,6 +616,8 @@ export function PracticesPage() {
 
   const queryClient = useQueryClient()
   const { data: practiceStats } = usePracticeStats()
+  const { data: availableTags = [] } = useUserTags()
+  const tagFilter = searchParams.get('tag') ?? 'all'
 
   const { data: practicesResponse, isFetching } = useQuery({
     queryKey: [
@@ -621,6 +628,8 @@ export function PracticesPage() {
       search,
       statusFilter,
       privacyFilter,
+      durationFilter,
+      tagFilter,
       startDate,
       endDate,
       sort,
@@ -633,6 +642,8 @@ export function PracticesPage() {
         query: search || undefined,
         status: statusFilter,
         privacyStatus: privacyFilter === 'all' ? undefined : privacyFilter,
+        durationDays: durationFilter !== 'all' ? Number(durationFilter) : undefined,
+        tagId: tagFilter !== 'all' ? Number(tagFilter) : undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         sort,
@@ -818,6 +829,27 @@ export function PracticesPage() {
             ]}
             triggerClassName="min-w-[100px]"
           />
+          <Select
+            value={searchParams.get('duration') ?? 'all'}
+            onValueChange={(v) => setFilter({ duration: v })}
+            options={[
+              { value: 'all', label: '全部期間' },
+              { value: '7', label: '7 天' },
+              { value: '14', label: '14 天' },
+              { value: '21', label: '21 天' },
+              { value: '30', label: '30 天' },
+            ]}
+            triggerClassName="min-w-[100px]"
+          />
+          <Select
+            value={tagFilter}
+            onValueChange={(v) => setFilter({ tag: v })}
+            options={[
+              { value: 'all', label: '全部標籤' },
+              ...availableTags.map((t) => ({ value: String(t.id), label: t.name })),
+            ]}
+            triggerClassName="min-w-[100px]"
+          />
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
@@ -901,6 +933,7 @@ export function PracticesPage() {
                   currentOrder={order}
                   onSort={handleSort}
                 />
+                <th className="px-4 py-3 font-medium text-muted-foreground text-right">實踐期間</th>
                 <th className="px-4 py-3 font-medium text-muted-foreground text-right">打卡次數</th>
                 <th className="px-4 py-3 font-medium text-muted-foreground text-right">瀏覽數</th>
                 <SortableHeader
@@ -981,6 +1014,9 @@ export function PracticesPage() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {formatDate(practice.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {practice.durationDays ? `${practice.durationDays} 天` : '—'}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {practice.checkInCount.toLocaleString()}
