@@ -1,5 +1,6 @@
 import apiClient from './client'
 import type {
+  ActiveUserListItem,
   ActiveUsersFunnelResponse,
   ActiveUsersTrendResponse,
   ActivityTimelineEvent,
@@ -110,6 +111,18 @@ export const getActiveUsersTrend = (params?: ActiveUsersTrendQueryParams) =>
   apiClient.get<ApiResponse<ActiveUsersTrendResponse>>(
     '/daodao-server/api/v1/admin/user-stats/active-users/trend',
     { params },
+  )
+
+export const getActiveUsersList = (params: { date: string; period: 'day' | 'week' | 'month' }) =>
+  apiClient.get<ApiResponse<ActiveUserListItem[]>>(
+    '/daodao-server/api/v1/admin/user-stats/active-users/list',
+    { params },
+  )
+
+export const getMetricDrillDown = (metric: string) =>
+  apiClient.get<ApiResponse<ActiveUserListItem[]>>(
+    '/daodao-server/api/v1/admin/metrics/drilldown',
+    { params: { metric } },
   )
 
 export const getActiveUsersFunnel = (params?: { startDate?: string; endDate?: string }) =>

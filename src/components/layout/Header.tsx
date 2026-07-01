@@ -21,6 +21,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/user-quotas': 'Token 配額',
   '/practices': '主題實踐',
   '/content-performance': '內容分析',
+  '/persona-status': '人物誌填寫統計',
   '/notifications': '站內通知',
   '/triggered-emails': '觸發式郵件',
   '/scheduled-reports': '排程報表',
@@ -47,7 +48,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/events': '活動管理',
   '/email-templates': 'Email 模板',
   '/email-templates/:id/edit': 'Email 模板編輯',
-  '/persona-questions': '人物誌題目',
+  '/persona-questions': '人物誌題目管理',
 }
 
 export function Header() {

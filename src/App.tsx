@@ -112,6 +112,9 @@ const OnboardingFlowsPage = lazy(() =>
 const ContentPerformancePage = lazy(() =>
   import('@/pages/ContentPerformancePage').then((m) => ({ default: m.ContentPerformancePage })),
 )
+const PersonaStatusPage = lazy(() =>
+  import('@/pages/PersonaStatusPage').then((m) => ({ default: m.PersonaStatusPage })),
+)
 const CommunityMapPage = lazy(() =>
   import('@/pages/CommunityMapPage').then((m) => ({ default: m.CommunityMapPage })),
 )
@@ -275,6 +278,14 @@ export function App() {
             element={
               <LazyPage>
                 <ContentPerformancePage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/persona-status"
+            element={
+              <LazyPage>
+                <PersonaStatusPage />
               </LazyPage>
             }
           />

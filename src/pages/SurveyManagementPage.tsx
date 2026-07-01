@@ -22,10 +22,6 @@ import type {
   AdminSurveyQuestionForm,
   SurveyStatus,
 } from '@/api/types'
-
-const SURVEY_PUBLIC_BASE =
-  import.meta.env.VITE_SURVEY_PUBLIC_BASE ?? 'https://app.daodao.so/survey/r'
-
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -33,6 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import { SURVEY_PUBLIC_BASE } from '@/config'
 
 const STATUS_LABELS: Record<SurveyStatus, string> = {
   draft: '草稿',

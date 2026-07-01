@@ -18,6 +18,7 @@ import type {
   LLMModelCreate,
   ModelSyncResult,
   OffsetPagination,
+  PaginatedApiResponse,
   Permission,
   PlaygroundChatRequest,
   PlaygroundChatResponse,
@@ -227,9 +228,14 @@ export const listAdminUsers = (params?: {
   userSource?: 'S1' | 'S2' | 'S3'
   registrationFlow?: 'landing_page' | 'quiz' | 'action_maker'
   creationMethod?: 'self_created' | 'copied' | 'action_generator'
+  lastLoginFrom?: string
+  lastLoginTo?: string
+  lastActivityFrom?: string
+  lastActivityTo?: string
   sortBy?:
     | 'createdAt'
     | 'lastLoginAt'
+    | 'lastActiveAt'
     | 'name'
     | 'email'
     | 'registrationFlow'
@@ -237,7 +243,9 @@ export const listAdminUsers = (params?: {
     | 'daysToComplete'
   sortOrder?: 'asc' | 'desc'
 }) =>
-  apiClient.get<ApiResponse<AdminUserListItem[]>>('/daodao-server/api/v1/admin/users', { params })
+  apiClient.get<PaginatedApiResponse<AdminUserListItem>>('/daodao-server/api/v1/admin/users', {
+    params,
+  })
 
 export const getUserRole = (userId: number) =>
   apiClient.get<ApiResponse<UserRoleInfo>>(`/daodao-server/api/v1/admin/users/${userId}/role`)

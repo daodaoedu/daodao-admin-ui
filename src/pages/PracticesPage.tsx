@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { getPracticePublicUrl } from '@/config'
 import { usePracticeStats } from '@/hooks/usePracticeStats'
 import { useUserTags } from '@/hooks/useUserTags'
 import { cn } from '@/lib/utils'
@@ -794,94 +795,129 @@ export function PracticesPage() {
       </div>
 
       {/* ── Section 2: 篩選 ── */}
-      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-4 shadow-sm space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[180px]">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="搜尋實踐..."
-              value={search}
-              onChange={(e) => setFilter({ q: e.target.value })}
-              className="w-full pl-9 pr-3"
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-4 shadow-sm">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="practice-search">
+              搜尋
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="搜尋實踐..."
+                id="practice-search"
+                value={search}
+                onChange={(e) => setFilter({ q: e.target.value })}
+                className="w-full pl-9 pr-3"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="practice-status">
+              狀態
+            </label>
+            <Select
+              id="practice-status"
+              value={statusFilter}
+              onValueChange={(v) => setFilter({ status: v })}
+              options={[
+                { value: 'all', label: '全部狀態' },
+                { value: 'active', label: '活躍' },
+                { value: 'not_started', label: '尚未開始' },
+                { value: 'draft', label: '草稿' },
+                { value: 'completed', label: '已完成' },
+                { value: 'archived', label: '已封存' },
+              ]}
+              triggerClassName="w-full"
             />
           </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setFilter({ status: v })}
-            options={[
-              { value: 'all', label: '全部狀態' },
-              { value: 'active', label: '活躍' },
-              { value: 'not_started', label: '尚未開始' },
-              { value: 'draft', label: '草稿' },
-              { value: 'completed', label: '已完成' },
-              { value: 'archived', label: '已封存' },
-            ]}
-            triggerClassName="min-w-[120px]"
-          />
-          <Select
-            value={privacyFilter}
-            onValueChange={(v) => setFilter({ privacy: v })}
-            options={[
-              { value: 'all', label: '全部隱私' },
-              { value: 'public', label: '公開' },
-              { value: 'private', label: '私密' },
-            ]}
-            triggerClassName="min-w-[100px]"
-          />
-          <Select
-            value={searchParams.get('duration') ?? 'all'}
-            onValueChange={(v) => setFilter({ duration: v })}
-            options={[
-              { value: 'all', label: '全部期間' },
-              { value: '7', label: '7 天' },
-              { value: '14', label: '14 天' },
-              { value: '21', label: '21 天' },
-              { value: '30', label: '30 天' },
-            ]}
-            triggerClassName="min-w-[100px]"
-          />
-          <Select
-            value={tagFilter}
-            onValueChange={(v) => setFilter({ tag: v })}
-            options={[
-              { value: 'all', label: '全部標籤' },
-              ...availableTags.map((t) => ({ value: String(t.id), label: t.name })),
-            ]}
-            triggerClassName="min-w-[100px]"
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <label htmlFor="date-from" className="text-xs text-muted-foreground shrink-0">
-              從
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="practice-privacy">
+              隱私
+            </label>
+            <Select
+              id="practice-privacy"
+              value={privacyFilter}
+              onValueChange={(v) => setFilter({ privacy: v })}
+              options={[
+                { value: 'all', label: '全部隱私' },
+                { value: 'public', label: '公開' },
+                { value: 'private', label: '私密' },
+              ]}
+              triggerClassName="w-full"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="practice-duration">
+              期間（天數）
+            </label>
+            <Select
+              id="practice-duration"
+              value={searchParams.get('duration') ?? 'all'}
+              onValueChange={(v) => setFilter({ duration: v })}
+              options={[
+                { value: 'all', label: '全部期間' },
+                { value: '7', label: '7 天' },
+                { value: '14', label: '14 天' },
+                { value: '21', label: '21 天' },
+                { value: '30', label: '30 天' },
+              ]}
+              triggerClassName="w-full"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="practice-tag">
+              標籤
+            </label>
+            <Select
+              id="practice-tag"
+              value={tagFilter}
+              onValueChange={(v) => setFilter({ tag: v })}
+              options={[
+                { value: 'all', label: '全部標籤' },
+                ...availableTags.map((t) => ({ value: String(t.id), label: t.name })),
+              ]}
+              triggerClassName="w-full"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="date-from">
+              開始日期
             </label>
             <Input
               id="date-from"
               type="date"
               value={startDate}
               onChange={(e) => setFilter({ from: e.target.value })}
-              className="w-36 text-sm"
+              className="w-full text-sm"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="date-to" className="text-xs text-muted-foreground shrink-0">
-              至
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="date-to">
+              結束日期
             </label>
             <Input
               id="date-to"
               type="date"
               value={endDate}
               onChange={(e) => setFilter({ to: e.target.value })}
-              className="w-36 text-sm"
+              className="w-full text-sm"
             />
           </div>
-          <div className="ml-auto">
+          <div>
+            <label
+              className="mb-1 block text-xs text-muted-foreground"
+              htmlFor="practice-page-size"
+            >
+              每頁顯示
+            </label>
             <Select
+              id="practice-page-size"
               value={String(pageSize)}
               onValueChange={(v) => setFilter({ limit: v })}
               options={PAGE_SIZE_OPTIONS}
-              triggerClassName="min-w-[100px]"
+              triggerClassName="w-full"
             />
           </div>
         </div>
@@ -969,13 +1005,15 @@ export function PracticesPage() {
                       />
                     </td>
                     <td className="px-4 py-3 max-w-[240px]">
-                      <button
-                        type="button"
+                      <a
+                        href={getPracticePublicUrl(practice.id)}
                         className="font-medium text-foreground hover:text-primary transition-colors text-left leading-snug"
-                        onClick={() => setSelectedPractice(practice)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(event) => event.stopPropagation()}
                       >
                         {practice.title}
-                      </button>
+                      </a>
                       {practice.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {practice.tags.slice(0, 3).map((tag) => (

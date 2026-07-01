@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  BarChart3,
   BookOpen,
   Brain,
   Eye,
@@ -16,6 +17,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { useContentPerformance, useSetContentFeatured } from '@/hooks/useContentPerformance'
+import { usePersonaStats } from '@/hooks/useOnboardingAnalytics'
 import { cn } from '@/lib/utils'
 
 type SortField = 'views' | 'depth' | 'avgTime' | 'interactionRate'
@@ -68,12 +70,23 @@ export function ContentPerformancePage() {
   const [preset, setPreset] = useState<DatePreset>('7')
   const { data, isLoading } = useContentPerformance(Number(preset))
   const { mutate: setFeatured } = useSetContentFeatured()
+  const { data: personaAnalytics } = usePersonaStats(Number(preset))
 
   const content = data?.items ?? []
   const collections = data?.collections ?? []
   const checkins = data?.checkinSummary
   const quiz = data?.quizSummary
   const persona = data?.personaSummary
+  const personaDistribution = personaAnalytics?.answerCountDistribution ?? []
+  const personaTopQuestions = personaAnalytics?.topQuestions ?? []
+  const personaQuestionRows = persona?.questions ?? []
+  const totalUsersByDistribution = personaDistribution.reduce(
+    (acc, item) => acc + item.userCount,
+    0,
+  )
+  const maxTopQuestionCount = Math.max(...personaTopQuestions.map((q) => q.answerCount), 1)
+  const maxQuestionAnswerCount = Math.max(...personaQuestionRows.map((q) => q.answerCount), 1)
+  const avgAnswerCountText = Number((personaAnalytics?.avgAnswerCount ?? 0).toFixed(1))
 
   const sorted = [...content].sort((a, b) => {
     if (sortBy === 'avgTime') return b.avgTime - a.avgTime
@@ -473,27 +486,101 @@ export function ContentPerformancePage() {
           {/* ─ Persona ─ */}
           {tab === 'persona' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
                 <StatCard title="題目總數" value={persona?.totalQuestions ?? 0} icon={Users} />
                 <StatCard title="有回答用戶" value={persona?.usersAnswered ?? 0} icon={Users} />
                 <StatCard title="總回答數" value={persona?.totalAnswers ?? 0} icon={Eye} />
+                <StatCard
+                  title="有回答率"
+                  value={`${personaAnalytics?.anyAnswerRate ?? 0}%`}
+                  icon={BarChart3}
+                />
+                <StatCard title="平均回答題數" value={avgAnswerCountText} icon={Brain} />
+              </div>
+
+              <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+                <h3 className="mb-1 text-sm font-semibold text-foreground">回答題數分佈</h3>
+                <p className="mb-4 text-xs text-muted-foreground">
+                  使用者回答題目數量分佈（有回答題數 x 使用者數）
+                </p>
+                {personaDistribution.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">尚無人物誌分佈資料</p>
+                ) : (
+                  <div className="space-y-3">
+                    {[...personaDistribution]
+                      .sort((a, b) => a.answerCount - b.answerCount)
+                      .map(({ answerCount, userCount }) => {
+                        const pct =
+                          totalUsersByDistribution > 0
+                            ? Math.round((userCount / totalUsersByDistribution) * 100)
+                            : 0
+                        return (
+                          <div key={answerCount} className="flex items-center gap-3">
+                            <span className="w-16 shrink-0 text-xs font-medium text-muted-foreground">
+                              {answerCount} 題
+                            </span>
+                            <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="w-24 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                              {userCount} 人 ({pct}%)
+                            </span>
+                          </div>
+                        )
+                      })}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+                <h3 className="mb-1 text-sm font-semibold text-foreground">熱門題目</h3>
+                <p className="mb-4 text-xs text-muted-foreground">
+                  回答數最多的題目，可直接判斷題目受關注程度與表現差異
+                </p>
+                {personaTopQuestions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">尚無熱門題目資料</p>
+                ) : (
+                  <div className="space-y-3">
+                    {personaTopQuestions.map(({ questionId, prompt, answerCount }) => {
+                      const pct = Math.round((answerCount / maxTopQuestionCount) * 100)
+                      return (
+                        <div key={questionId} className="flex items-center gap-3">
+                          <span className="w-10 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                            Q{questionId}
+                          </span>
+                          <span className="flex-1 text-xs text-foreground truncate" title={prompt}>
+                            {prompt}
+                          </span>
+                          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden max-w-[240px]">
+                            <div
+                              className="h-full rounded-full bg-primary transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="w-16 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                            {answerCount} 人
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
                 <h3 className="mb-1 text-sm font-semibold text-foreground">各題回答率</h3>
                 <p className="mb-4 text-xs text-muted-foreground">
-                  人物誌問卷中每道題目的填答人數，可了解哪些問題最受用戶回應
+                  人物誌問卷中每道題目的填答人數（依內容分析彙整）
                 </p>
-                {(persona?.questions?.length ?? 0) === 0 ? (
-                  <p className="text-sm text-muted-foreground">尚無人物誌資料</p>
+                {personaQuestionRows.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">尚無人物誌題目資料</p>
                 ) : (
                   <div className="space-y-3">
-                    {persona?.questions.map(({ id, prompt, answerCount }) => {
-                      const maxCount = Math.max(
-                        ...(persona?.questions ?? []).map((q) => q.answerCount),
-                        1,
-                      )
-                      const pct = Math.round((answerCount / maxCount) * 100)
+                    {personaQuestionRows.map(({ id, prompt, answerCount }) => {
+                      const pct = Math.round((answerCount / maxQuestionAnswerCount) * 100)
                       return (
                         <div key={id} className="flex items-center gap-3">
                           <span className="w-6 shrink-0 text-xs font-mono text-muted-foreground text-right">
