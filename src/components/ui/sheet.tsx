@@ -4,6 +4,12 @@ import { cn } from '@/lib/utils'
 export const Sheet = DialogPrimitive.Root
 export const SheetTrigger = DialogPrimitive.Trigger
 export const SheetClose = DialogPrimitive.Close
+export const SheetTitle = DialogPrimitive.Title
+export const SheetDescription = DialogPrimitive.Description
+
+export function SheetHeader({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  return <div className={cn('flex flex-col gap-1.5', className)} {...props} />
+}
 
 export function SheetContent({
   className,

@@ -30,10 +30,11 @@ export function useQuizAnalyticsStats() {
   })
 }
 
-export function usePersonaStats() {
+export function usePersonaStats(days?: number) {
   return useQuery({
-    queryKey: ['admin', 'persona', 'stats'],
-    queryFn: () => getPersonaStats().then((r) => r.data.data),
+    queryKey: ['admin', 'persona', 'stats', days],
+    queryFn: () =>
+      getPersonaStats(days === undefined ? undefined : { days }).then((r) => r.data.data),
   })
 }
 

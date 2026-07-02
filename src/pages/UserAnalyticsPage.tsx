@@ -20,13 +20,16 @@ import {
   YAxis,
 } from 'recharts'
 import type { LearningStyleType } from '@/api/types'
+import { DrillDownDrawer } from '@/components/DrillDownDrawer'
 import { ExportButton } from '@/components/ExportButton'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Input } from '@/components/ui/input'
 import {
   useActiveUsersFunnel,
+  useActiveUsersList,
   useActiveUsersTrend,
+  useMetricDrillDown,
   useUserCohortRetention,
 } from '@/hooks/useActiveUsersTrend'
 import {
@@ -66,6 +69,10 @@ function retentionBg(pct: number): string {
   if (pct >= 15) return 'text-success text-foreground'
   return 'text-success text-foreground'
 }
+
+type DrillDownState =
+  | { type: 'active'; title: string; date: string; period: 'day' | 'week' | 'month' }
+  | { type: 'metric'; title: string; metric: string }
 
 export function UserAnalyticsPage() {
   const defaultDateFrom = useMemo(() => format(subDays(new Date(), 29), 'yyyy-MM-dd'), [])
@@ -135,6 +142,29 @@ export function UserAnalyticsPage() {
 
   const retentionRows = useMemo(() => engagementStats?.retentionByDay ?? [], [engagementStats])
 
+  const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), [])
+
+  const [drillDown, setDrillDown] = useState<DrillDownState | null>(null)
+
+  const activeQuery = useMemo(
+    () =>
+      drillDown?.type === 'active' ? { date: drillDown.date, period: drillDown.period } : null,
+    [drillDown],
+  )
+  const metricQuery = useMemo(
+    () => (drillDown?.type === 'metric' ? drillDown.metric : null),
+    [drillDown],
+  )
+
+  const activeResult = useActiveUsersList(activeQuery)
+  const metricResult = useMetricDrillDown(metricQuery)
+
+  const drillDownUsers = drillDown?.type === 'active' ? activeResult.data : metricResult.data
+  const isDrillDownLoading =
+    drillDown?.type === 'active' ? activeResult.isLoading : metricResult.isLoading
+  const isDrillDownError =
+    drillDown?.type === 'active' ? activeResult.isError : metricResult.isError
+
   const exportColumns = [
     { key: 'date', header: '日期' },
     { key: 'dau', header: 'DAU' },
@@ -183,6 +213,14 @@ export function UserAnalyticsPage() {
           change={summary?.dauChangePercent ?? 0}
           changeLabel="vs 上週同日"
           icon={Users}
+          onClick={() =>
+            setDrillDown({
+              type: 'active',
+              title: 'DAU — 今日活躍用戶',
+              date: today,
+              period: 'day',
+            })
+          }
         />
         <StatCard
           title="WAU (週活躍)"
@@ -191,6 +229,14 @@ export function UserAnalyticsPage() {
           change={summary?.wauChangePercent ?? 0}
           changeLabel="vs 上週"
           icon={Activity}
+          onClick={() =>
+            setDrillDown({
+              type: 'active',
+              title: 'WAU — 近 7 天活躍用戶',
+              date: today,
+              period: 'week',
+            })
+          }
         />
         <StatCard
           title="MAU (月活躍)"
@@ -199,6 +245,14 @@ export function UserAnalyticsPage() {
           change={summary?.mauChangePercent ?? 0}
           changeLabel="vs 上月"
           icon={TrendingUp}
+          onClick={() =>
+            setDrillDown({
+              type: 'active',
+              title: 'MAU — 近 30 天活躍用戶',
+              date: today,
+              period: 'month',
+            })
+          }
         />
       </div>
 
@@ -209,24 +263,48 @@ export function UserAnalyticsPage() {
           description="已獲得至少一個徽章的用戶佔總用戶比例，反映任務完成度"
           value={`${onboardingStats?.badgeGrantedRate ?? 0}%`}
           icon={Award}
+          onClick={() =>
+            setDrillDown({
+              type: 'metric',
+              title: '已完成 Badge 的用戶',
+              metric: 'badge_completed',
+            })
+          }
         />
         <StatCard
           title="測驗完成率"
           description="完成島嶼人格測驗（學習風格）的用戶比例，越高代表用戶越願意參與引導流程"
           value={`${quizStats?.quizCompletedRate ?? 0}%`}
           icon={BookOpen}
+          onClick={() =>
+            setDrillDown({ type: 'metric', title: '已完成測驗的用戶', metric: 'quiz_completed' })
+          }
         />
         <StatCard
           title="實踐放棄率"
           description="已開始但未完成實踐任務的用戶比例，越低越好"
           value={`${engagementStats?.practiceStats.abandonmentRate ?? 0}%`}
           icon={TrendingDown}
+          onClick={() =>
+            setDrillDown({
+              type: 'metric',
+              title: '已放棄實踐的用戶',
+              metric: 'practice_abandoned',
+            })
+          }
         />
         <StatCard
           title="Streak 7天+ 人數"
           description="連續打卡達 7 天以上的用戶人數，代表高度活躍的核心用戶群"
           value={formatNumber(engagementStats?.checkinStats.usersWithStreak7Plus)}
           icon={Flame}
+          onClick={() =>
+            setDrillDown({
+              type: 'metric',
+              title: '連續打卡 7 天以上的用戶',
+              metric: 'streak_7plus',
+            })
+          }
         />
       </div>
 
@@ -348,7 +426,18 @@ export function UserAnalyticsPage() {
               const count = roleData?.count ?? 0
               const rate = roleData?.rate ?? 0
               return (
-                <div key={code} className="flex items-center gap-4">
+                <button
+                  type="button"
+                  key={code}
+                  onClick={() =>
+                    setDrillDown({
+                      type: 'metric',
+                      title: `${code} ${meta.label} 的用戶`,
+                      metric: `persona_${code}`,
+                    })
+                  }
+                  className="flex w-full items-center gap-4 rounded-lg px-1 py-0.5 transition-colors hover:bg-muted/50"
+                >
                   <span className="w-36 shrink-0 text-right text-sm font-medium text-foreground">
                     {code} {meta.label}
                   </span>
@@ -366,7 +455,7 @@ export function UserAnalyticsPage() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -552,6 +641,17 @@ export function UserAnalyticsPage() {
           </div>
         )}
       </div>
+
+      <DrillDownDrawer
+        open={drillDown !== null}
+        onOpenChange={(open) => {
+          if (!open) setDrillDown(null)
+        }}
+        title={drillDown?.title ?? ''}
+        users={drillDownUsers ?? []}
+        isLoading={isDrillDownLoading}
+        isError={isDrillDownError}
+      />
     </div>
   )
 }

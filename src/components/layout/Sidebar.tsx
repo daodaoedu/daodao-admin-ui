@@ -77,13 +77,22 @@ const navGroups: NavGroup[] = [
   },
   {
     title: '內容',
-    items: [{ to: '/practices', label: '主題實踐', icon: Target }],
+    items: [
+      { to: '/content-performance', label: '內容分析', icon: TrendingUp },
+      { to: '/practices', label: '主題實踐', icon: Target },
+    ],
+  },
+  {
+    title: '人物誌管理',
+    items: [
+      { to: '/persona-questions', label: '人物誌題目管理', icon: Brain },
+      { to: '/persona-status', label: '人物誌填寫統計', icon: ClipboardList },
+    ],
   },
   {
     title: '社群',
     items: [
       { to: '/onboarding-flows', label: 'Onboarding', icon: UserPlus },
-      { to: '/content-performance', label: '內容分析', icon: TrendingUp },
       { to: '/community-map', label: '社群地圖', icon: Users },
       { to: '/ai-assistant', label: 'AI 助手', icon: Bot },
     ],
@@ -106,10 +115,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: '問卷',
-    items: [
-      { to: '/surveys', label: '問卷管理', icon: ClipboardList },
-      { to: '/persona-questions', label: '人物誌題目', icon: Brain },
-    ],
+    items: [{ to: '/surveys', label: '問卷管理', icon: ClipboardList }],
   },
   {
     title: '溝通',

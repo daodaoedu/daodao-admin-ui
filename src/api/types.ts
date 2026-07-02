@@ -351,6 +351,7 @@ export interface AdminUserListItem {
   badgeGranted: boolean | null
   userSource: string | null
   tags: Array<{ id: number; name: string }>
+  lastActiveAt: string | null
   registrationFlow: 'landing_page' | 'quiz' | 'action_maker' | null
   creationMethod: 'self_created' | 'copied' | 'action_generator' | null
   daysToComplete: number | null
@@ -377,7 +378,7 @@ export interface AdminUserDetail {
     totalCheckins: number
     totalPosts: number
     totalComments: number
-    lastActivityAt: string | null
+    lastActiveAt: string | null
   }
 }
 
@@ -499,6 +500,14 @@ export interface ActiveUsersTrendResponse {
     wauChangePercent: number
     mauChangePercent: number
   }
+}
+
+export interface ActiveUserListItem {
+  id: string
+  name: string | null
+  email: string | null
+  photoURL: string | null
+  lastActiveAt: string | null
 }
 
 export interface ActiveUsersFunnelStep {
@@ -983,7 +992,7 @@ export interface AdminUserDetail {
     totalCheckins: number
     totalPosts: number
     totalComments: number
-    lastActivityAt: string | null
+    lastActiveAt: string | null
   }
 }
 

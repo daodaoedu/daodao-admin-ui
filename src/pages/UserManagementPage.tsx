@@ -75,7 +75,16 @@ const SOURCE_OPTIONS = [
   { value: 'S3', label: 'S3' },
 ]
 
+const DATE_PRESET_OPTIONS = [
+  { value: '', label: '全部' },
+  { value: 'today', label: '今天' },
+  { value: '7d', label: '近 7 天' },
+  { value: '30d', label: '近 30 天' },
+  { value: '90d', label: '近 90 天' },
+]
+
 const SORT_OPTIONS = [
+  { value: 'lastActiveAt_desc', label: '最後操作' },
   { value: 'createdAt_desc', label: '最新註冊' },
   { value: 'createdAt_asc', label: '最早註冊' },
   { value: 'lastLoginAt_desc', label: '最近登入' },
@@ -91,11 +100,15 @@ const SORT_OPTIONS = [
 const SELECT_CLASS =
   'rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20'
 
+type DatePreset = (typeof DATE_PRESET_OPTIONS)[number]['value']
+type RecordPresenceFilter = 'all' | 'with' | 'without'
+
 const LIMIT = 20
-const TABLE_COLS = 14
+const TABLE_COLS = 15
 const USER_MANAGEMENT_SORT_FIELDS: UserManagementSortBy[] = [
   'createdAt',
   'lastLoginAt',
+  'lastActiveAt',
   'name',
   'email',
   'registrationFlow',
@@ -117,6 +130,32 @@ function getDaysToCompleteLabel(daysToComplete: number | null) {
   return daysToComplete == null ? '-' : `${daysToComplete} 天`
 }
 
+function toInputDateValue(date: Date) {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function normalizePresenceFilter(value: string | null) {
+  if (value === 'with' || value === 'without') return value
+  return 'all'
+}
+
+function getPresetDateRange(preset: DatePreset) {
+  if (!preset) return { from: '', to: '' }
+
+  if (preset === 'today') {
+    const today = toInputDateValue(new Date())
+    return { from: today, to: today }
+  }
+
+  const days = preset === '7d' ? 6 : preset === '30d' ? 29 : 89
+  const fromDate = new Date()
+  fromDate.setDate(fromDate.getDate() - days)
+  return { from: toInputDateValue(fromDate), to: toInputDateValue(new Date()) }
+}
+
 function getBadgeLabel(user: AdminUserListItem) {
   return user.badgeGranted == null ? '-' : user.badgeGranted ? '已完成' : '未完成'
 }
@@ -124,6 +163,7 @@ function getBadgeLabel(user: AdminUserListItem) {
 type UserManagementSortBy =
   | 'createdAt'
   | 'lastLoginAt'
+  | 'lastActiveAt'
   | 'name'
   | 'email'
   | 'registrationFlow'
@@ -144,6 +184,7 @@ const TABLE_HEADERS = [
   'Onboarding',
   '完成天數',
   '最後登入',
+  '最後操作',
   '操作',
 ]
 
@@ -181,7 +222,20 @@ export function UserManagementPage() {
   const [creationMethodFilter, setCreationMethodFilter] = useState(
     searchParams.get('creationMethod') ?? '',
   )
-  const [sortValue, setSortValue] = useState(searchParams.get('sort') ?? 'createdAt_desc')
+  const [lastLoginFrom, setLastLoginFrom] = useState(searchParams.get('lastLoginFrom') ?? '')
+  const [lastLoginTo, setLastLoginTo] = useState(searchParams.get('lastLoginTo') ?? '')
+  const [lastLoginPresenceFilter, setLastLoginPresenceFilter] = useState<RecordPresenceFilter>(
+    normalizePresenceFilter(searchParams.get('lastLoginPresence')),
+  )
+  const [lastActivityFrom, setLastActivityFrom] = useState(
+    searchParams.get('lastActivityFrom') ?? '',
+  )
+  const [lastActivityTo, setLastActivityTo] = useState(searchParams.get('lastActivityTo') ?? '')
+  const [lastActivityPresenceFilter, setLastActivityPresenceFilter] =
+    useState<RecordPresenceFilter>(
+      normalizePresenceFilter(searchParams.get('lastActivityPresence')),
+    )
+  const [sortValue, setSortValue] = useState(searchParams.get('sort') ?? 'lastActiveAt_desc')
 
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
   const [assigningUser, setAssigningUser] = useState<AdminUserListItem | null>(null)
@@ -209,7 +263,14 @@ export function UserManagementPage() {
     if (sourceFilter) params.source = sourceFilter
     if (registrationFlowFilter) params.registrationFlow = registrationFlowFilter
     if (creationMethodFilter) params.creationMethod = creationMethodFilter
-    if (sortValue !== 'createdAt_desc') params.sort = sortValue
+    if (lastLoginFrom) params.lastLoginFrom = lastLoginFrom
+    if (lastLoginTo) params.lastLoginTo = lastLoginTo
+    if (lastLoginPresenceFilter !== 'all') params.lastLoginPresence = lastLoginPresenceFilter
+    if (lastActivityFrom) params.lastActivityFrom = lastActivityFrom
+    if (lastActivityTo) params.lastActivityTo = lastActivityTo
+    if (lastActivityPresenceFilter !== 'all')
+      params.lastActivityPresence = lastActivityPresenceFilter
+    if (sortValue !== 'lastActiveAt_desc') params.sort = sortValue
     setSearchParams(params, { replace: true })
   }, [
     search,
@@ -221,15 +282,45 @@ export function UserManagementPage() {
     sourceFilter,
     registrationFlowFilter,
     creationMethodFilter,
+    lastLoginFrom,
+    lastLoginTo,
+    lastLoginPresenceFilter,
+    lastActivityFrom,
+    lastActivityTo,
+    lastActivityPresenceFilter,
     sortValue,
     setSearchParams,
   ])
+
+  const setLastLoginDatePreset = (preset: DatePreset) => {
+    const { from, to } = getPresetDateRange(preset)
+    setLastLoginFrom(from)
+    setLastLoginTo(to)
+    setPage(1)
+  }
+
+  const setLastActivityDatePreset = (preset: DatePreset) => {
+    const { from, to } = getPresetDateRange(preset)
+    setLastActivityFrom(from)
+    setLastActivityTo(to)
+    setPage(1)
+  }
+
+  const isLastLoginPresetActive = (preset: DatePreset) => {
+    const { from, to } = getPresetDateRange(preset)
+    return lastLoginFrom === from && lastLoginTo === to
+  }
+
+  const isLastActivityPresetActive = (preset: DatePreset) => {
+    const { from, to } = getPresetDateRange(preset)
+    return lastActivityFrom === from && lastActivityTo === to
+  }
 
   const [sortField, sortOrder] = useMemo(() => {
     const match = sortValue.match(/^(?<field>[^_]+)_(?<order>asc|desc)$/)
 
     if (!match?.groups) {
-      return ['createdAt', 'desc'] as const
+      return ['lastActiveAt', 'desc'] as const
     }
 
     const fieldValue = match.groups.field
@@ -237,7 +328,7 @@ export function UserManagementPage() {
 
     const field = USER_MANAGEMENT_SORT_FIELDS.includes(fieldValue as UserManagementSortBy)
       ? (fieldValue as UserManagementSortBy)
-      : 'createdAt'
+      : 'lastActiveAt'
 
     const order = orderValue === 'asc' ? 'asc' : 'desc'
     return [field, order] as [UserManagementSortBy, 'asc' | 'desc']
@@ -255,6 +346,12 @@ export function UserManagementPage() {
       sourceFilter,
       registrationFlowFilter,
       creationMethodFilter,
+      lastLoginFrom,
+      lastLoginTo,
+      lastLoginPresenceFilter,
+      lastActivityFrom,
+      lastActivityTo,
+      lastActivityPresenceFilter,
       sortField,
       sortOrder,
     ],
@@ -272,6 +369,13 @@ export function UserManagementPage() {
           (registrationFlowFilter as 'landing_page' | 'quiz' | 'action_maker') || undefined,
         creationMethod:
           (creationMethodFilter as 'self_created' | 'copied' | 'action_generator') || undefined,
+        lastLoginFrom: lastLoginFrom || undefined,
+        lastLoginTo: lastLoginTo || undefined,
+        lastLoginPresence: lastLoginPresenceFilter === 'all' ? undefined : lastLoginPresenceFilter,
+        lastActivityFrom: lastActivityFrom || undefined,
+        lastActivityTo: lastActivityTo || undefined,
+        lastActivityPresence:
+          lastActivityPresenceFilter === 'all' ? undefined : lastActivityPresenceFilter,
         sortBy: sortField,
         sortOrder,
       }).then((r) => r.data),
@@ -298,6 +402,7 @@ export function UserManagementPage() {
         badgeGranted: getBadgeLabel(user),
         daysToComplete: getDaysToCompleteLabel(user.daysToComplete ?? null),
         lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-',
+        lastActiveAt: user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleString('zh-TW') : '-',
       })),
     [users],
   )
@@ -325,6 +430,12 @@ export function UserManagementPage() {
     sourceFilter,
     registrationFlowFilter,
     creationMethodFilter,
+    lastLoginFrom,
+    lastLoginTo,
+    lastLoginPresenceFilter !== 'all',
+    lastActivityPresenceFilter !== 'all',
+    lastActivityFrom,
+    lastActivityTo,
   ].filter(Boolean).length
   const hasActiveFilters = activeFilterCount > 0
 
@@ -336,6 +447,12 @@ export function UserManagementPage() {
     setSourceFilter('')
     setRegistrationFlowFilter('')
     setCreationMethodFilter('')
+    setLastLoginFrom('')
+    setLastLoginTo('')
+    setLastLoginPresenceFilter('all')
+    setLastActivityFrom('')
+    setLastActivityTo('')
+    setLastActivityPresenceFilter('all')
     setPage(1)
   }
 
@@ -444,8 +561,48 @@ export function UserManagementPage() {
       },
     })
   }
+  if (lastLoginFrom || lastLoginTo) {
+    const parts = [lastLoginFrom || '...', lastLoginTo || '...']
+    activeChips.push({
+      label: `最後登入: ${parts[0]} ~ ${parts[1]}`,
+      onRemove: () => {
+        setLastLoginFrom('')
+        setLastLoginTo('')
+        setPage(1)
+      },
+    })
+  }
+  if (lastLoginPresenceFilter !== 'all') {
+    activeChips.push({
+      label: `登入紀錄: ${lastLoginPresenceFilter === 'with' ? '有紀錄' : '無紀錄'}`,
+      onRemove: () => {
+        setLastLoginPresenceFilter('all')
+        setPage(1)
+      },
+    })
+  }
+  if (lastActivityFrom || lastActivityTo) {
+    const parts = [lastActivityFrom || '...', lastActivityTo || '...']
+    activeChips.push({
+      label: `最後操作: ${parts[0]} ~ ${parts[1]}`,
+      onRemove: () => {
+        setLastActivityFrom('')
+        setLastActivityTo('')
+        setPage(1)
+      },
+    })
+  }
+  if (lastActivityPresenceFilter !== 'all') {
+    activeChips.push({
+      label: `操作紀錄: ${lastActivityPresenceFilter === 'with' ? '有紀錄' : '無紀錄'}`,
+      onRemove: () => {
+        setLastActivityPresenceFilter('all')
+        setPage(1)
+      },
+    })
+  }
 
-  const totalPages = pagination?.total_count ? Math.ceil(pagination.total_count / LIMIT) : 0
+  const totalPages = pagination?.totalItems ? Math.ceil(pagination.totalItems / LIMIT) : 0
 
   return (
     <div className="space-y-4">
@@ -457,7 +614,7 @@ export function UserManagementPage() {
           </h1>
           {pagination && (
             <p className="mt-1 text-sm text-muted-foreground">
-              共 {(pagination.total_count ?? 0).toLocaleString()} 位用戶
+              共 {(pagination.totalItems ?? 0).toLocaleString()} 位用戶
             </p>
           )}
         </div>
@@ -478,12 +635,25 @@ export function UserManagementPage() {
             { key: 'badgeGranted', header: 'Badge' },
             { key: 'daysToComplete', header: '完成天數' },
             { key: 'lastLoginAt', header: '最後登入' },
+            { key: 'lastActiveAt', header: '最後操作' },
           ]}
         />
       </div>
 
       {/* Toolbar */}
       <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={sortValue}
+            onValueChange={(v) => {
+              setSortValue(v)
+              setPage(1)
+            }}
+            options={SORT_OPTIONS}
+            triggerClassName={`${SELECT_CLASS} w-44`}
+          />
+        </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <Input
             placeholder="搜尋名稱 / Email"
@@ -542,79 +712,220 @@ export function UserManagementPage() {
 
         {/* Collapsible filter panel */}
         {filterPanelOpen && (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => {
-                setStatusFilter(v)
-                setPage(1)
-              }}
-              options={STATUS_OPTIONS}
-              triggerClassName={SELECT_CLASS}
-            />
-            <Select
-              value={roleIdFilter}
-              onValueChange={(v) => {
-                setRoleIdFilter(v)
-                setPage(1)
-              }}
-              options={roleFilterOptions}
-              triggerClassName={SELECT_CLASS}
-            />
-            <Select
-              value={personaFilter}
-              onValueChange={(v) => {
-                setPersonaFilter(v)
-                setPage(1)
-              }}
-              options={PERSONA_OPTIONS}
-              triggerClassName={SELECT_CLASS}
-            />
-            <Select
-              value={badgeFilter}
-              onValueChange={(v) => {
-                setBadgeFilter(v)
-                setPage(1)
-              }}
-              options={BADGE_OPTIONS}
-              triggerClassName={SELECT_CLASS}
-            />
-            <Select
-              value={sourceFilter}
-              onValueChange={(v) => {
-                setSourceFilter(v)
-                setPage(1)
-              }}
-              options={SOURCE_OPTIONS}
-              triggerClassName={SELECT_CLASS}
-            />
-            <Select
-              value={registrationFlowFilter}
-              onValueChange={(v) => {
-                setRegistrationFlowFilter(v)
-                setPage(1)
-              }}
-              options={REGISTRATION_FLOW_OPTIONS}
-              triggerClassName={SELECT_CLASS}
-            />
-            <Select
-              value={creationMethodFilter}
-              onValueChange={(v) => {
-                setCreationMethodFilter(v)
-                setPage(1)
-              }}
-              options={CREATION_METHOD_OPTIONS}
-              triggerClassName={SELECT_CLASS}
-            />
-            <Select
-              value={sortValue}
-              onValueChange={(v) => {
-                setSortValue(v)
-                setPage(1)
-              }}
-              options={SORT_OPTIONS}
-              triggerClassName={SELECT_CLASS}
-            />
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-foreground">快速時間區間</span>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="space-y-2 rounded-md border border-border/80 bg-background/60 p-2">
+                  <span className="text-xs text-muted-foreground">最後登入</span>
+                  <div className="flex flex-wrap gap-2">
+                    {DATE_PRESET_OPTIONS.map((preset) => (
+                      <Button
+                        key={`login-${preset.value}`}
+                        type="button"
+                        size="xs"
+                        variant={isLastLoginPresetActive(preset.value) ? 'secondary' : 'outline'}
+                        onClick={() => setLastLoginDatePreset(preset.value)}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="date"
+                      aria-label="最後登入起始日期"
+                      value={lastLoginFrom}
+                      onChange={(e) => {
+                        setLastLoginFrom(e.target.value)
+                        setPage(1)
+                      }}
+                    />
+                    <Input
+                      type="date"
+                      aria-label="最後登入結束日期"
+                      value={lastLoginTo}
+                      onChange={(e) => {
+                        setLastLoginTo(e.target.value)
+                        setPage(1)
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant={lastLoginPresenceFilter === 'all' ? 'secondary' : 'outline'}
+                      onClick={() => {
+                        setLastLoginPresenceFilter('all')
+                        setPage(1)
+                      }}
+                    >
+                      全部
+                    </Button>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant={lastLoginPresenceFilter === 'with' ? 'secondary' : 'outline'}
+                      onClick={() => {
+                        setLastLoginPresenceFilter('with')
+                        setPage(1)
+                      }}
+                    >
+                      有紀錄
+                    </Button>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant={lastLoginPresenceFilter === 'without' ? 'secondary' : 'outline'}
+                      onClick={() => {
+                        setLastLoginPresenceFilter('without')
+                        setPage(1)
+                      }}
+                    >
+                      無紀錄
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2 rounded-md border border-border/80 bg-background/60 p-2">
+                  <span className="text-xs text-muted-foreground">最後操作</span>
+                  <div className="flex flex-wrap gap-2">
+                    {DATE_PRESET_OPTIONS.map((preset) => (
+                      <Button
+                        key={`activity-${preset.value}`}
+                        type="button"
+                        size="xs"
+                        variant={isLastActivityPresetActive(preset.value) ? 'secondary' : 'outline'}
+                        onClick={() => setLastActivityDatePreset(preset.value)}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="date"
+                      aria-label="最後操作起始日期"
+                      value={lastActivityFrom}
+                      onChange={(e) => {
+                        setLastActivityFrom(e.target.value)
+                        setPage(1)
+                      }}
+                    />
+                    <Input
+                      type="date"
+                      aria-label="最後操作結束日期"
+                      value={lastActivityTo}
+                      onChange={(e) => {
+                        setLastActivityTo(e.target.value)
+                        setPage(1)
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant={lastActivityPresenceFilter === 'all' ? 'secondary' : 'outline'}
+                      onClick={() => {
+                        setLastActivityPresenceFilter('all')
+                        setPage(1)
+                      }}
+                    >
+                      全部
+                    </Button>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant={lastActivityPresenceFilter === 'with' ? 'secondary' : 'outline'}
+                      onClick={() => {
+                        setLastActivityPresenceFilter('with')
+                        setPage(1)
+                      }}
+                    >
+                      有紀錄
+                    </Button>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant={lastActivityPresenceFilter === 'without' ? 'secondary' : 'outline'}
+                      onClick={() => {
+                        setLastActivityPresenceFilter('without')
+                        setPage(1)
+                      }}
+                    >
+                      無紀錄
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-2 md:grid-cols-2">
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v)
+                  setPage(1)
+                }}
+                options={STATUS_OPTIONS}
+                triggerClassName={`${SELECT_CLASS} w-full`}
+              />
+              <Select
+                value={roleIdFilter}
+                onValueChange={(v) => {
+                  setRoleIdFilter(v)
+                  setPage(1)
+                }}
+                options={roleFilterOptions}
+                triggerClassName={`${SELECT_CLASS} w-full`}
+              />
+              <Select
+                value={personaFilter}
+                onValueChange={(v) => {
+                  setPersonaFilter(v)
+                  setPage(1)
+                }}
+                options={PERSONA_OPTIONS}
+                triggerClassName={`${SELECT_CLASS} w-full`}
+              />
+              <Select
+                value={badgeFilter}
+                onValueChange={(v) => {
+                  setBadgeFilter(v)
+                  setPage(1)
+                }}
+                options={BADGE_OPTIONS}
+                triggerClassName={`${SELECT_CLASS} w-full`}
+              />
+              <Select
+                value={sourceFilter}
+                onValueChange={(v) => {
+                  setSourceFilter(v)
+                  setPage(1)
+                }}
+                options={SOURCE_OPTIONS}
+                triggerClassName={`${SELECT_CLASS} w-full`}
+              />
+              <Select
+                value={registrationFlowFilter}
+                onValueChange={(v) => {
+                  setRegistrationFlowFilter(v)
+                  setPage(1)
+                }}
+                options={REGISTRATION_FLOW_OPTIONS}
+                triggerClassName={`${SELECT_CLASS} w-full`}
+              />
+              <Select
+                value={creationMethodFilter}
+                onValueChange={(v) => {
+                  setCreationMethodFilter(v)
+                  setPage(1)
+                }}
+                options={CREATION_METHOD_OPTIONS}
+                triggerClassName={`${SELECT_CLASS} w-full`}
+              />
+            </div>
           </div>
         )}
 
@@ -643,11 +954,11 @@ export function UserManagementPage() {
 
       {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <table className="w-full border-collapse text-sm">
+        <table className="min-w-[1400px] w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
               {TABLE_HEADERS.map((h) => (
-                <th key={h} className="px-4 py-3 text-left font-medium">
+                <th key={h} className="px-3 py-3 text-left font-medium whitespace-nowrap">
                   {h}
                 </th>
               ))}
@@ -673,26 +984,28 @@ export function UserManagementPage() {
                     key={user.id}
                     className="border-b border-border/80 transition-colors hover:bg-muted/45"
                   >
-                    <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
                       {user.internalId}
                     </td>
-                    <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap">
                       {user.customId ? `@${user.customId}` : '-'}
                     </td>
-                    <td className="px-4 py-2 font-medium">
+                    <td className="px-3 py-2 font-medium whitespace-nowrap">
                       <UserLink
                         userId={user.internalId}
                         name={user.name ?? '-'}
                         showAvatar={false}
                       />
                     </td>
-                    <td className="px-4 py-2 text-muted-foreground">{user.email ?? '-'}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                      {user.email ?? '-'}
+                    </td>
+                    <td className="px-3 py-2">
                       <Badge variant={user.isActive ? 'success' : 'error'}>
                         {user.isActive ? '啟用' : '停用'}
                       </Badge>
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
                         {(Array.isArray(user.roles) ? user.roles : []).length > 0 ? (
                           user.roles.map((r) => (
@@ -705,7 +1018,7 @@ export function UserManagementPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
                         {(Array.isArray(user.tags) ? user.tags : []).length > 0 ? (
                           user.tags.map((tag) => (
@@ -718,7 +1031,7 @@ export function UserManagementPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       {user.personaType ? (
                         <Badge variant="primary">
                           {user.personaType} {PERSONA_LABELS[user.personaType as PersonaType]}
@@ -727,13 +1040,13 @@ export function UserManagementPage() {
                         <span className="text-xs text-muted-foreground">未測驗</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                       {getRegistrationFlowLabel(user.registrationFlow ?? null)}
                     </td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                       {getCreationMethodLabel(user.creationMethod ?? null)}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2">
                       {badgeLabel === '-' ? (
                         <span className="text-xs text-muted-foreground">-</span>
                       ) : badgeLabel === '已完成' ? (
@@ -742,14 +1055,19 @@ export function UserManagementPage() {
                         <Badge variant="default">未完成</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                       {getDaysToCompleteLabel(user.daysToComplete ?? null)}
                     </td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                       {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-'}
                     </td>
-                    <td className="px-4 py-2">
-                      <div className="flex gap-1">
+                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                      {user.lastActiveAt
+                        ? new Date(user.lastActiveAt).toLocaleString('zh-TW')
+                        : '-'}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex gap-1 whitespace-nowrap">
                         <Button
                           type="button"
                           variant="secondary"
@@ -787,7 +1105,7 @@ export function UserManagementPage() {
       {pagination && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            共 {(pagination.total_count ?? 0).toLocaleString()} 位 · 第 {page} / {totalPages} 頁
+            共 {(pagination.totalItems ?? 0).toLocaleString()} 位 · 第 {page} / {totalPages} 頁
           </span>
           <div className="flex gap-2">
             <Button
@@ -804,7 +1122,7 @@ export function UserManagementPage() {
               type="button"
               variant="secondary"
               size="xs"
-              disabled={!pagination.has_next}
+              disabled={!pagination.hasNext}
               onClick={() => setPage((p) => p + 1)}
               className="px-3 disabled:opacity-40"
             >

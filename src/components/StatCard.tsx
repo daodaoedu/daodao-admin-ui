@@ -9,6 +9,7 @@ interface StatCardProps {
   icon?: LucideIcon
   description?: string
   iconClassName?: string
+  onClick?: () => void
 }
 
 export function StatCard({
@@ -19,11 +20,21 @@ export function StatCard({
   icon: Icon,
   description,
   iconClassName,
+  onClick,
 }: StatCardProps) {
   const isPositive = change !== undefined && change >= 0
 
+  const CardElement = onClick ? 'button' : 'div'
+
   return (
-    <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+    <CardElement
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className={cn(
+        'rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm text-left w-full',
+        onClick && 'cursor-pointer transition-shadow hover:shadow-md hover:border-primary/30',
+      )}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <p className="text-sm text-muted-foreground">{title}</p>
@@ -67,6 +78,6 @@ export function StatCard({
           {changeLabel && <span className="text-muted-foreground">{changeLabel}</span>}
         </div>
       )}
-    </div>
+    </CardElement>
   )
 }
