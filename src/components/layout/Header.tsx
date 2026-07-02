@@ -40,6 +40,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/learning-paths': '學習路徑',
   '/badges': '徽章管理',
   '/challenges': '挑戰管理',
+  '/community-challenges': '共同挑戰',
   '/leaderboards': '排行榜',
   '/onboarding-flows': 'Onboarding 流程',
   '/community-map': '社群地圖',

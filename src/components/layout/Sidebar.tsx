@@ -163,6 +163,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/badges', label: '徽章', icon: Trophy },
       { to: '/challenges', label: '挑戰', icon: Target },
+      { to: '/community-challenges', label: '共同挑戰', icon: Target },
       { to: '/leaderboards', label: '排行榜', icon: BarChart3 },
     ],
   },

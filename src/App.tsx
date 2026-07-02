@@ -103,6 +103,9 @@ const BadgesPage = lazy(() => import('@/pages/BadgesPage').then((m) => ({ defaul
 const ChallengesPage = lazy(() =>
   import('@/pages/ChallengesPage').then((m) => ({ default: m.ChallengesPage })),
 )
+const CommunityChallengesPage = lazy(() =>
+  import('@/pages/CommunityChallengesPage').then((m) => ({ default: m.CommunityChallengesPage })),
+)
 const LeaderboardsPage = lazy(() =>
   import('@/pages/LeaderboardsPage').then((m) => ({ default: m.LeaderboardsPage })),
 )
@@ -457,6 +460,14 @@ export function App() {
             element={
               <LazyPage>
                 <ChallengesPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/community-challenges"
+            element={
+              <LazyPage>
+                <CommunityChallengesPage />
               </LazyPage>
             }
           />
