@@ -217,8 +217,10 @@ function SeasonStatsPanel({ challenge, season }: { challenge: MockChallenge; sea
             {MOCK_TOP_MEMBERS.map((member) => (
               <div key={member.name} className="flex items-center justify-between text-sm">
                 <span>{member.name}</span>
-                <span className="text-muted-foreground">
-                  共 {member.totalCheckins} 次 · 🔥 連續 {member.streak} 天
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  共 {member.totalCheckins} 次 ·
+                  <Flame className="h-3 w-3 text-amber-500" />
+                  連續 {member.streak} 天
                 </span>
               </div>
             ))}
