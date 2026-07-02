@@ -230,8 +230,10 @@ export const listAdminUsers = (params?: {
   creationMethod?: 'self_created' | 'copied' | 'action_generator'
   lastLoginFrom?: string
   lastLoginTo?: string
+  lastLoginPresence?: 'with' | 'without'
   lastActivityFrom?: string
   lastActivityTo?: string
+  lastActivityPresence?: 'with' | 'without'
   sortBy?:
     | 'createdAt'
     | 'lastLoginAt'

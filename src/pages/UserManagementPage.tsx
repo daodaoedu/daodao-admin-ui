@@ -131,8 +131,10 @@ function getDaysToCompleteLabel(daysToComplete: number | null) {
 }
 
 function toInputDateValue(date: Date) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  return d.toLocaleDateString('en-CA')
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 function normalizePresenceFilter(value: string | null) {
@@ -376,7 +378,7 @@ export function UserManagementPage() {
           lastActivityPresenceFilter === 'all' ? undefined : lastActivityPresenceFilter,
         sortBy: sortField,
         sortOrder,
-      } as Parameters<typeof listAdminUsers>[0]).then((r) => r.data),
+      }).then((r) => r.data),
   })
 
   const users = (Array.isArray(usersData?.data) ? usersData.data : []).map((user) => ({
