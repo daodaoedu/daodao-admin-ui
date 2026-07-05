@@ -291,7 +291,7 @@ export function DashboardPage() {
   const { data: dbInfo } = useDbInfo()
   const { data: redisInfo } = useRedisInfo()
 
-  const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), [])
+  const today = format(new Date(), 'yyyy-MM-dd')
 
   const activeQuery = useMemo(
     () =>

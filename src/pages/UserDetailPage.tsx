@@ -1077,7 +1077,7 @@ export function UserDetailPage() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : loginHistory.isError ? (
-            <p className="py-8 text-center text-sm text-destructive">無法���入登入歷史</p>
+            <p className="py-8 text-center text-sm text-destructive">無法載入登入歷史</p>
           ) : (
             <LoginHistoryTab rows={loginHistoryRows} />
           ))}
