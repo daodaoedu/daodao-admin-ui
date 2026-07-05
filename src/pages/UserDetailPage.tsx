@@ -1066,6 +1066,8 @@ export function UserDetailPage() {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
+          ) : activityStats.isError ? (
+            <p className="py-8 text-center text-sm text-destructive">無法載入活動統計</p>
           ) : (
             <ActivityStatsTab stats={activityStats.data} />
           ))}
@@ -1074,6 +1076,8 @@ export function UserDetailPage() {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
+          ) : loginHistory.isError ? (
+            <p className="py-8 text-center text-sm text-destructive">無法���入登入歷史</p>
           ) : (
             <LoginHistoryTab rows={loginHistoryRows} />
           ))}

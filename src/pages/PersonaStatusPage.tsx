@@ -483,11 +483,11 @@ function UsersTable({
         order,
         limit,
         offset,
-      }).then((r) => r.data.data),
+      }).then((r) => r.data),
   })
 
-  const users = data ?? []
-  const hasNext = users.length === limit
+  const users = data?.data ?? []
+  const hasNext = data?.pagination?.has_next ?? users.length === limit
   const hasPrev = offset > 0
 
   const toggleSort = (field: UserSortField) => {
@@ -520,11 +520,7 @@ function UsersTable({
         </div>
       ) : isError ? (
         <p className="py-8 text-center text-sm text-muted-foreground">
-          後端尚未提供此 API，請聯繫開發者實作
-          <br />
-          <code className="mt-1 inline-block text-xs text-muted-foreground/70">
-            GET /api/v1/admin/persona/users
-          </code>
+          載入用戶資料失敗，請稍後再試
         </p>
       ) : users.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">沒有符合條件的用戶</p>
@@ -671,7 +667,7 @@ function QuestionDetailPanel({
                   <div className="flex items-center justify-between gap-2">
                     <UserLink userId={a.userId} name={a.name || '未命名'} photoURL={a.photoURL} />
                     <span className="shrink-0 text-[10px] text-muted-foreground">
-                      {a.answeredAt.slice(0, 10)}
+                      {a.answeredAt?.slice(0, 10) ?? '—'}
                     </span>
                   </div>
                   <p className="mt-1.5 rounded bg-primary/8 px-2.5 py-1.5 text-xs text-foreground">
@@ -755,7 +751,7 @@ function UserDetailPanel({ user, onClose }: { user: PersonaUser; onClose: () => 
                       </p>
                       <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
                         <span>共鳴 {q.answer.resonanceCount}</span>
-                        <span>{q.answer.createdAt.slice(0, 10)}</span>
+                        <span>{q.answer.createdAt?.slice(0, 10) ?? '—'}</span>
                       </div>
                     </>
                   )}

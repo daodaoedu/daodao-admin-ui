@@ -144,7 +144,9 @@ const TIMELINE_ICON: Record<ActivityTimelineEvent['type'], typeof LogIn> = {
 
 function relativeTime(ts: string | null | undefined) {
   if (!ts) return '—'
-  return formatDistanceToNow(new Date(ts), { addSuffix: true, locale: zhTW })
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return '—'
+  return formatDistanceToNow(d, { addSuffix: true, locale: zhTW })
 }
 
 // ── Expandable user row inside drawer ────────────────────
@@ -158,6 +160,7 @@ function DrawerUserRow({ user }: { user: AdminUserListItem }) {
       setTimelineLoading(true)
       getActivityTimeline(user.id, { limit: 5 })
         .then((r) => setTimeline(r.data.data))
+        .catch(() => {})
         .finally(() => setTimelineLoading(false))
     }
     setExpanded((v) => !v)
