@@ -6,12 +6,19 @@ import { PageHeader } from '@/components/PageHeader'
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Input, Textarea } from '@/components/ui/input'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   useCreateEmailTemplate,
   useDeleteEmailTemplate,
   useEmailTemplates,
 } from '@/hooks/useEmailTemplates'
 import { detectVariables } from '@/lib/email-preview'
-import { cn } from '@/lib/utils'
 
 interface TemplateFormData {
   name: string
@@ -396,24 +403,24 @@ export function EmailTemplatesPage() {
 
           {!isLoading && templates && templates.length > 0 && (
             <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40 text-left text-xs font-medium text-muted-foreground">
-                    <th className="px-4 py-3">模板名稱</th>
-                    <th className="px-4 py-3">主旨</th>
-                    <th className="px-4 py-3">變數</th>
-                    <th className="px-4 py-3">建立時間</th>
-                    <th className="px-4 py-3 text-right">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/40 text-left text-xs">
+                    <TableHead>模板名稱</TableHead>
+                    <TableHead>主旨</TableHead>
+                    <TableHead>變數</TableHead>
+                    <TableHead>建立時間</TableHead>
+                    <TableHead className="text-right">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border">
                   {templates.map((tpl) => (
-                    <tr key={tpl.id} className={cn('bg-card hover:bg-muted/30 transition-colors')}>
-                      <td className="px-4 py-3 font-medium text-foreground">{tpl.name}</td>
-                      <td className="max-w-[240px] truncate px-4 py-3 text-muted-foreground">
+                    <TableRow key={tpl.id} className="bg-card">
+                      <TableCell className="font-medium text-foreground">{tpl.name}</TableCell>
+                      <TableCell className="max-w-[240px] truncate text-muted-foreground">
                         {tpl.subject}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         {tpl.variables.length === 0 ? (
                           <span className="text-muted-foreground">—</span>
                         ) : (
@@ -428,11 +435,11 @@ export function EmailTemplatesPage() {
                             ))}
                           </div>
                         )}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
                         {new Date(tpl.createdAt).toLocaleDateString('zh-TW')}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center justify-end gap-1">
                           <Link
                             to={`/email-templates/${tpl.id}/edit`}
@@ -447,11 +454,11 @@ export function EmailTemplatesPage() {
                             isDeleting={deleteMutation.isPending}
                           />
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>

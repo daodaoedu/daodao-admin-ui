@@ -14,6 +14,14 @@ import {
 import { getRoadmapReport } from '@/api/admin-roadmap'
 import { PageHeader } from '@/components/PageHeader'
 import { Select } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { CATEGORY_LABELS, ROADMAP_STATUS_LABELS } from '@/constants/wishpool'
 
 type Range = 'week' | 'month' | 'quarter' | 'year'
@@ -125,34 +133,32 @@ export function RoadmapReportsPage() {
             <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
               熱門項目（依票數）
             </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-muted-foreground">
-                    <th className="px-3 py-2 text-left font-medium">標題</th>
-                    <th className="px-3 py-2 text-left font-medium">狀態</th>
-                    <th className="px-3 py-2 text-left font-medium">票數</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.popularItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="px-3 py-4 text-center text-muted-foreground">
-                        無資料
-                      </td>
-                    </tr>
-                  ) : (
-                    data.popularItems.map((it) => (
-                      <tr key={it.external_id} className="border-b border-border">
-                        <td className="px-3 py-2">{it.title}</td>
-                        <td className="px-3 py-2">{ROADMAP_STATUS_LABELS[it.status]}</td>
-                        <td className="px-3 py-2 font-medium">{it.support_count}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>標題</TableHead>
+                  <TableHead>狀態</TableHead>
+                  <TableHead>票數</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.popularItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-4 text-center text-muted-foreground">
+                      無資料
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  data.popularItems.map((it) => (
+                    <TableRow key={it.external_id}>
+                      <TableCell>{it.title}</TableCell>
+                      <TableCell>{ROADMAP_STATUS_LABELS[it.status]}</TableCell>
+                      <TableCell className="font-medium">{it.support_count}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </>
       )}

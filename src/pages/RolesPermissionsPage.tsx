@@ -18,6 +18,14 @@ import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 
 type Tab = 'roles' | 'permissions'
@@ -244,51 +252,48 @@ export function RolesPermissionsPage() {
           )}
 
           <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+            <Table>
+              <TableHeader>
+                <TableRow className="text-left">
                   {['ID', '名稱', '說明', '建立時間', '操作'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left font-medium">
-                      {h}
-                    </th>
+                    <TableHead key={h}>{h}</TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {rolesLoading ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
                       載入中...
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : roles.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
                       無資料
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   roles.map((role) => (
                     <>
-                      <tr
+                      <TableRow
                         key={role.id}
-                        className="border-b border-border hover:bg-accent transition-colors cursor-pointer"
+                        className="cursor-pointer"
                         onClick={() =>
                           setExpandedRoleId(expandedRoleId === role.id ? null : role.id)
                         }
                       >
-                        <td className="px-4 py-2 font-mono text-xs">{role.id}</td>
-                        <td className="px-4 py-2 font-medium">
+                        <TableCell className="font-mono text-xs">{role.id}</TableCell>
+                        <TableCell className="font-medium">
                           <Badge variant="primary">{role.name}</Badge>
-                        </td>
-                        <td className="px-4 py-2 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                           {role.description ?? '-'}
-                        </td>
-                        <td className="px-4 py-2 text-xs text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
                           {role.created_at ? new Date(role.created_at).toLocaleDateString() : '-'}
-                        </td>
-                        <td
-                          className="px-4 py-2"
+                        </TableCell>
+                        <TableCell
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
                         >
@@ -313,11 +318,11 @@ export function RolesPermissionsPage() {
                               刪除
                             </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                       {expandedRoleId === role.id && (
-                        <tr key={`${role.id}-expanded`} className="bg-muted/40">
-                          <td colSpan={5} className="px-6 py-3">
+                        <TableRow key={`${role.id}-expanded`} className="bg-muted/40">
+                          <TableCell colSpan={5} className="px-6">
                             <div className="space-y-2">
                               <p className="text-xs font-medium text-muted-foreground">
                                 已指派權限
@@ -381,14 +386,14 @@ export function RolesPermissionsPage() {
                                 </div>
                               </div>
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )}
                     </>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
@@ -463,44 +468,41 @@ export function RolesPermissionsPage() {
           )}
 
           <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+            <Table>
+              <TableHeader>
+                <TableRow className="text-left">
                   {['ID', '名稱', '說明', '建立時間', '操作'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left font-medium">
-                      {h}
-                    </th>
+                    <TableHead key={h}>{h}</TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {permsLoading ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
                       載入中...
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : permissions.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
                       無資料
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   permissions.map((perm) => (
-                    <tr
-                      key={perm.id}
-                      className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
-                    >
-                      <td className="px-4 py-2 font-mono text-xs">{perm.id}</td>
-                      <td className="px-4 py-2">
+                    <TableRow key={perm.id}>
+                      <TableCell className="font-mono text-xs">{perm.id}</TableCell>
+                      <TableCell>
                         <Badge variant="primary">{perm.name}</Badge>
-                      </td>
-                      <td className="px-4 py-2 text-muted-foreground">{perm.description ?? '-'}</td>
-                      <td className="px-4 py-2 text-xs text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {perm.description ?? '-'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
                         {perm.created_at ? new Date(perm.created_at).toLocaleDateString() : '-'}
-                      </td>
-                      <td className="px-4 py-2">
+                      </TableCell>
+                      <TableCell>
                         <div className="flex gap-1">
                           <Button
                             type="button"
@@ -522,12 +524,12 @@ export function RolesPermissionsPage() {
                             刪除
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}

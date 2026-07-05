@@ -14,6 +14,14 @@ import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useOnboardingFlowAnalytics, useOnboardingFlows } from '@/hooks/useOnboardingFlows'
 import { cn } from '@/lib/utils'
 
@@ -325,35 +333,35 @@ function QuizStatsSection({ days }: { days?: number }) {
           )}
 
           {crossTab === 'source' && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="pb-2 pr-4 font-medium">角色</th>
-                    <th className="pb-2 pr-4 font-medium">Landing Page</th>
-                    <th className="pb-2 pr-4 font-medium">測驗</th>
-                    <th className="pb-2 font-medium">Action Maker</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ROLE_ORDER.map((role) => {
-                    const info = data.byRoleAndRegistrationFlow?.[role] ?? {}
-                    return (
-                      <tr key={role} className="border-b border-border/50 last:border-0">
-                        <td className="py-2 pr-4 text-foreground">
-                          {role} {LEARNING_STYLE_LABEL[role].name}
-                        </td>
-                        <td className="py-2 pr-4 text-muted-foreground">
-                          {info.landing_page ?? 0}
-                        </td>
-                        <td className="py-2 pr-4 text-muted-foreground">{info.quiz ?? 0}</td>
-                        <td className="py-2 text-muted-foreground">{info.action_maker ?? 0}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow className="text-left text-xs">
+                  <TableHead className="pr-4">角色</TableHead>
+                  <TableHead className="pr-4">Landing Page</TableHead>
+                  <TableHead className="pr-4">測驗</TableHead>
+                  <TableHead>Action Maker</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ROLE_ORDER.map((role) => {
+                  const info = data.byRoleAndRegistrationFlow?.[role] ?? {}
+                  return (
+                    <TableRow key={role}>
+                      <TableCell className="pr-4 text-foreground">
+                        {role} {LEARNING_STYLE_LABEL[role].name}
+                      </TableCell>
+                      <TableCell className="pr-4 text-muted-foreground">
+                        {info.landing_page ?? 0}
+                      </TableCell>
+                      <TableCell className="pr-4 text-muted-foreground">{info.quiz ?? 0}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {info.action_maker ?? 0}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
           )}
         </div>
       </div>
@@ -560,27 +568,9 @@ export function OnboardingFlowsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard
-          title="完成率"
-          value={`${completionRate}%`}
-          change={3.2}
-          changeLabel="vs 上月"
-          icon={CheckCircle}
-        />
-        <StatCard
-          title="平均完成時間"
-          value={`${avgDuration} 分鐘`}
-          change={-8.5}
-          changeLabel="vs 上月"
-          icon={Clock}
-        />
-        <StatCard
-          title="本月開始人數"
-          value={totalStarted}
-          change={12.1}
-          changeLabel="vs 上月"
-          icon={UserPlus}
-        />
+        <StatCard title="完成率" value={`${completionRate}%`} icon={CheckCircle} />
+        <StatCard title="平均完成時間" value={`${avgDuration} 分鐘`} icon={Clock} />
+        <StatCard title="本月開始人數" value={totalStarted} icon={UserPlus} />
       </div>
 
       {/* Active Flow */}

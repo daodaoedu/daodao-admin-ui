@@ -18,6 +18,14 @@ import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Select } from '@/components/ui/select'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   useCommunityInteractionDetails,
   useCommunityInteractionStats,
 } from '@/hooks/useCommunityMap'
@@ -157,34 +165,32 @@ function HeatmapSection({
           <div className="mb-1 pl-10 text-[10px] text-muted-foreground/60 text-center tracking-wide">
             ← 時段（每格跨 4 小時） →
           </div>
-          <table className="w-full text-xs">
-            <thead>
-              <tr>
-                <th className="w-10 pr-2 text-right text-muted-foreground font-normal text-[10px]">
-                  星期
-                </th>
+          <Table className="text-xs">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10 pr-2 text-right font-normal text-[10px]">星期</TableHead>
                 {HOUR_BUCKETS.map((b) => (
-                  <th
+                  <TableHead
                     key={b.label}
-                    className="px-1 pb-2 text-center text-muted-foreground font-medium whitespace-pre-line leading-tight"
+                    className="px-1 pb-2 text-center whitespace-pre-line leading-tight"
                   >
                     {b.label}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {DOW_LABELS.map((dow, dowIdx) => (
-                <tr key={dow}>
-                  <td className="pr-2 py-0.5 text-right text-muted-foreground whitespace-nowrap">
+                <TableRow key={dow}>
+                  <TableCell className="pr-2 py-0.5 text-right text-muted-foreground whitespace-nowrap">
                     週{dow}
-                  </td>
+                  </TableCell>
                   {HOUR_BUCKETS.map((bucket, bucketIdx) => {
                     const count = grid[dowIdx][bucketIdx]
                     const intensity = count / maxCount
                     const alpha = count > 0 ? (intensity * 0.75 + 0.12).toFixed(2) : '0.04'
                     return (
-                      <td key={bucket.label} className="px-1 py-0.5">
+                      <TableCell key={bucket.label} className="px-1 py-0.5">
                         <div
                           title={`週${dow} ${HOUR_BUCKETS[bucketIdx].label.replace('\n', ' ')}: ${count} 次`}
                           className="h-7 w-full min-w-[36px] rounded cursor-default"
@@ -192,13 +198,13 @@ function HeatmapSection({
                             backgroundColor: `oklch(var(--primary) / ${alpha})`,
                           }}
                         />
-                      </td>
+                      </TableCell>
                     )
                   })}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
             <span>少</span>
             {[0.08, 0.2, 0.38, 0.58, 0.87].map((alpha) => (
@@ -333,36 +339,38 @@ function TopContentSection({
         title="熱門內容 Top 10"
         description="本期按讚＋留言合計最高的內容，反映成員最感興趣的主題與形式，可作為後續選題的參考依據。"
       />
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--admin-card-border)] text-xs text-muted-foreground">
-              <th className="pb-2 text-left font-medium">類型</th>
-              <th className="pb-2 text-left font-medium">內容</th>
-              <th className="pb-2 text-right font-medium">迴響</th>
-              <th className="pb-2 text-right font-medium">留言</th>
-              <th className="pb-2 text-right font-medium">合計</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--admin-card-border)]">
-            {topContent.slice(0, 10).map((item) => (
-              <tr key={item.targetId} className="hover:bg-muted/20 transition-colors">
-                <td className="py-2 pr-3">
-                  <TypeBadge type={item.targetType} />
-                </td>
-                <td className="py-2 pr-3 max-w-[240px] truncate text-foreground">
-                  {item.targetName}
-                </td>
-                <td className="py-2 text-right tabular-nums">{item.reactions.toLocaleString()}</td>
-                <td className="py-2 text-right tabular-nums">{item.comments.toLocaleString()}</td>
-                <td className="py-2 text-right font-semibold tabular-nums">
-                  {item.total.toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow className="border-[var(--admin-card-border)] text-xs text-muted-foreground">
+            <TableHead className="pb-2">類型</TableHead>
+            <TableHead className="pb-2">內容</TableHead>
+            <TableHead className="pb-2 text-right">迴響</TableHead>
+            <TableHead className="pb-2 text-right">留言</TableHead>
+            <TableHead className="pb-2 text-right">合計</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody className="divide-y divide-[var(--admin-card-border)]">
+          {topContent.slice(0, 10).map((item) => (
+            <TableRow key={item.targetId}>
+              <TableCell className="pr-3">
+                <TypeBadge type={item.targetType} />
+              </TableCell>
+              <TableCell className="pr-3 max-w-[240px] truncate text-foreground">
+                {item.targetName}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {item.reactions.toLocaleString()}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {item.comments.toLocaleString()}
+              </TableCell>
+              <TableCell className="text-right font-semibold tabular-nums">
+                {item.total.toLocaleString()}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 }

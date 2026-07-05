@@ -32,6 +32,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   useActivityTimeline,
   useAdminActivityStats,
   useAdminLoginHistory,
@@ -149,13 +157,31 @@ function ActivityTimeline({ events }: { events: TimelineEvent[] }) {
 
 function ActivityStatsTab({ stats }: { stats: AdminActivityStats | undefined }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <StatCard title="總實踐數" value={stats?.totalPractices ?? 0} icon={BookOpen} />
-      <StatCard title="總打卡數" value={stats?.totalCheckins ?? 0} icon={MapPin} />
-      <StatCard title="總發文數" value={stats?.totalPosts ?? 0} icon={FileText} />
-      <StatCard title="總反應數" value={stats?.totalReactions ?? 0} icon={Heart} />
-      <StatCard title="總登入次數" value={stats?.loginCount ?? 0} icon={LogIn} />
-      <StatCard title="近30天登入" value={stats?.recentLoginCount ?? 0} icon={Clock} />
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard title="總實踐數" value={stats?.totalPractices ?? 0} icon={BookOpen} />
+        <StatCard title="總打卡數" value={stats?.totalCheckins ?? 0} icon={MapPin} />
+        <StatCard title="總發文數" value={stats?.totalPosts ?? 0} icon={FileText} />
+        <StatCard title="總反應數" value={stats?.totalReactions ?? 0} icon={Heart} />
+        <StatCard title="總登入次數" value={stats?.loginCount ?? 0} icon={LogIn} />
+        <StatCard title="近30天登入" value={stats?.recentLoginCount ?? 0} icon={Clock} />
+      </div>
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">最後登入:</span>
+            <span className="font-medium text-foreground">
+              {stats?.lastLoginAt ? new Date(stats.lastLoginAt).toLocaleString('zh-TW') : '-'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">最後操作:</span>
+            <span className="font-medium text-foreground">
+              {stats?.lastActiveAt ? new Date(stats.lastActiveAt).toLocaleString('zh-TW') : '-'}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -166,35 +192,32 @@ function LoginHistoryTab({
   rows: { id: number; time: string; ip: string; device: string }[]
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-            <th className="px-4 py-3 text-left font-medium text-muted-foreground">時間</th>
-            <th className="px-4 py-3 text-left font-medium text-muted-foreground">IP</th>
-            <th className="px-4 py-3 text-left font-medium text-muted-foreground">裝置 / 瀏覽器</th>
-          </tr>
-        </thead>
-        <tbody>
+    <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>時間</TableHead>
+            <TableHead>IP</TableHead>
+            <TableHead>裝置 / 瀏覽器</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((row) => (
-            <tr
-              key={row.id}
-              className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-            >
-              <td className="whitespace-nowrap px-4 py-3 text-foreground">{row.time}</td>
-              <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">
+            <TableRow key={row.id}>
+              <TableCell className="whitespace-nowrap text-foreground">{row.time}</TableCell>
+              <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                 {row.ip}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+              </TableCell>
+              <TableCell className="whitespace-nowrap text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   <Monitor className="h-3.5 w-3.5" />
                   {row.device}
                 </span>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }
@@ -752,38 +775,36 @@ function OnboardingTab({ userId }: { userId: string }) {
           <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">
             Email 序列
           </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                  <th className="pb-2 pr-4 font-medium">信件</th>
-                  <th className="pb-2 pr-4 font-medium">狀態</th>
-                  <th className="pb-2 pr-4 font-medium">寄送時間</th>
-                  <th className="pb-2 pr-4 font-medium">開信時間</th>
-                  <th className="pb-2 font-medium">開信次數</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.emailSequence.map((email) => (
-                  <tr key={email.emailType} className="border-b border-border/50 last:border-0">
-                    <td className="py-2 pr-4 font-medium text-foreground">
-                      {EMAIL_TYPE_LABEL[email.emailType] ?? email.emailType}
-                    </td>
-                    <td className={cn('py-2 pr-4', EMAIL_STATUS_COLOR[email.status] ?? '')}>
-                      {EMAIL_STATUS_LABEL[email.status] ?? email.status}
-                    </td>
-                    <td className="py-2 pr-4 text-muted-foreground">
-                      {email.sentAt ? email.sentAt.slice(0, 10) : '-'}
-                    </td>
-                    <td className="py-2 pr-4 text-muted-foreground">
-                      {email.openedAt ? email.openedAt.slice(0, 10) : '-'}
-                    </td>
-                    <td className="py-2 text-muted-foreground">{email.openCount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>信件</TableHead>
+                <TableHead>狀態</TableHead>
+                <TableHead>寄送時間</TableHead>
+                <TableHead>開信時間</TableHead>
+                <TableHead>開信次數</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.emailSequence.map((email) => (
+                <TableRow key={email.emailType}>
+                  <TableCell className="font-medium text-foreground">
+                    {EMAIL_TYPE_LABEL[email.emailType] ?? email.emailType}
+                  </TableCell>
+                  <TableCell className={cn(EMAIL_STATUS_COLOR[email.status] ?? '')}>
+                    {EMAIL_STATUS_LABEL[email.status] ?? email.status}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {email.sentAt ? email.sentAt.slice(0, 10) : '-'}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {email.openedAt ? email.openedAt.slice(0, 10) : '-'}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{email.openCount}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -836,7 +857,9 @@ export function UserDetailPage() {
         email: userDetail.data.email ?? '-',
         avatar: userDetail.data.photoURL,
         registeredAt: userDetail.data.createdAt?.slice(0, 10) ?? '-',
-        lastLoginAt: userDetail.data.lastLoginAt ?? '-',
+        lastLoginAt: userDetail.data.lastLoginAt
+          ? new Date(userDetail.data.lastLoginAt).toLocaleString('zh-TW')
+          : '-',
         status: userDetail.data.isActive ? ('active' as const) : ('inactive' as const),
         role: userDetail.data.roles[0]?.name ?? '-',
         permissions: userDetail.data.permissions,
@@ -941,6 +964,14 @@ export function UserDetailPage() {
               <InfoRow label="註冊日期" value={user.registeredAt} />
               <InfoRow label="最後登入" value={user.lastLoginAt} />
               <InfoRow
+                label="最後操作"
+                value={
+                  activityStats.data?.lastActiveAt
+                    ? new Date(activityStats.data.lastActiveAt).toLocaleString('zh-TW')
+                    : '-'
+                }
+              />
+              <InfoRow
                 label="狀態"
                 value={
                   <Badge variant={user.status === 'active' ? 'success' : 'error'}>
@@ -1020,9 +1051,36 @@ export function UserDetailPage() {
       </div>
 
       <div>
-        {activeTab === '活動時間軸' && <ActivityTimeline events={timelineEvents} />}
-        {activeTab === '活動統計' && <ActivityStatsTab stats={activityStats.data} />}
-        {activeTab === '登入歷史' && <LoginHistoryTab rows={loginHistoryRows} />}
+        {activeTab === '活動時間軸' &&
+          (activityTimeline.isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : activityTimeline.isError ? (
+            <p className="py-8 text-center text-sm text-destructive">無法載入活動時間軸</p>
+          ) : (
+            <ActivityTimeline events={timelineEvents} />
+          ))}
+        {activeTab === '活動統計' &&
+          (activityStats.isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : activityStats.isError ? (
+            <p className="py-8 text-center text-sm text-destructive">無法載入活動統計</p>
+          ) : (
+            <ActivityStatsTab stats={activityStats.data} />
+          ))}
+        {activeTab === '登入歷史' &&
+          (loginHistory.isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : loginHistory.isError ? (
+            <p className="py-8 text-center text-sm text-destructive">無法���入登入歷史</p>
+          ) : (
+            <LoginHistoryTab rows={loginHistoryRows} />
+          ))}
         {activeTab === '角色管理' && userDetail.data && (
           <RoleManagementTab
             userId={userDetail.data.internalId}

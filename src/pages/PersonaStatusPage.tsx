@@ -1,3 +1,4 @@
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
   AlertTriangle,
   ArrowUpDown,
@@ -6,14 +7,52 @@ import {
   CheckCircle2,
   Eye,
   PieChart,
+  Search,
   Users,
+  X,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  getPersonaQuestionAnswers,
+  getUserPersonaProfile,
+  listPersonaUsers,
+} from '@/api/admin-community'
+import type { PersonaUser } from '@/api/types'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
+import { UserLink } from '@/components/UserLink'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Spinner } from '@/components/ui/spinner'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useContentPerformance } from '@/hooks/useContentPerformance'
 import { usePersonaStats } from '@/hooks/useOnboardingAnalytics'
+
+const PERSONA_TYPE_LABEL: Record<string, string> = {
+  D: '探探島',
+  A: '動動島',
+  O: '構構島',
+  L: '跨跨島',
+  C: '連連島',
+}
+
+const QUESTION_TYPE_LABEL: Record<string, string> = {
+  choice: '選擇題',
+  sentence_completion: '句子完成',
+  scenario: '情境題',
+}
+
+type PersonaQuestionRow = { id: number; prompt: string; answerCount: number }
 
 type DatePreset = '1' | '7' | '30'
 
@@ -45,10 +84,6 @@ export function PersonaStatusPage() {
   const maxTopQuestionCount = useMemo(
     () => Math.max(...topQuestions.map((q) => q.answerCount), 1),
     [topQuestions],
-  )
-  const maxQuestionAnswerCount = useMemo(
-    () => Math.max(...personaQuestionRows.map((q) => q.answerCount), 1),
-    [personaQuestionRows],
   )
   const anyAnswerRate = personaAnalytics?.anyAnswerRate ?? 0
   const avgAnswerCountText = Number((personaAnalytics?.avgAnswerCount ?? 0).toFixed(1))
@@ -294,45 +329,438 @@ export function PersonaStatusPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-            <h3 className="mb-1 text-sm font-semibold text-foreground">題目回答率（逐題）</h3>
-            <p className="mb-4 text-xs text-muted-foreground">
-              以內容分析彙總的每題回答數做對比，對應上方「題目管理健康檢查」定位題目風險。
-            </p>
-            {personaQuestionRows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">尚無題目資料</p>
-            ) : (
-              <div className="space-y-3">
-                {personaQuestionRows.map(({ id, prompt, answerCount }) => {
-                  const pct = Math.round((answerCount / maxQuestionAnswerCount) * 100)
-                  return (
-                    <div key={id} className="flex items-center gap-3">
-                      <span className="w-6 shrink-0 text-xs font-mono text-muted-foreground text-right">
-                        Q{id}
-                      </span>
-                      <span
-                        className="w-64 shrink-0 text-xs text-foreground truncate"
-                        title={prompt}
-                      >
-                        {prompt}
-                      </span>
-                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <span className="w-16 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-                        {answerCount} 人
-                      </span>
-                    </div>
-                  )
-                })}
+          <PersonaDrillDown personaQuestionRows={personaQuestionRows} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PersonaDrillDown({ personaQuestionRows }: { personaQuestionRows: PersonaQuestionRow[] }) {
+  const [selectedQuestion, setSelectedQuestion] = useState<PersonaQuestionRow | null>(null)
+  const [selectedUser, setSelectedUser] = useState<PersonaUser | null>(null)
+  const [tab, setTab] = useState<'questions' | 'users'>('questions')
+
+  const handleTabChange = (v: string) => {
+    setTab(v as 'questions' | 'users')
+    setSelectedQuestion(null)
+    setSelectedUser(null)
+  }
+
+  const hasDetail = tab === 'questions' ? !!selectedQuestion : !!selectedUser
+
+  return (
+    <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+      <h3 className="mb-1 text-sm font-semibold text-foreground">明細下鑽</h3>
+      <p className="mb-4 text-xs text-muted-foreground">
+        依題目查看每題回答者，或依用戶查看個別填寫內容。點擊列表項目查看明細。
+      </p>
+      <Tabs value={tab} onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="questions">按題目查看</TabsTrigger>
+          <TabsTrigger value="users">按用戶查看</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="questions" className="min-h-[500px]">
+          <div className="flex gap-4">
+            <div className={hasDetail ? 'w-1/2 shrink-0' : 'w-full'}>
+              <QuestionsTable
+                rows={personaQuestionRows}
+                selectedId={selectedQuestion?.id ?? null}
+                onSelect={(q) => setSelectedQuestion(q)}
+              />
+            </div>
+            {selectedQuestion && (
+              <div className="w-1/2 shrink-0">
+                <QuestionDetailPanel
+                  question={selectedQuestion}
+                  onClose={() => setSelectedQuestion(null)}
+                />
               </div>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="users" className="min-h-[500px]">
+          <div className="flex gap-4">
+            <div className={hasDetail ? 'w-1/2 shrink-0' : 'w-full'}>
+              <UsersTable
+                selectedId={selectedUser?.userId ?? null}
+                onSelect={(u) => setSelectedUser(u)}
+              />
+            </div>
+            {selectedUser && (
+              <div className="w-1/2 shrink-0">
+                <UserDetailPanel user={selectedUser} onClose={() => setSelectedUser(null)} />
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+function QuestionsTable({
+  rows,
+  selectedId,
+  onSelect,
+}: {
+  rows: PersonaQuestionRow[]
+  selectedId: number | null
+  onSelect: (q: PersonaQuestionRow) => void
+}) {
+  if (rows.length === 0) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">尚無題目資料</p>
+  }
+
+  return (
+    <Table className="text-xs">
+      <TableHeader>
+        <TableRow>
+          <TableHead className="py-1.5 px-2">Q#</TableHead>
+          <TableHead className="py-1.5 px-2">題目</TableHead>
+          <TableHead className="py-1.5 px-2 text-right">回答人次</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((q) => (
+          <TableRow
+            key={q.id}
+            className={`cursor-pointer ${selectedId === q.id ? 'bg-muted' : ''}`}
+            onClick={() => onSelect(q)}
+          >
+            <TableCell className="py-1.5 px-2 font-mono text-muted-foreground">Q{q.id}</TableCell>
+            <TableCell className="max-w-0 py-1.5 px-2">
+              <span className="block truncate text-foreground" title={q.prompt}>
+                {q.prompt}
+              </span>
+            </TableCell>
+            <TableCell className="py-1.5 px-2 text-right tabular-nums text-muted-foreground">
+              {q.answerCount} 人
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+const SORT_FIELD_MAP = {
+  answerCount: 'answer_count',
+  lastAnsweredAt: 'last_answered',
+} as const
+type UserSortField = keyof typeof SORT_FIELD_MAP
+
+function UsersTable({
+  selectedId,
+  onSelect,
+}: {
+  selectedId: number | null
+  onSelect: (u: PersonaUser) => void
+}) {
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<UserSortField>('answerCount')
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc')
+  const [offset, setOffset] = useState(0)
+  const limit = 20
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput)
+      setOffset(0)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: ['admin', 'persona', 'users', search, sort, order, offset],
+    queryFn: () =>
+      listPersonaUsers({
+        search: search || undefined,
+        sort: SORT_FIELD_MAP[sort],
+        order,
+        limit,
+        offset,
+      }).then((r) => r.data),
+  })
+
+  const users = data?.data ?? []
+  const hasNext = data?.pagination?.has_next ?? users.length === limit
+  const hasPrev = offset > 0
+
+  const toggleSort = (field: UserSortField) => {
+    if (sort === field) {
+      setOrder((o) => (o === 'desc' ? 'asc' : 'desc'))
+    } else {
+      setSort(field)
+      setOrder('desc')
+    }
+    setOffset(0)
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="relative max-w-xs">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="搜尋用戶名稱"
+          className="w-full pl-8"
+        />
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-11 w-full" />
+          ))}
         </div>
+      ) : isError ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          載入用戶資料失敗，請稍後再試
+        </p>
+      ) : users.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">沒有符合條件的用戶</p>
+      ) : (
+        <>
+          <Table className="text-xs">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="py-1.5 px-2">用戶</TableHead>
+                <TableHead className="w-20 py-1.5 px-2">類型</TableHead>
+                <TableHead className="w-20 py-1.5 px-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort('answerCount')}
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                  >
+                    回答數
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </TableHead>
+                <TableHead className="w-24 py-1.5 px-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort('lastAnsweredAt')}
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                  >
+                    最後回答
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((u) => (
+                <TableRow
+                  key={u.userId}
+                  className={`cursor-pointer ${selectedId === u.userId ? 'bg-muted' : ''}`}
+                  onClick={() => onSelect(u)}
+                >
+                  <TableCell className="py-1.5 px-2">
+                    <UserLink
+                      userId={u.externalId}
+                      name={u.name || '未命名'}
+                      photoURL={u.photoUrl}
+                    />
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2">
+                    {u.personaType ? (
+                      <Badge variant="primary">{PERSONA_TYPE_LABEL[u.personaType]}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-right tabular-nums text-muted-foreground">
+                    {u.answerCount}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-right text-muted-foreground">
+                    {u.lastAnsweredAt ? u.lastAnsweredAt.slice(0, 10) : '—'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <div className="flex items-center justify-end gap-2 pt-1">
+            {isFetching && <Spinner className="mr-1 h-4 w-4" />}
+            <button
+              type="button"
+              disabled={!hasPrev}
+              onClick={() => setOffset((o) => Math.max(0, o - limit))}
+              className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-40 enabled:hover:bg-muted"
+            >
+              上一頁
+            </button>
+            <button
+              type="button"
+              disabled={!hasNext}
+              onClick={() => setOffset((o) => o + limit)}
+              className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-40 enabled:hover:bg-muted"
+            >
+              下一頁
+            </button>
+          </div>
+        </>
       )}
+    </div>
+  )
+}
+
+function QuestionDetailPanel({
+  question,
+  onClose,
+}: {
+  question: PersonaQuestionRow
+  onClose: () => void
+}) {
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ['admin', 'persona', 'question-answers', question.id],
+      queryFn: ({ pageParam }) =>
+        getPersonaQuestionAnswers(question.id, {
+          limit: 20,
+          cursor: pageParam ?? undefined,
+        }).then((r) => r.data.data),
+      initialPageParam: undefined as string | undefined,
+      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    })
+
+  const answers = data?.pages.flatMap((p) => p.answers) ?? []
+  const totalCount = data?.pages[0]?.question.totalAnswerCount ?? 0
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
+      <div className="flex items-start justify-between border-b border-border px-4 py-3">
+        <div className="pr-3">
+          <h4 className="text-sm font-semibold text-foreground">Q{question.id} 回答者</h4>
+          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{question.prompt}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="max-h-[480px] overflow-y-auto px-4 py-3">
+        {isLoading ? (
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        ) : isError ? (
+          <p className="py-8 text-center text-xs text-muted-foreground">無法載入回答資料</p>
+        ) : answers.length === 0 ? (
+          <p className="py-8 text-center text-xs text-muted-foreground">此題目尚無回答</p>
+        ) : (
+          <>
+            <p className="mb-2 text-[11px] text-muted-foreground">共 {totalCount} 則回答</p>
+            <div className="space-y-2">
+              {answers.map((a) => (
+                <div key={a.answerId} className="rounded-lg border border-border bg-card p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <UserLink userId={a.userId} name={a.name || '未命名'} photoURL={a.photoURL} />
+                    <span className="shrink-0 text-[10px] text-muted-foreground">
+                      {a.answeredAt?.slice(0, 10) ?? '—'}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 rounded bg-primary/8 px-2.5 py-1.5 text-xs text-foreground">
+                    {a.selectedValue ?? a.textAnswer ?? '-'}
+                  </p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">共鳴 {a.resonanceCount}</p>
+                </div>
+              ))}
+            </div>
+            {hasNextPage && (
+              <button
+                type="button"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+                className="mt-3 w-full rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-50 enabled:hover:bg-muted"
+              >
+                {isFetchingNextPage ? '載入中...' : '載入更多'}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function UserDetailPanel({ user, onClose }: { user: PersonaUser; onClose: () => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'persona', 'user-profile', user.externalId],
+    queryFn: () => getUserPersonaProfile(user.externalId).then((r) => r.data.data),
+  })
+
+  const answered = data?.questions.filter((q) => !q.isPlaceholder) ?? []
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
+      <div className="flex items-start justify-between border-b border-border px-4 py-3">
+        <div className="pr-3">
+          <h4 className="text-sm font-semibold text-foreground">{user.name || '用戶'} 的填寫</h4>
+          {user.personaType && (
+            <Badge variant="primary" className="mt-1">
+              {PERSONA_TYPE_LABEL[user.personaType]}
+            </Badge>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="max-h-[480px] overflow-y-auto px-4 py-3">
+        {isLoading ? (
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        ) : answered.length === 0 ? (
+          <p className="py-8 text-center text-xs text-muted-foreground">
+            此用戶尚未填寫任何人物誌問題
+          </p>
+        ) : (
+          <>
+            <p className="mb-2 text-[11px] text-muted-foreground">已填寫 {answered.length} 題</p>
+            <div className="space-y-2">
+              {answered.map((q) => (
+                <div key={q.id} className="rounded-lg border border-border bg-card p-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-medium text-foreground">{q.prompt}</p>
+                    <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      {QUESTION_TYPE_LABEL[q.questionType] ?? q.questionType}
+                    </span>
+                  </div>
+                  {q.answer && (
+                    <>
+                      <p className="mt-1.5 rounded bg-primary/8 px-2.5 py-1.5 text-xs text-foreground">
+                        {q.answer.selectedValue ?? q.answer.textAnswer ?? '-'}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <span>共鳴 {q.answer.resonanceCount}</span>
+                        <span>{q.answer.createdAt?.slice(0, 10) ?? '—'}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

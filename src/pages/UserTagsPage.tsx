@@ -5,6 +5,14 @@ import type { TagItem } from '@/api/admin-users'
 import { createTag, deleteTag, deleteTagRule, updateTag } from '@/api/admin-users'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useTagRules, useUserTags } from '@/hooks/useUserTags'
 
 const DEFAULT_COLORS = [
@@ -175,60 +183,53 @@ export function UserTagsPage() {
           ) : tags.length === 0 ? (
             <p className="text-sm text-muted-foreground">尚無標籤</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                    {['標籤名稱', '用戶數', '建立日期', '操作'].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left font-medium">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tags.map((tag) => (
-                    <tr
-                      key={tag.id}
-                      className="border-b border-border/80 hover:bg-muted/45 transition-colors"
-                    >
-                      <td className="px-4 py-2">
-                        <span className="inline-flex items-center gap-2">
-                          <span
-                            className="inline-block h-2.5 w-2.5 rounded-full"
-                            style={{ backgroundColor: tag.color }}
-                          />
-                          <span className="font-medium">{tag.name}</span>
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 font-mono">{tag.userCount.toLocaleString()}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{tag.createdAt}</td>
-                      <td className="px-4 py-2">
-                        <div className="flex gap-1">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="xs"
-                            onClick={() => setEditingTag(tag)}
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="xs"
-                            onClick={() => handleDeleteTag(tag.id)}
-                            disabled={deleteTagMutation.isPending}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {['標籤名稱', '用戶數', '建立日期', '操作'].map((h) => (
+                    <TableHead key={h}>{h}</TableHead>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tags.map((tag) => (
+                  <TableRow key={tag.id}>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className="inline-block h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: tag.color }}
+                        />
+                        <span className="font-medium">{tag.name}</span>
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-mono">{tag.userCount.toLocaleString()}</TableCell>
+                    <TableCell className="text-muted-foreground">{tag.createdAt}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="xs"
+                          onClick={() => setEditingTag(tag)}
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="xs"
+                          onClick={() => handleDeleteTag(tag.id)}
+                          disabled={deleteTagMutation.isPending}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
 
@@ -242,62 +243,55 @@ export function UserTagsPage() {
           ) : autoRules.length === 0 ? (
             <p className="text-sm text-muted-foreground">尚無自動標籤規則</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                    {['標籤 ID', '條件類型', '運算子', '條件值', '狀態', '操作'].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left font-medium">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {autoRules.map((rule) => (
-                    <tr
-                      key={rule.id}
-                      className="border-b border-border/80 hover:bg-muted/45 transition-colors"
-                    >
-                      <td className="px-4 py-2 font-mono text-xs">{rule.tagId}</td>
-                      <td className="px-4 py-2 text-xs">{rule.conditionType}</td>
-                      <td className="px-4 py-2 text-xs">{rule.conditionOperator}</td>
-                      <td className="px-4 py-2 font-mono text-xs">{rule.conditionValue}</td>
-                      <td className="px-4 py-2">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {['標籤 ID', '條件類型', '運算子', '條件值', '狀態', '操作'].map((h) => (
+                    <TableHead key={h}>{h}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {autoRules.map((rule) => (
+                  <TableRow key={rule.id}>
+                    <TableCell className="font-mono text-xs">{rule.tagId}</TableCell>
+                    <TableCell className="text-xs">{rule.conditionType}</TableCell>
+                    <TableCell className="text-xs">{rule.conditionOperator}</TableCell>
+                    <TableCell className="font-mono text-xs">{rule.conditionValue}</TableCell>
+                    <TableCell>
+                      <Button
+                        type="button"
+                        role="switch"
+                        aria-checked={rule.isEnabled}
+                        onClick={() => toggleRule(rule.id)}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
+                          rule.isEnabled ? 'bg-primary' : 'bg-muted-foreground/30'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow-sm transition-transform ${
+                            rule.isEnabled ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
                         <Button
                           type="button"
-                          role="switch"
-                          aria-checked={rule.isEnabled}
-                          onClick={() => toggleRule(rule.id)}
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-                            rule.isEnabled ? 'bg-primary' : 'bg-muted-foreground/30'
-                          }`}
+                          variant="secondary"
+                          size="xs"
+                          onClick={() => handleDeleteTagRule(rule.id)}
+                          disabled={deleteTagRuleMutation.isPending}
                         >
-                          <span
-                            className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow-sm transition-transform ${
-                              rule.isEnabled ? 'translate-x-4' : 'translate-x-0'
-                            }`}
-                          />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="flex gap-1">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="xs"
-                            onClick={() => handleDeleteTagRule(rule.id)}
-                            disabled={deleteTagRuleMutation.isPending}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
       </div>

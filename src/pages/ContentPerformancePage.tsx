@@ -16,6 +16,14 @@ import { ExportButton } from '@/components/ExportButton'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useContentPerformance, useSetContentFeatured } from '@/hooks/useContentPerformance'
 import { usePersonaStats } from '@/hooks/useOnboardingAnalytics'
 import { cn } from '@/lib/utils'
@@ -251,134 +259,129 @@ export function ContentPerformancePage() {
                     目前尚無公開 Practice
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b border-border text-left">
-                          <th className="px-4 py-3 font-medium text-muted-foreground">標題</th>
-                          <th className="px-4 py-3 font-medium text-muted-foreground">建立者</th>
-                          {SORT_COLUMNS.map((col) => (
-                            <th key={col.key} className="px-4 py-3">
-                              <div className="flex flex-col gap-0.5">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="xs"
-                                  className={cn(
-                                    'w-fit px-0 py-0 h-auto font-medium text-muted-foreground',
-                                    sortBy === col.key && 'text-primary underline',
-                                    'hover:bg-transparent hover:text-primary',
-                                  )}
-                                  onClick={() => setSortBy(col.key)}
-                                >
-                                  {col.label}
-                                  {sortBy === col.key && <span className="ml-1">↓</span>}
-                                </Button>
-                                <span className="text-[10px] text-muted-foreground/60 font-normal leading-tight">
-                                  {col.hint}
-                                </span>
-                              </div>
-                            </th>
-                          ))}
-                          <th className="px-4 py-3 font-medium text-muted-foreground">被複製</th>
-                          <th className="px-4 py-3 font-medium text-muted-foreground">複製來源</th>
-                          <th
-                            className="px-4 py-3 font-medium text-muted-foreground cursor-help"
-                            title="精選內容會顯示在首頁推薦區與探索頁精選輪播"
-                          >
-                            精選
-                          </th>
-                          <th className="px-4 py-3 font-medium text-muted-foreground">操作</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sorted.map((item) => (
-                          <tr
-                            key={item.id}
-                            className={cn(
-                              'border-b border-border transition-colors',
-                              item.interactionRate === 0
-                                ? 'bg-warning/5 hover:bg-warning/10'
-                                : 'hover:bg-muted/30',
-                            )}
-                          >
-                            <td className="px-4 py-3 font-medium max-w-[220px] truncate">
-                              {item.title}
-                            </td>
-                            <td className="px-4 py-3 max-w-[160px]">
-                              <div className="truncate text-sm">{item.creatorName ?? '—'}</div>
-                              {item.creatorEmail && (
-                                <div className="truncate text-xs text-muted-foreground">
-                                  {item.creatorEmail}
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 tabular-nums">
-                              {item.views.toLocaleString()}
-                            </td>
-                            <td className="px-4 py-3 tabular-nums">
-                              {item.depth > 0 ? (
-                                `${item.depth}%`
-                              ) : (
-                                <span className="text-muted-foreground/40">—</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 tabular-nums">
-                              {item.avgTime > 0 ? (
-                                `${item.avgTime} 分`
-                              ) : (
-                                <span className="text-muted-foreground/40">—</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 tabular-nums">
-                              {item.interactionRate > 0 ? (
-                                <span
-                                  className={cn(
-                                    'font-medium',
-                                    item.interactionRate >= 10
-                                      ? 'text-success'
-                                      : item.interactionRate >= 3
-                                        ? 'text-primary'
-                                        : 'text-muted-foreground',
-                                  )}
-                                >
-                                  {item.interactionRate}%
-                                </span>
-                              ) : (
-                                <span className="text-warning/70 font-medium">0%</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                              {item.copyCount > 0 ? item.copyCount : '—'}
-                            </td>
-                            <td className="px-4 py-3 max-w-[140px] truncate text-muted-foreground text-xs">
-                              {item.copiedFromTitle ?? '—'}
-                            </td>
-                            <td className="px-4 py-3">
-                              {item.featured && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                  <Star className="h-3 w-3 fill-current" /> 精選
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="text-left">
+                        <TableHead>標題</TableHead>
+                        <TableHead>建立者</TableHead>
+                        {SORT_COLUMNS.map((col) => (
+                          <TableHead key={col.key}>
+                            <div className="flex flex-col gap-0.5">
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="xs"
-                                className="h-auto px-0 py-0 font-medium text-primary hover:text-primary/80"
-                                onClick={() =>
-                                  setFeatured({ id: item.id, featured: !item.featured })
-                                }
+                                className={cn(
+                                  'w-fit px-0 py-0 h-auto font-medium text-muted-foreground',
+                                  sortBy === col.key && 'text-primary underline',
+                                  'hover:bg-transparent hover:text-primary',
+                                )}
+                                onClick={() => setSortBy(col.key)}
                               >
-                                {item.featured ? '取消精選' : '設為精選'}
+                                {col.label}
+                                {sortBy === col.key && <span className="ml-1">↓</span>}
                               </Button>
-                            </td>
-                          </tr>
+                              <span className="text-[10px] text-muted-foreground/60 font-normal leading-tight">
+                                {col.hint}
+                              </span>
+                            </div>
+                          </TableHead>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        <TableHead>被複製</TableHead>
+                        <TableHead>複製來源</TableHead>
+                        <TableHead
+                          className="cursor-help"
+                          title="精選內容會顯示在首頁推薦區與探索頁精選輪播"
+                        >
+                          精選
+                        </TableHead>
+                        <TableHead>操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sorted.map((item) => (
+                        <TableRow
+                          key={item.id}
+                          className={cn(
+                            item.interactionRate === 0
+                              ? 'bg-warning/5 hover:bg-warning/10'
+                              : 'hover:bg-muted/30',
+                          )}
+                        >
+                          <TableCell className="font-medium max-w-[220px] truncate">
+                            {item.title}
+                          </TableCell>
+                          <TableCell className="max-w-[160px]">
+                            <div className="truncate text-sm">{item.creatorName ?? '—'}</div>
+                            {item.creatorEmail && (
+                              <div className="truncate text-xs text-muted-foreground">
+                                {item.creatorEmail}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="tabular-nums">
+                            {item.views.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="tabular-nums">
+                            {item.depth > 0 ? (
+                              `${item.depth}%`
+                            ) : (
+                              <span className="text-muted-foreground/40">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="tabular-nums">
+                            {item.avgTime > 0 ? (
+                              `${item.avgTime} 分`
+                            ) : (
+                              <span className="text-muted-foreground/40">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="tabular-nums">
+                            {item.interactionRate > 0 ? (
+                              <span
+                                className={cn(
+                                  'font-medium',
+                                  item.interactionRate >= 10
+                                    ? 'text-success'
+                                    : item.interactionRate >= 3
+                                      ? 'text-primary'
+                                      : 'text-muted-foreground',
+                                )}
+                              >
+                                {item.interactionRate}%
+                              </span>
+                            ) : (
+                              <span className="text-warning/70 font-medium">0%</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="tabular-nums text-muted-foreground">
+                            {item.copyCount > 0 ? item.copyCount : '—'}
+                          </TableCell>
+                          <TableCell className="max-w-[140px] truncate text-muted-foreground text-xs">
+                            {item.copiedFromTitle ?? '—'}
+                          </TableCell>
+                          <TableCell>
+                            {item.featured && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                <Star className="h-3 w-3 fill-current" /> 精選
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="xs"
+                              className="h-auto px-0 py-0 font-medium text-primary hover:text-primary/80"
+                              onClick={() => setFeatured({ id: item.id, featured: !item.featured })}
+                            >
+                              {item.featured ? '取消精選' : '設為精選'}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </div>
             </div>

@@ -5,6 +5,14 @@ import { ExportButton } from '@/components/ExportButton'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useCustomReportFields, useSavedReports } from '@/hooks/useCustomReports'
 
 type ReportRow = Record<string, string>
@@ -151,33 +159,26 @@ export function CustomReportsPage() {
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">尚未查詢到資料</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                  {selectedFields.map((field) => (
-                    <th key={field} className="pb-3 pr-4 font-medium">
-                      {field}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, index) => (
-                  <tr
-                    key={row.id ?? index}
-                    className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                  >
-                    {selectedFields.map((field) => (
-                      <td key={field} className="py-3 pr-4 text-foreground">
-                        {row[field]}
-                      </td>
-                    ))}
-                  </tr>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {selectedFields.map((field) => (
+                  <TableHead key={field}>{field}</TableHead>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row, index) => (
+                <TableRow key={row.id ?? index}>
+                  {selectedFields.map((field) => (
+                    <TableCell key={field} className="text-foreground">
+                      {row[field]}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
 

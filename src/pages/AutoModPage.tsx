@@ -21,6 +21,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   useAutoModCommunityModConfig,
   useAutoModFlagQueue,
   useAutoModLog,
@@ -185,49 +193,42 @@ export function AutoModPage() {
                 新增規則
               </Button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                    {['規則名稱', '模式', '動作', '狀態'].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left font-medium">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {keywordRules.map((rule) => (
-                    <tr
-                      key={rule.id}
-                      className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
-                    >
-                      <td className="px-4 py-2 font-medium">{rule.name}</td>
-                      <td className="px-4 py-2">{patternBadge(rule.pattern)}</td>
-                      <td className="px-4 py-2">{actionBadge(rule.action)}</td>
-                      <td className="px-4 py-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => toggleRule(rule.id)}
-                          className={cn(
-                            'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
-                            rule.enabled ? 'bg-primary' : 'bg-muted',
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              'inline-block h-3.5 w-3.5 rounded-full bg-background transition-transform',
-                              rule.enabled ? 'translate-x-4' : 'translate-x-1',
-                            )}
-                          />
-                        </Button>
-                      </td>
-                    </tr>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {['規則名稱', '模式', '動作', '狀態'].map((h) => (
+                    <TableHead key={h}>{h}</TableHead>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {keywordRules.map((rule) => (
+                  <TableRow key={rule.id}>
+                    <TableCell className="font-medium">{rule.name}</TableCell>
+                    <TableCell>{patternBadge(rule.pattern)}</TableCell>
+                    <TableCell>{actionBadge(rule.action)}</TableCell>
+                    <TableCell>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => toggleRule(rule.id)}
+                        className={cn(
+                          'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
+                          rule.enabled ? 'bg-primary' : 'bg-muted',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'inline-block h-3.5 w-3.5 rounded-full bg-background transition-transform',
+                            rule.enabled ? 'translate-x-4' : 'translate-x-1',
+                          )}
+                        />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
 
           {/* Sensitive word libraries */}
@@ -380,37 +381,30 @@ export function AutoModPage() {
         <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
           審核動作紀錄
         </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                {['時間', '內容摘要', '觸發規則', '執行動作', '用戶'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-medium">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {auditLogItems.map((row) => (
-                <tr
-                  key={`${row.time}-${row.user}`}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
-                >
-                  <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                    {row.time}
-                  </td>
-                  <td className="px-4 py-2 max-w-[200px] truncate">{row.summary}</td>
-                  <td className="px-4 py-2">
-                    <Badge variant="primary">{row.rule}</Badge>
-                  </td>
-                  <td className="px-4 py-2">{actionBadge(row.action)}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{row.user}</td>
-                </tr>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {['時間', '內容摘要', '觸發規則', '執行動作', '用戶'].map((h) => (
+                <TableHead key={h}>{h}</TableHead>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {auditLogItems.map((row) => (
+              <TableRow key={`${row.time}-${row.user}`}>
+                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                  {row.time}
+                </TableCell>
+                <TableCell className="max-w-[200px] truncate">{row.summary}</TableCell>
+                <TableCell>
+                  <Badge variant="primary">{row.rule}</Badge>
+                </TableCell>
+                <TableCell>{actionBadge(row.action)}</TableCell>
+                <TableCell className="text-muted-foreground">{row.user}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Report queue - full width */}
@@ -418,59 +412,52 @@ export function AutoModPage() {
         <h2 className="text-base leading-none font-semibold tracking-tight text-foreground mb-4">
           檢舉佇列
         </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                {['內容', '檢舉人數', '優先度', '檢舉原因', '操作'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-medium">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {reportQueue.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
-                    目前無待處理檢舉
-                  </td>
-                </tr>
-              ) : (
-                reportQueue.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
-                  >
-                    <td className="px-4 py-2 max-w-[200px] truncate">{row.content}</td>
-                    <td className="px-4 py-2 font-medium">{row.reporters}</td>
-                    <td className="px-4 py-2">{priorityBadge(row.priority)}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{row.reason}</td>
-                    <td className="px-4 py-2">
-                      <div className="flex gap-1">
-                        <Button
-                          type="button"
-                          size="xs"
-                          onClick={() => handleReport(row.id, 'approve')}
-                        >
-                          同意
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="xs"
-                          onClick={() => handleReport(row.id, 'reject')}
-                        >
-                          駁回
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {['內容', '檢舉人數', '優先度', '檢舉原因', '操作'].map((h) => (
+                <TableHead key={h}>{h}</TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {reportQueue.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  目前無待處理檢舉
+                </TableCell>
+              </TableRow>
+            ) : (
+              reportQueue.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="max-w-[200px] truncate">{row.content}</TableCell>
+                  <TableCell className="font-medium">{row.reporters}</TableCell>
+                  <TableCell>{priorityBadge(row.priority)}</TableCell>
+                  <TableCell className="text-muted-foreground">{row.reason}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        size="xs"
+                        onClick={() => handleReport(row.id, 'approve')}
+                      >
+                        同意
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => handleReport(row.id, 'reject')}
+                      >
+                        駁回
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )
