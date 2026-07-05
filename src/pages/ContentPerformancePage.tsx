@@ -83,8 +83,12 @@ const ROLE_LABELS: Record<string, string> = {
 export function ContentPerformancePage() {
   const [tab, setTab] = useState<TabKey>('practice')
   const [sortBy, setSortBy] = useState<SortField>('views')
-  const [preset, setPreset] = useState<DatePreset>('7')
+  const [preset, setPresetState] = useState<DatePreset>('7')
   const [checkinPage, setCheckinPage] = useState(0)
+  const setPreset = (val: DatePreset) => {
+    setPresetState(val)
+    setCheckinPage(0)
+  }
   const checkinLimit = 20
   const { data, isLoading } = useContentPerformance(Number(preset))
   const { mutate: setFeatured } = useSetContentFeatured()
@@ -544,7 +548,7 @@ export function ContentPerformancePage() {
                                 </div>
                               </TableCell>
                               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                                {new Date(record.createdAt).toLocaleDateString('zh-TW', {
+                                {new Date(record.createdAt).toLocaleString('zh-TW', {
                                   month: '2-digit',
                                   day: '2-digit',
                                   hour: '2-digit',

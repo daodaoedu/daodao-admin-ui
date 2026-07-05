@@ -62,6 +62,7 @@ const PERSONA_LABELS: Record<string, string> = {
 type EventType =
   | '登入'
   | '打卡'
+  | '發文'
   | '實踐'
   | '人物誌'
   | '瀏覽'
@@ -83,6 +84,7 @@ interface TimelineEvent {
 const eventTypeConfig: Record<EventType, { color: string; icon: typeof LogIn }> = {
   登入: { color: 'border-info', icon: LogIn },
   打卡: { color: 'border-success', icon: MapPin },
+  發文: { color: 'border-info', icon: FileText },
   實踐: { color: 'border-info', icon: BookOpen },
   人物誌: { color: 'border-warning', icon: Star },
   瀏覽: { color: 'border-muted', icon: Eye },
@@ -108,6 +110,7 @@ type Tab = (typeof tabs)[number]
 const TIMELINE_TYPE_MAP: Record<string, EventType> = {
   login: '登入',
   checkin: '打卡',
+  post: '發文',
   practice: '實踐',
   persona: '人物誌',
   view: '瀏覽',
@@ -119,6 +122,7 @@ const eventFilterOptions: ('全部' | EventType)[] = [
   '全部',
   '登入',
   '打卡',
+  '發文',
   '實踐',
   '人物誌',
   '瀏覽',
