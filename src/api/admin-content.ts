@@ -65,3 +65,49 @@ export const setContentFeatured = (id: number, featured: boolean) =>
     `/daodao-server/api/v1/admin/content/${id}/featured`,
     { featured },
   )
+
+// ── Checkin List ─────────────────────────────────────────
+
+export interface CheckinRecord {
+  id: number
+  userId: number
+  userName: string | null
+  userEmail: string | null
+  practiceId: number
+  practiceTitle: string
+  mood: string | null
+  content: string | null
+  reactionCount: number
+  commentCount: number
+  createdAt: string
+}
+
+interface CheckinBackendPagination {
+  currentPage: number
+  totalPages: number
+  totalItems: number
+  itemsPerPage: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+export const listCheckins = (params?: { days?: number; limit?: number; offset?: number }) =>
+  apiClient
+    .get<{ success: boolean; data: CheckinRecord[]; pagination: CheckinBackendPagination }>(
+      '/daodao-server/api/v1/admin/content/checkins',
+      { params },
+    )
+    .then((res) => ({
+      ...res,
+      data: {
+        ...res.data,
+        pagination: res.data.pagination
+          ? {
+              total_count: res.data.pagination.totalItems,
+              limit: res.data.pagination.itemsPerPage,
+              offset: (res.data.pagination.currentPage - 1) * res.data.pagination.itemsPerPage,
+              has_next: res.data.pagination.hasNext,
+            }
+          : null,
+      },
+    }))

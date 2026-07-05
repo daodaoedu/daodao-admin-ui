@@ -402,9 +402,10 @@ export interface AdminActivityStats {
 
 export interface ActivityTimelineEvent {
   id: string
-  type: 'login' | 'checkin' | 'post'
+  type: 'login' | 'checkin' | 'post' | 'practice' | 'persona' | 'view' | 'reaction' | 'comment'
   description: string
   timestamp: string
+  url?: string
 }
 
 export interface PracticeStats {
