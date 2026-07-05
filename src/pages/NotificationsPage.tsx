@@ -1,6 +1,14 @@
 import { Bell, Clock, Eye, Loader2, Megaphone, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useAdminNotificationStats, useAdminNotifications } from '@/hooks/useNotifications'
 import { cn } from '@/lib/utils'
 
@@ -77,56 +85,54 @@ export function NotificationsPage() {
         ) : notifications.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">尚無通知紀錄</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">標題</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">類型</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">目標</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">發送時間</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">已讀率</th>
-                  <th className="pb-3 font-medium text-muted-foreground">狀態</th>
-                </tr>
-              </thead>
-              <tbody>
-                {notifications.map((n) => {
-                  const readRate =
-                    n.total_sent > 0 ? Math.round((n.read_count / n.total_sent) * 100 * 10) / 10 : 0
+          <Table>
+            <TableHeader>
+              <TableRow className="text-left">
+                <TableHead className="pr-4">標題</TableHead>
+                <TableHead className="pr-4">類型</TableHead>
+                <TableHead className="pr-4">目標</TableHead>
+                <TableHead className="pr-4">發送時間</TableHead>
+                <TableHead className="pr-4">已讀率</TableHead>
+                <TableHead>狀態</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {notifications.map((n) => {
+                const readRate =
+                  n.total_sent > 0 ? Math.round((n.read_count / n.total_sent) * 100 * 10) / 10 : 0
 
-                  return (
-                    <tr key={n.id} className="border-b border-border last:border-0">
-                      <td className="py-3 pr-4 font-medium">
-                        <div className="flex items-center gap-2">
-                          <Bell className="h-4 w-4 text-muted-foreground" />
-                          {n.title}
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <span
-                          className={cn(
-                            'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium',
-                            typeBadgeClass[n.type] ??
-                              'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-                          )}
-                        >
-                          {n.type}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-4 text-muted-foreground">{n.target}</td>
-                      <td className="py-3 pr-4 text-muted-foreground">{n.sent_at ?? '-'}</td>
-                      <td className="py-3 pr-4 text-muted-foreground">
-                        {n.status === 'sent' ? `${readRate}%` : '-'}
-                      </td>
-                      <td className={cn('py-3 text-sm font-medium', statusClass[n.status])}>
-                        {statusLabel[n.status] ?? n.status}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                return (
+                  <TableRow key={n.id}>
+                    <TableCell className="pr-4 font-medium">
+                      <div className="flex items-center gap-2">
+                        <Bell className="h-4 w-4 text-muted-foreground" />
+                        {n.title}
+                      </div>
+                    </TableCell>
+                    <TableCell className="pr-4">
+                      <span
+                        className={cn(
+                          'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium',
+                          typeBadgeClass[n.type] ??
+                            'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                        )}
+                      >
+                        {n.type}
+                      </span>
+                    </TableCell>
+                    <TableCell className="pr-4 text-muted-foreground">{n.target}</TableCell>
+                    <TableCell className="pr-4 text-muted-foreground">{n.sent_at ?? '-'}</TableCell>
+                    <TableCell className="pr-4 text-muted-foreground">
+                      {n.status === 'sent' ? `${readRate}%` : '-'}
+                    </TableCell>
+                    <TableCell className={cn('text-sm font-medium', statusClass[n.status])}>
+                      {statusLabel[n.status] ?? n.status}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         )}
       </div>
     </div>

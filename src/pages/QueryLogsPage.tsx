@@ -8,6 +8,14 @@ import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 const LIMIT = 50
 
@@ -88,9 +96,9 @@ export function QueryLogsPage() {
 
       {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+        <Table>
+          <TableHeader>
+            <TableRow className="text-left">
               {[
                 'ID',
                 'Backend',
@@ -103,65 +111,63 @@ export function QueryLogsPage() {
                 'Status',
                 '時間',
               ].map((h) => (
-                <th key={h} className="px-4 py-3 text-left font-medium">
-                  {h}
-                </th>
+                <TableHead key={h}>{h}</TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading ? (
-              <tr>
-                <td colSpan={10} className="px-4 py-6 text-center text-muted-foreground">
+              <TableRow>
+                <TableCell colSpan={10} className="py-6 text-center text-muted-foreground">
                   載入中...
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : logs.length === 0 ? (
-              <tr>
-                <td colSpan={10} className="px-4 py-6 text-center text-muted-foreground">
+              <TableRow>
+                <TableCell colSpan={10} className="py-6 text-center text-muted-foreground">
                   無資料
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               logs.map((log) => (
-                <tr
+                <TableRow
                   key={log.id}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors cursor-pointer transition-colors"
+                  className="cursor-pointer"
                   onClick={() => setSelected(selected?.id === log.id ? null : log)}
                 >
-                  <td className="px-4 py-2 font-mono text-xs">{log.id}</td>
-                  <td className="px-4 py-2">
+                  <TableCell className="font-mono text-xs">{log.id}</TableCell>
+                  <TableCell>
                     <Badge variant="primary">{log.backend}</Badge>
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">{log.context ?? '-'}</td>
-                  <td className="px-4 py-2 font-mono text-xs truncate max-w-[100px]">
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{log.context ?? '-'}</TableCell>
+                  <TableCell className="font-mono text-xs truncate max-w-[100px]">
                     {log.user_id ?? '-'}
-                  </td>
-                  <td className="px-4 py-2">{log.total_tokens?.toLocaleString() ?? '-'}</td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell>{log.total_tokens?.toLocaleString() ?? '-'}</TableCell>
+                  <TableCell>
                     {log.cost_usd ? `$${Number(log.cost_usd).toFixed(5)}` : '-'}
-                  </td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell>
                     {log.latency_ms
                       ? log.latency_ms >= 1000
                         ? `${(log.latency_ms / 1000).toFixed(1)}s`
                         : `${log.latency_ms}ms`
                       : '-'}
-                  </td>
-                  <td className="px-4 py-2 font-mono text-xs">{log.finish_reason ?? '-'}</td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{log.finish_reason ?? '-'}</TableCell>
+                  <TableCell>
                     <Badge variant={log.status === 'success' ? 'success' : 'error'}>
                       {log.status}
                     </Badge>
-                  </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                     {format(new Date(log.created_at), 'MM-dd HH:mm:ss')}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Detail panel */}

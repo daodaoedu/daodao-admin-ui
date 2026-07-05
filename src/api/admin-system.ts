@@ -75,7 +75,7 @@ function mapSystemMonitor(data: SystemMonitorBackendData): SystemMonitorData {
 
 function mapDbInfo(data: DbInfoBackendData): DbInfo {
   return {
-    status: 'connected',
+    status: data.activeConnections > 0 || data.totalQueries > 0 ? 'connected' : 'disconnected',
     activeConnections: data.activeConnections,
     maxConnections: data.maxConnections,
     idleConnections: data.idleConnections,
@@ -146,6 +146,9 @@ interface EmailStatsBackendData {
   successRate: number
   bounceRate: number
   queueSize: number
+  sentChange: number
+  successRateChange: number
+  bounceRateChange: number
 }
 
 interface EmailHealthBackendData {
@@ -153,6 +156,7 @@ interface EmailHealthBackendData {
   smtpConnection: boolean
   queueSize: number
   lastError: string | null
+  provider?: string
 }
 
 interface EmailHistoryBackendRecord {
@@ -189,17 +193,17 @@ function mapEmailStats(data: EmailStatsBackendData): EmailStats {
     successRate: data.successRate,
     bounceRate: data.bounceRate,
     queuePending: data.queueSize,
-    sentChange: 0,
-    successRateChange: 0,
-    bounceRateChange: 0,
+    sentChange: data.sentChange ?? 0,
+    successRateChange: data.successRateChange ?? 0,
+    bounceRateChange: data.bounceRateChange ?? 0,
   }
 }
 
 function mapEmailHealth(data: EmailHealthBackendData): EmailHealth {
   return {
     status: data.status === 'healthy' && data.smtpConnection ? 'connected' : 'disconnected',
-    provider: 'SMTP',
-    lastChecked: data.lastError ?? '剛剛',
+    provider: data.provider ?? 'SMTP',
+    lastChecked: data.lastError ? `錯誤: ${data.lastError}` : '正常',
   }
 }
 

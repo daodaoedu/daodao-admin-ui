@@ -4,6 +4,14 @@ import type { LeaderboardUser, LeaderboardWeightConfig } from '@/api/admin-gamif
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useLeaderboard, useLeaderboardConfig } from '@/hooks/useLeaderboard'
 import { cn } from '@/lib/utils'
 
@@ -121,60 +129,57 @@ export function LeaderboardsPage() {
 
       {/* Leaderboard Table */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-5">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="pb-3 font-medium text-muted-foreground">排名</th>
-                <th className="pb-3 font-medium text-muted-foreground">用戶</th>
-                <th className="pb-3 text-right font-medium text-muted-foreground">分數</th>
-                <th className="pb-3 text-right font-medium text-muted-foreground">發文</th>
-                <th className="pb-3 text-right font-medium text-muted-foreground">留言</th>
-                <th className="pb-3 text-right font-medium text-muted-foreground">獲讚</th>
-                <th className="pb-3 text-right font-medium text-muted-foreground">課程</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => {
-                const RankIcon = RANK_ICONS[user.rank]
-                return (
-                  <tr
-                    key={user.rank}
-                    className={cn('border-b border-border last:border-0', RANK_STYLES[user.rank])}
-                  >
-                    <td className="py-3 text-foreground">
-                      <div className="flex items-center gap-1.5">
-                        {RankIcon ? (
-                          <RankIcon className={cn('h-4 w-4', RANK_ICON_COLORS[user.rank])} />
-                        ) : (
-                          <span className="inline-flex h-4 w-4 items-center justify-center text-xs text-muted-foreground">
-                            {user.rank}
-                          </span>
-                        )}
-                        <span className="font-medium">{user.rank}</span>
+        <Table>
+          <TableHeader>
+            <TableRow className="text-left">
+              <TableHead>排名</TableHead>
+              <TableHead>用戶</TableHead>
+              <TableHead className="text-right">分數</TableHead>
+              <TableHead className="text-right">發文</TableHead>
+              <TableHead className="text-right">留言</TableHead>
+              <TableHead className="text-right">獲讚</TableHead>
+              <TableHead className="text-right">課程</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => {
+              const RankIcon = RANK_ICONS[user.rank]
+              return (
+                <TableRow key={user.rank} className={RANK_STYLES[user.rank]}>
+                  <TableCell className="text-foreground">
+                    <div className="flex items-center gap-1.5">
+                      {RankIcon ? (
+                        <RankIcon className={cn('h-4 w-4', RANK_ICON_COLORS[user.rank])} />
+                      ) : (
+                        <span className="inline-flex h-4 w-4 items-center justify-center text-xs text-muted-foreground">
+                          {user.rank}
+                        </span>
+                      )}
+                      <span className="font-medium">{user.rank}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-xs font-medium text-primary">
+                        {user.avatar}
                       </div>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-xs font-medium text-primary">
-                          {user.avatar}
-                        </div>
-                        <span className="text-foreground">{user.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 text-right font-semibold text-foreground">
-                      {user.score.toLocaleString()}
-                    </td>
-                    <td className="py-3 text-right text-muted-foreground">{user.posts}</td>
-                    <td className="py-3 text-right text-muted-foreground">{user.comments}</td>
-                    <td className="py-3 text-right text-muted-foreground">{user.likes}</td>
-                    <td className="py-3 text-right text-muted-foreground">{user.courses}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                      <span className="text-foreground">{user.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-semibold text-foreground">
+                    {user.score.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground">{user.posts}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {user.comments}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground">{user.likes}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{user.courses}</TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

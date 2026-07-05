@@ -20,6 +20,14 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input, Textarea } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 
 const CATEGORY_LABELS: Record<WishCategory, string> = {
@@ -237,50 +245,45 @@ export function RoadmapItemsPage() {
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+          <Table>
+            <TableHeader>
+              <TableRow className="text-left">
                 {['標題', '分類', '狀態', '支持數', '公開', '建立時間', '操作'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-medium">
-                    {h}
-                  </th>
+                  <TableHead key={h}>{h}</TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                <TableRow>
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     <div className="flex items-center justify-center gap-2">
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       載入中...
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : displayItems.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                <TableRow>
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     目前沒有路線圖項目
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 displayItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b border-border transition-colors hover:bg-accent"
-                  >
-                    <td className="px-4 py-2 font-medium">
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
                       <div className="flex items-center gap-1">
                         {item.pinned && <Pin className="h-3 w-3 shrink-0 text-muted-foreground" />}
                         <span>{item.title}</span>
                       </div>
-                    </td>
-                    <td className="px-4 py-2">
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="default">
                         {CATEGORY_LABELS[item.category] ?? item.category}
                       </Badge>
-                    </td>
-                    <td className="px-4 py-2">
+                    </TableCell>
+                    <TableCell>
                       <span
                         className={cn(
                           'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
@@ -289,24 +292,24 @@ export function RoadmapItemsPage() {
                       >
                         {STATUS_LABELS[item.status]}
                       </span>
-                    </td>
-                    <td className="px-4 py-2">
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <Heart className="h-3 w-3" />
                         <span>{item.support_count}</span>
                       </div>
-                    </td>
-                    <td className="px-4 py-2">
+                    </TableCell>
+                    <TableCell>
                       {item.is_public ? (
                         <span className="text-success font-medium">✓</span>
                       ) : (
                         <span className="text-destructive font-medium">✕</span>
                       )}
-                    </td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
                       {format(new Date(item.created_at), 'yyyy/MM/dd')}
-                    </td>
-                    <td className="px-4 py-2">
+                    </TableCell>
+                    <TableCell>
                       <Button
                         type="button"
                         variant="secondary"
@@ -315,12 +318,12 @@ export function RoadmapItemsPage() {
                       >
                         編輯
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {nextCursor && (

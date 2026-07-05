@@ -26,6 +26,14 @@ import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Input } from '@/components/ui/input'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   useActiveUsersFunnel,
   useActiveUsersList,
   useActiveUsersTrend,
@@ -600,45 +608,40 @@ export function UserAnalyticsPage() {
         ) : cohortRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">目前沒有可顯示的留存資料</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr>
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">月份</th>
-                  {COHORT_COLUMNS.map((col) => (
-                    <th
-                      key={col}
-                      className="px-3 py-2 text-center font-medium text-muted-foreground"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {cohortRows.map((row) => (
-                  <tr key={row.period} className="border-t border-border">
-                    <td className="px-3 py-2 font-medium text-foreground">{row.period}</td>
-                    {row.values.map((val, ci) => {
-                      const safeValue = Math.max(0, Math.min(100, Math.round(val)))
-                      return (
-                        <td key={COHORT_COLUMNS[ci]} className="px-1 py-1 text-center">
-                          <span
-                            className={cn(
-                              'inline-flex h-8 w-full items-center justify-center rounded-md text-xs font-semibold',
-                              retentionBg(safeValue),
-                            )}
-                          >
-                            {safeValue}%
-                          </span>
-                        </td>
-                      )
-                    })}
-                  </tr>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="py-2">月份</TableHead>
+                {COHORT_COLUMNS.map((col) => (
+                  <TableHead key={col} className="py-2 text-center">
+                    {col}
+                  </TableHead>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {cohortRows.map((row) => (
+                <TableRow key={row.period} className="border-t border-border">
+                  <TableCell className="font-medium text-foreground">{row.period}</TableCell>
+                  {row.values.map((val, ci) => {
+                    const safeValue = Math.max(0, Math.min(100, Math.round(val)))
+                    return (
+                      <TableCell key={COHORT_COLUMNS[ci]} className="px-1 py-1 text-center">
+                        <span
+                          className={cn(
+                            'inline-flex h-8 w-full items-center justify-center rounded-md text-xs font-semibold',
+                            retentionBg(safeValue),
+                          )}
+                        >
+                          {safeValue}%
+                        </span>
+                      </TableCell>
+                    )
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
 

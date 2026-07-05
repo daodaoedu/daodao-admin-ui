@@ -2,6 +2,14 @@ import { Award, CheckCircle, ExternalLink, FileText, Plus, XCircle } from 'lucid
 import type { CertificateTemplate, IssuedCertificate } from '@/api/admin-learning'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useCertificateTemplates, useIssuedCertificates } from '@/hooks/useCertificates'
 import { cn } from '@/lib/utils'
 
@@ -72,55 +80,50 @@ export function CertificatesPage() {
             已發放證書
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="pb-3 pr-4 font-medium">證書</th>
-                <th className="pb-3 pr-4 font-medium">用戶</th>
-                <th className="pb-3 pr-4 font-medium">發放日期</th>
-                <th className="pb-3 pr-4 font-medium">驗證連結</th>
-                <th className="pb-3 font-medium">狀態</th>
-              </tr>
-            </thead>
-            <tbody>
-              {issued.map((row) => (
-                <tr
-                  key={row.link}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                >
-                  <td className="py-3 pr-4 font-medium text-foreground">{row.cert}</td>
-                  <td className="py-3 pr-4 text-foreground">{row.user}</td>
-                  <td className="py-3 pr-4 text-muted-foreground">{row.date}</td>
-                  <td className="py-3 pr-4">
-                    <a
-                      href={row.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-primary hover:text-primary/80"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      驗證
-                    </a>
-                  </td>
-                  <td className="py-3">
-                    {row.status === 'active' ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-medium text-success">
-                        <CheckCircle className="h-3 w-3" />
-                        有效
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2.5 py-0.5 text-xs font-medium text-destructive">
-                        <XCircle className="h-3 w-3" />
-                        已撤銷
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>證書</TableHead>
+              <TableHead>用戶</TableHead>
+              <TableHead>發放日期</TableHead>
+              <TableHead>驗證連結</TableHead>
+              <TableHead>狀態</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {issued.map((row) => (
+              <TableRow key={row.link}>
+                <TableCell className="font-medium text-foreground">{row.cert}</TableCell>
+                <TableCell className="text-foreground">{row.user}</TableCell>
+                <TableCell className="text-muted-foreground">{row.date}</TableCell>
+                <TableCell>
+                  <a
+                    href={row.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:text-primary/80"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    驗證
+                  </a>
+                </TableCell>
+                <TableCell>
+                  {row.status === 'active' ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-medium text-success">
+                      <CheckCircle className="h-3 w-3" />
+                      有效
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2.5 py-0.5 text-xs font-medium text-destructive">
+                      <XCircle className="h-3 w-3" />
+                      已撤銷
+                    </span>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

@@ -1,19 +1,26 @@
-import { format, subDays } from 'date-fns'
+import { format, formatDistanceToNow, subDays } from 'date-fns'
+import { zhTW } from 'date-fns/locale'
 import {
   CheckCircle,
+  ChevronDown,
+  ChevronRight,
   CircleDollarSign,
   Database,
   Flame,
   Hash,
+  LogIn,
   Mail,
   MessageSquare,
+  PenLine,
   Server,
   Target,
   UserCheck,
+  UserPlus,
   Users,
+  X,
   Zap,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -26,10 +33,19 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { getActivityTimeline } from '@/api/admin-users'
+import type { ActivityTimelineEvent, AdminUserListItem, RegistrationFlow } from '@/api/types'
+import { DrillDownDrawer } from '@/components/DrillDownDrawer'
 import { ExportButton } from '@/components/ExportButton'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
-import { useActiveUsersTrend } from '@/hooks/useActiveUsersTrend'
+import { UserLink } from '@/components/UserLink'
+import { Sheet, SheetClose, SheetContent } from '@/components/ui/sheet'
+import {
+  useActiveUsersList,
+  useActiveUsersTrend,
+  useMetricDrillDown,
+} from '@/hooks/useActiveUsersTrend'
 import { useCommunityInteractionStats } from '@/hooks/useCommunityMap'
 import { useContentPerformance } from '@/hooks/useContentPerformance'
 import { useDashboardStats } from '@/hooks/useDashboardStats'
@@ -40,6 +56,7 @@ import {
   usePersonaStats,
 } from '@/hooks/useOnboardingAnalytics'
 import { useDbInfo, useRedisInfo } from '@/hooks/useSystemMonitor'
+import { useTodayRegistrations } from '@/hooks/useTodayRegistrations'
 import { cn } from '@/lib/utils'
 
 // ── Types ─────────────────────────────────────────────────
@@ -112,14 +129,153 @@ function DashboardSkeleton() {
   )
 }
 
+// ── Registration helpers ──────────────────────────────────
+const REG_FLOW_LABEL: Record<RegistrationFlow, string> = {
+  landing_page: 'Landing Page',
+  quiz: '測驗',
+  action_maker: 'Action Maker',
+}
+
+const TIMELINE_ICON: Record<ActivityTimelineEvent['type'], typeof LogIn> = {
+  login: LogIn,
+  checkin: CheckCircle,
+  post: PenLine,
+}
+
+function relativeTime(ts: string | null | undefined) {
+  if (!ts) return '—'
+  return formatDistanceToNow(new Date(ts), { addSuffix: true, locale: zhTW })
+}
+
+// ── Expandable user row inside drawer ────────────────────
+function DrawerUserRow({ user }: { user: AdminUserListItem }) {
+  const [expanded, setExpanded] = useState(false)
+  const [timeline, setTimeline] = useState<ActivityTimelineEvent[]>([])
+  const [timelineLoading, setTimelineLoading] = useState(false)
+
+  function handleToggle() {
+    if (!expanded && timeline.length === 0) {
+      setTimelineLoading(true)
+      getActivityTimeline(user.id, { limit: 5 })
+        .then((r) => setTimeline(r.data.data))
+        .finally(() => setTimelineLoading(false))
+    }
+    setExpanded((v) => !v)
+  }
+
+  const Arrow = expanded ? ChevronDown : ChevronRight
+
+  return (
+    <div className="rounded-lg transition-colors hover:bg-muted/50">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+      >
+        <UserLink userId={user.id} name={user.name ?? '未命名'} photoURL={user.photoURL} />
+        <div className="ml-auto flex items-center gap-3">
+          <div className="flex flex-col items-end gap-0.5">
+            {user.email && <span className="text-xs text-muted-foreground">{user.email}</span>}
+            <span className="text-[10px] text-muted-foreground/70">
+              {user.registrationFlow ? REG_FLOW_LABEL[user.registrationFlow] : '—'}
+              {' · '}
+              {relativeTime(user.lastActiveAt)}
+            </span>
+          </div>
+          <Arrow className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+        </div>
+      </button>
+      {expanded && (
+        <div className="px-6 pb-3">
+          {timelineLoading ? (
+            <p className="text-xs text-muted-foreground animate-pulse">載入活動紀錄...</p>
+          ) : timeline.length === 0 ? (
+            <p className="text-xs text-muted-foreground">尚無活動紀錄</p>
+          ) : (
+            <div className="space-y-1.5 border-l-2 border-border pl-3">
+              {timeline.map((ev) => {
+                const Icon = TIMELINE_ICON[ev.type] ?? CheckCircle
+                return (
+                  <div key={ev.id} className="flex items-center gap-2 text-xs">
+                    <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                    <span className="text-foreground">{ev.description}</span>
+                    <span className="ml-auto text-muted-foreground whitespace-nowrap">
+                      {format(new Date(ev.timestamp), 'HH:mm')}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Today registrations drawer ───────────────────────────
+function TodayRegistrationsDrawer({
+  open,
+  onOpenChange,
+  users,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  users: AdminUserListItem[]
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">今日註冊用戶</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              共 {users.length} 位 · 點擊展開查看活動紀錄
+            </p>
+          </div>
+          <SheetClose className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+            <X className="h-4 w-4" />
+          </SheetClose>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {users.length === 0 ? (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              今天還沒有新使用者註冊
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {users.map((u) => (
+                <DrawerUserRow key={u.id} user={u} />
+              ))}
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+// ── Drill-down types ─────────────────────────────────────
+type DrillDownState =
+  | { type: 'active'; title: string; date: string; period: 'day' | 'week' | 'month' }
+  | { type: 'metric'; title: string; metric: string }
+
 // ── Main ──────────────────────────────────────────────────
 export function DashboardPage() {
+  const [regDrawerOpen, setRegDrawerOpen] = useState(false)
+  const [drillDown, setDrillDown] = useState<DrillDownState | null>(null)
   const [preset, setPreset] = useState<DatePreset>('7')
   const days = Number(preset)
   const dateTo = format(new Date(), 'yyyy-MM-dd')
   const dateFrom = format(subDays(new Date(), days - 1), 'yyyy-MM-dd')
 
   // Data fetching
+  const {
+    users: todayUsers,
+    todayCount,
+    changePercent: regChangePercent,
+    isLoading: regLoading,
+  } = useTodayRegistrations()
   const { data: aiData, isLoading, error } = useDashboardStats(dateFrom, dateTo)
   const { data: userTrend } = useActiveUsersTrend({ days })
   const period = preset === '30' ? '30d' : '7d'
@@ -131,6 +287,26 @@ export function DashboardPage() {
   const { data: emailHealth } = useEmailHealth()
   const { data: dbInfo } = useDbInfo()
   const { data: redisInfo } = useRedisInfo()
+
+  const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), [])
+
+  const activeQuery = useMemo(
+    () =>
+      drillDown?.type === 'active' ? { date: drillDown.date, period: drillDown.period } : null,
+    [drillDown],
+  )
+  const metricQuery = useMemo(
+    () => (drillDown?.type === 'metric' ? drillDown.metric : null),
+    [drillDown],
+  )
+  const activeResult = useActiveUsersList(activeQuery)
+  const metricResult = useMetricDrillDown(metricQuery)
+
+  const drillDownUsers = drillDown?.type === 'active' ? activeResult.data : metricResult.data
+  const isDrillDownLoading =
+    drillDown?.type === 'active' ? activeResult.isLoading : metricResult.isLoading
+  const isDrillDownError =
+    drillDown?.type === 'active' ? activeResult.isError : metricResult.isError
 
   if (isLoading) return <DashboardSkeleton />
   if (error || !aiData) return <div className="text-destructive">載入失敗</div>
@@ -204,6 +380,28 @@ export function DashboardPage() {
         }
       />
 
+      {/* ── 今日新進 ─────────────────────────────────────── */}
+      <div className="space-y-2">
+        <SectionLabel>今日新進</SectionLabel>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard
+            title="今日註冊"
+            value={regLoading ? '—' : todayCount}
+            icon={UserPlus}
+            change={regChangePercent}
+            changeLabel="vs 昨天"
+            description="今天完成註冊的新使用者人數，點擊查看清單"
+            onClick={() => setRegDrawerOpen(true)}
+          />
+        </div>
+      </div>
+
+      <TodayRegistrationsDrawer
+        open={regDrawerOpen}
+        onOpenChange={setRegDrawerOpen}
+        users={todayUsers}
+      />
+
       {/* ── 用戶活躍 ─────────────────────────────────────── */}
       <div className="space-y-2">
         <SectionLabel>用戶活躍</SectionLabel>
@@ -215,6 +413,14 @@ export function DashboardPage() {
             change={trend?.dauChangePercent}
             changeLabel="vs 上期"
             description="Daily Active Users：當日至少有一次互動的用戶數"
+            onClick={() =>
+              setDrillDown({
+                type: 'active',
+                title: 'DAU — 今日活躍用戶',
+                date: today,
+                period: 'day',
+              })
+            }
           />
           <StatCard
             title="WAU"
@@ -223,6 +429,14 @@ export function DashboardPage() {
             change={trend?.wauChangePercent}
             changeLabel="vs 上期"
             description="Weekly Active Users：過去 7 天內有互動的不重複用戶數"
+            onClick={() =>
+              setDrillDown({
+                type: 'active',
+                title: 'WAU — 近 7 天活躍用戶',
+                date: today,
+                period: 'week',
+              })
+            }
           />
           <StatCard
             title="MAU"
@@ -231,12 +445,21 @@ export function DashboardPage() {
             change={trend?.mauChangePercent}
             changeLabel="vs 上期"
             description="Monthly Active Users：過去 30 天內有互動的不重複用戶數"
+            onClick={() =>
+              setDrillDown({
+                type: 'active',
+                title: 'MAU — 近 30 天活躍用戶',
+                date: today,
+                period: 'month',
+              })
+            }
           />
           <StatCard
             title="總用戶"
             value={onboarding?.totalUsers.toLocaleString() ?? '—'}
             icon={UserCheck}
             description="平台上所有已完成 Onboarding 流程的用戶總數"
+            onClick={() => setDrillDown({ type: 'metric', title: '全部用戶', metric: 'all_users' })}
           />
         </div>
       </div>
@@ -252,6 +475,9 @@ export function DashboardPage() {
             change={interaction?.changes.reactions}
             changeLabel="vs 上期"
             description="所選期間內的迴響總數（對打卡、內容等的情感迴響）"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '有迴響的用戶', metric: 'reactions' })
+            }
           />
           <StatCard
             title="留言"
@@ -260,6 +486,9 @@ export function DashboardPage() {
             change={interaction?.changes.comments}
             changeLabel="vs 上期"
             description="所選期間內的留言總數"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '有留言的用戶', metric: 'comments' })
+            }
           />
           <StatCard
             title="追蹤"
@@ -268,6 +497,9 @@ export function DashboardPage() {
             change={interaction?.changes.follows}
             changeLabel="vs 上期"
             description="所選期間內的追蹤動作總數（用戶追蹤其他用戶或主題）"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '有追蹤的用戶', metric: 'follows' })
+            }
           />
           <StatCard
             title="連結"
@@ -276,6 +508,9 @@ export function DashboardPage() {
             change={interaction?.changes.connects}
             changeLabel="vs 上期"
             description="所選期間內的互相連結數（雙向關係建立）"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '有連結的用戶', metric: 'connects' })
+            }
           />
         </div>
       </div>
@@ -289,18 +524,35 @@ export function DashboardPage() {
             value={pct(onboarding?.badgeGrantedRate)}
             icon={CheckCircle}
             description="完成所有 Onboarding 任務並獲得徽章的用戶比例"
+            onClick={() =>
+              setDrillDown({
+                type: 'metric',
+                title: '已完成 Badge 的用戶',
+                metric: 'badge_completed',
+              })
+            }
           />
           <StatCard
             title="測驗完成率"
             value={pct(content?.quizSummary?.completionRate)}
             icon={Target}
             description="完成學習風格測驗（D/A/O/L/C 五型）的用戶比例"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '已完成測驗的用戶', metric: 'quiz_completed' })
+            }
           />
           <StatCard
             title="人物誌解鎖率"
             value={pct(personaStats?.unlockedRate)}
             icon={CheckCircle}
             description="完成人物誌問卷（persona_answers）並解鎖個人人物誌的用戶比例"
+            onClick={() =>
+              setDrillDown({
+                type: 'metric',
+                title: '已解鎖人物誌的用戶',
+                metric: 'persona_unlocked',
+              })
+            }
           />
           <StatCard
             title="平均主題實踐數"
@@ -311,6 +563,9 @@ export function DashboardPage() {
             }
             icon={Target}
             description="每位用戶平均加入的主題實踐數，反映用戶的內容參與深度"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '有加入實踐的用戶', metric: 'has_practices' })
+            }
           />
         </div>
       </div>
@@ -324,24 +579,36 @@ export function DashboardPage() {
             value={`$${(Number(aiData.total_cost_usd) || 0).toFixed(4)}`}
             icon={CircleDollarSign}
             description="所選時間範圍內，所有 AI 後端（OpenAI、Gemini 等）的合計費用"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '有使用 AI 的用戶', metric: 'ai_users' })
+            }
           />
           <StatCard
             title="查詢次數"
             value={aiData.total_queries.toLocaleString()}
             icon={MessageSquare}
             description="所選時間範圍內，用戶發出的 AI 查詢總次數"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '有使用 AI 的用戶', metric: 'ai_users' })
+            }
           />
           <StatCard
             title="總 Tokens"
             value={formatTokens(totalTokens)}
             icon={Hash}
             description="Input tokens 與 Output tokens 的合計，反映 AI 使用量"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '有使用 AI 的用戶', metric: 'ai_users' })
+            }
           />
           <StatCard
             title="平均費用/次"
             value={`$${avgCostPerQuery.toFixed(5)}`}
             icon={Zap}
             description="每次 AI 查詢的平均費用（總費用 ÷ 查詢次數）"
+            onClick={() =>
+              setDrillDown({ type: 'metric', title: '有使用 AI 的用戶', metric: 'ai_users' })
+            }
           />
         </div>
       </div>
@@ -423,6 +690,18 @@ export function DashboardPage() {
           })}
         </div>
       </div>
+
+      {/* ── Drill-down drawer ─────────────────────────────── */}
+      <DrillDownDrawer
+        open={drillDown !== null}
+        onOpenChange={(open) => {
+          if (!open) setDrillDown(null)
+        }}
+        title={drillDown?.title ?? ''}
+        users={drillDownUsers ?? []}
+        isLoading={isDrillDownLoading}
+        isError={isDrillDownError}
+      />
     </div>
   )
 }

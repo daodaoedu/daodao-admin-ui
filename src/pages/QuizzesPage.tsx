@@ -1,15 +1,40 @@
+import { useQuery } from '@tanstack/react-query'
 import { ClipboardList, FileQuestion, Hash, Percent, Plus } from 'lucide-react'
-import type { Quiz, QuizQuestion } from '@/api/admin-learning'
+import { useState } from 'react'
+import type { Quiz } from '@/api/admin-learning'
+import { listQuizQuestions } from '@/api/admin-learning'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useQuizzes } from '@/hooks/useQuizzes'
 import { cn } from '@/lib/utils'
 
 export function QuizzesPage() {
   const { data: quizzesData } = useQuizzes()
   const quizzes = quizzesData ?? ([] as Quiz[])
-  const quizQuestions: QuizQuestion[] = []
+
+  const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null)
+  const activeQuizId = selectedQuizId ?? quizzes[0]?.id ?? null
+  const activeQuiz = quizzes.find((q) => q.id === activeQuizId)
+
+  const { data: quizQuestions = [] } = useQuery({
+    queryKey: ['admin', 'learning', 'quizzes', activeQuizId, 'questions'],
+    queryFn: () => listQuizQuestions(activeQuizId as string).then((r) => r.data.data),
+    enabled: !!activeQuizId,
+  })
+
+  const avgPassRate =
+    quizzes.length > 0
+      ? Math.round(quizzes.reduce((sum, q) => sum + q.passRate, 0) / quizzes.length)
+      : 0
 
   return (
     <div className="space-y-6">
@@ -27,9 +52,13 @@ export function QuizzesPage() {
 
       {/* ── Stats ──────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard title="總測驗" value={8} icon={ClipboardList} change={1.5} changeLabel="較上月" />
-        <StatCard title="平均通過率" value="72%" icon={Percent} change={4.2} changeLabel="較上月" />
-        <StatCard title="總作答次數" value="1,234" icon={Hash} change={12.3} changeLabel="較上月" />
+        <StatCard title="總測驗" value={quizzes.length} icon={ClipboardList} />
+        <StatCard title="平均通過率" value={`${avgPassRate}%`} icon={Percent} />
+        <StatCard
+          title="總題目數"
+          value={quizzes.reduce((sum, q) => sum + q.questions, 0)}
+          icon={Hash}
+        />
       </div>
 
       {/* ── Quiz table ─────────────────────────────────── */}
@@ -37,72 +66,74 @@ export function QuizzesPage() {
         <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
           測驗列表
         </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="pb-3 pr-4 font-medium">測驗名稱</th>
-                <th className="pb-3 pr-4 font-medium">附加課程</th>
-                <th className="pb-3 pr-4 font-medium">題目數</th>
-                <th className="pb-3 pr-4 font-medium">及格線</th>
-                <th className="pb-3 pr-4 font-medium">平均分</th>
-                <th className="pb-3 pr-4 font-medium">通過率</th>
-                <th className="pb-3 font-medium">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quizzes.map((quiz) => (
-                <tr
-                  key={quiz.name}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                >
-                  <td className="py-3 pr-4 font-medium text-foreground">{quiz.name}</td>
-                  <td className="py-3 pr-4 text-muted-foreground">{quiz.course}</td>
-                  <td className="py-3 pr-4 text-foreground">{quiz.questions}</td>
-                  <td className="py-3 pr-4 text-foreground">{quiz.passingScore}%</td>
-                  <td className="py-3 pr-4">
-                    <span
-                      className={cn(
-                        'font-medium',
-                        quiz.avgScore >= quiz.passingScore ? 'text-success' : 'text-destructive',
-                      )}
-                    >
-                      {quiz.avgScore}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-16 rounded-full bg-muted">
-                        <div
-                          className={cn(
-                            'h-2 rounded-full',
-                            quiz.passRate >= 75
-                              ? 'bg-success'
-                              : quiz.passRate >= 50
-                                ? 'bg-warning'
-                                : 'bg-destructive',
-                          )}
-                          style={{ width: `${quiz.passRate}%` }}
-                        />
-                      </div>
-                      <span className="text-foreground">{quiz.passRate}%</span>
+        <Table>
+          <TableHeader>
+            <TableRow className="text-left">
+              <TableHead className="pr-4">測驗名稱</TableHead>
+              <TableHead className="pr-4">附加課程</TableHead>
+              <TableHead className="pr-4">題目數</TableHead>
+              <TableHead className="pr-4">及格線</TableHead>
+              <TableHead className="pr-4">平均分</TableHead>
+              <TableHead className="pr-4">通過率</TableHead>
+              <TableHead>操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {quizzes.map((quiz) => (
+              <TableRow
+                key={quiz.id}
+                className={cn(
+                  'last:border-0 cursor-pointer',
+                  quiz.id === activeQuizId && 'bg-muted/50',
+                )}
+                onClick={() => setSelectedQuizId(quiz.id)}
+              >
+                <TableCell className="pr-4 font-medium text-foreground">{quiz.name}</TableCell>
+                <TableCell className="pr-4 text-muted-foreground">{quiz.course}</TableCell>
+                <TableCell className="pr-4 text-foreground">{quiz.questions}</TableCell>
+                <TableCell className="pr-4 text-foreground">{quiz.passingScore}%</TableCell>
+                <TableCell className="pr-4">
+                  <span
+                    className={cn(
+                      'font-medium',
+                      quiz.avgScore >= quiz.passingScore ? 'text-success' : 'text-destructive',
+                    )}
+                  >
+                    {quiz.avgScore}
+                  </span>
+                </TableCell>
+                <TableCell className="pr-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-16 rounded-full bg-muted">
+                      <div
+                        className={cn(
+                          'h-2 rounded-full',
+                          quiz.passRate >= 75
+                            ? 'bg-success'
+                            : quiz.passRate >= 50
+                              ? 'bg-warning'
+                              : 'bg-destructive',
+                        )}
+                        style={{ width: `${quiz.passRate}%` }}
+                      />
                     </div>
-                  </td>
-                  <td className="py-3">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      className="h-auto px-0 py-0 text-primary"
-                    >
-                      編輯
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <span className="text-foreground">{quiz.passRate}%</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    className="h-auto px-0 py-0 text-primary"
+                  >
+                    編輯
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {/* ── Per-question stats ─────────────────────────── */}
@@ -112,67 +143,64 @@ export function QuizzesPage() {
           <h2 className="text-base leading-none font-semibold tracking-tight text-foreground">
             題目分析
           </h2>
-          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-            前端基礎測驗
-          </span>
+          {activeQuiz && (
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+              {activeQuiz.name}
+            </span>
+          )}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="pb-3 pr-4 font-medium">題目</th>
-                <th className="pb-3 pr-4 font-medium">類型</th>
-                <th className="pb-3 pr-4 font-medium">正確率</th>
-                <th className="pb-3 font-medium">最常錯答案</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quizQuestions.map((q) => (
-                <tr
-                  key={q.question}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                >
-                  <td className="py-3 pr-4 font-medium text-foreground max-w-xs truncate">
-                    {q.question}
-                  </td>
-                  <td className="py-3 pr-4">
-                    <span
-                      className={cn(
-                        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                        q.type === '選擇'
-                          ? 'bg-primary/10 text-primary'
-                          : q.type === '是非'
-                            ? 'bg-success/10 text-success'
-                            : 'bg-warning/10 text-warning',
-                      )}
-                    >
-                      {q.type}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-16 rounded-full bg-muted">
-                        <div
-                          className={cn(
-                            'h-2 rounded-full',
-                            q.correctRate >= 70
-                              ? 'bg-success'
-                              : q.correctRate >= 50
-                                ? 'bg-warning'
-                                : 'bg-destructive',
-                          )}
-                          style={{ width: `${q.correctRate}%` }}
-                        />
-                      </div>
-                      <span className="text-foreground">{q.correctRate}%</span>
+        <Table>
+          <TableHeader>
+            <TableRow className="text-left">
+              <TableHead className="pr-4">題目</TableHead>
+              <TableHead className="pr-4">類型</TableHead>
+              <TableHead className="pr-4">正確率</TableHead>
+              <TableHead>最常錯答案</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {quizQuestions.map((q) => (
+              <TableRow key={q.question} className="last:border-0">
+                <TableCell className="pr-4 font-medium text-foreground max-w-xs truncate">
+                  {q.question}
+                </TableCell>
+                <TableCell className="pr-4">
+                  <span
+                    className={cn(
+                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                      q.type === '選擇'
+                        ? 'bg-primary/10 text-primary'
+                        : q.type === '是非'
+                          ? 'bg-success/10 text-success'
+                          : 'bg-warning/10 text-warning',
+                    )}
+                  >
+                    {q.type}
+                  </span>
+                </TableCell>
+                <TableCell className="pr-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-16 rounded-full bg-muted">
+                      <div
+                        className={cn(
+                          'h-2 rounded-full',
+                          q.correctRate >= 70
+                            ? 'bg-success'
+                            : q.correctRate >= 50
+                              ? 'bg-warning'
+                              : 'bg-destructive',
+                        )}
+                        style={{ width: `${q.correctRate}%` }}
+                      />
                     </div>
-                  </td>
-                  <td className="py-3 text-muted-foreground">{q.commonWrong}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <span className="text-foreground">{q.correctRate}%</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-muted-foreground">{q.commonWrong}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

@@ -230,6 +230,8 @@ export const listAdminUsers = (params?: {
   creationMethod?: 'self_created' | 'copied' | 'action_generator'
   lastLoginFrom?: string
   lastLoginTo?: string
+  createdFrom?: string
+  createdTo?: string
   lastActivityFrom?: string
   lastActivityTo?: string
   sortBy?:
