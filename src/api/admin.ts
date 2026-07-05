@@ -232,8 +232,10 @@ export const listAdminUsers = (params?: {
   lastLoginTo?: string
   createdFrom?: string
   createdTo?: string
+  lastLoginPresence?: 'with' | 'without'
   lastActivityFrom?: string
   lastActivityTo?: string
+  lastActivityPresence?: 'with' | 'without'
   sortBy?:
     | 'createdAt'
     | 'lastLoginAt'

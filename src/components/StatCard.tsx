@@ -24,11 +24,12 @@ export function StatCard({
 }: StatCardProps) {
   const isPositive = change !== undefined && change >= 0
 
+  const CardElement = onClick ? 'button' : 'div'
+
   return (
-    <button
-      type="button"
+    <CardElement
+      type={onClick ? 'button' : undefined}
       onClick={onClick}
-      disabled={!onClick}
       className={cn(
         'rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm text-left w-full',
         onClick && 'cursor-pointer transition-shadow hover:shadow-md hover:border-primary/30',
@@ -77,6 +78,6 @@ export function StatCard({
           {changeLabel && <span className="text-muted-foreground">{changeLabel}</span>}
         </div>
       )}
-    </button>
+    </CardElement>
   )
 }
