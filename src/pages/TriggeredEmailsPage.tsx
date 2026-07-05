@@ -2,6 +2,14 @@ import { Loader2, Mail, MailCheck, Percent, Plus, Zap } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   useEmailTriggerLogs,
   useEmailTriggerRules,
   useEmailTriggerStats,
@@ -69,59 +77,55 @@ export function TriggeredEmailsPage() {
         ) : rules.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">尚無郵件規則</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">規則名稱</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">觸發條件</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">郵件模板</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">已發送</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">開信率</th>
-                  <th className="pb-3 font-medium text-muted-foreground">狀態</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rules.map((rule) => (
-                  <tr key={rule.id} className="border-b border-border last:border-0">
-                    <td className="py-3 pr-4 font-medium">
-                      <div className="flex items-center gap-2">
-                        <MailCheck className="h-4 w-4 text-muted-foreground" />
-                        {rule.name}
-                      </div>
-                    </td>
-                    <td className="py-3 pr-4 text-muted-foreground">{rule.trigger_type}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">{rule.template}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">{rule.sent_count}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">{rule.open_rate}%</td>
-                    <td className="py-3">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          toggleMutation.mutate({ id: rule.id, enabled: !rule.enabled })
-                        }
-                        disabled={toggleMutation.isPending}
+          <Table>
+            <TableHeader>
+              <TableRow className="text-left">
+                <TableHead className="pr-4">規則名稱</TableHead>
+                <TableHead className="pr-4">觸發條件</TableHead>
+                <TableHead className="pr-4">郵件模板</TableHead>
+                <TableHead className="pr-4">已發送</TableHead>
+                <TableHead className="pr-4">開信率</TableHead>
+                <TableHead>狀態</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rules.map((rule) => (
+                <TableRow key={rule.id} className="last:border-0">
+                  <TableCell className="pr-4 font-medium">
+                    <div className="flex items-center gap-2">
+                      <MailCheck className="h-4 w-4 text-muted-foreground" />
+                      {rule.name}
+                    </div>
+                  </TableCell>
+                  <TableCell className="pr-4 text-muted-foreground">{rule.trigger_type}</TableCell>
+                  <TableCell className="pr-4 text-muted-foreground">{rule.template}</TableCell>
+                  <TableCell className="pr-4 text-muted-foreground">{rule.sent_count}</TableCell>
+                  <TableCell className="pr-4 text-muted-foreground">{rule.open_rate}%</TableCell>
+                  <TableCell>
+                    <button
+                      type="button"
+                      onClick={() => toggleMutation.mutate({ id: rule.id, enabled: !rule.enabled })}
+                      disabled={toggleMutation.isPending}
+                      className={cn(
+                        'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                        rule.enabled ? 'bg-primary' : 'bg-muted',
+                      )}
+                      role="switch"
+                      aria-checked={rule.enabled}
+                      aria-label={`${rule.name} ${rule.enabled ? '啟用' : '停用'}`}
+                    >
+                      <span
                         className={cn(
-                          'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                          rule.enabled ? 'bg-primary' : 'bg-muted',
+                          'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform',
+                          rule.enabled ? 'translate-x-4' : 'translate-x-0',
                         )}
-                        role="switch"
-                        aria-checked={rule.enabled}
-                        aria-label={`${rule.name} ${rule.enabled ? '啟用' : '停用'}`}
-                      >
-                        <span
-                          className={cn(
-                            'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform',
-                            rule.enabled ? 'translate-x-4' : 'translate-x-0',
-                          )}
-                        />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      />
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
 
@@ -138,37 +142,35 @@ export function TriggeredEmailsPage() {
         ) : logs.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">尚無執行紀錄</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">規則</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">收件人</th>
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">發送時間</th>
-                  <th className="pb-3 font-medium text-muted-foreground">狀態</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((log) => (
-                  <tr key={log.id} className="border-b border-border last:border-0">
-                    <td className="py-3 pr-4 font-medium">{log.rule_name}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">{log.recipient}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">{log.sent_at}</td>
-                    <td
-                      className={cn(
-                        'py-3 text-sm font-medium',
-                        log.status === 'success'
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400',
-                      )}
-                    >
-                      {log.status === 'success' ? '成功' : '失敗'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="text-left">
+                <TableHead className="pr-4">規則</TableHead>
+                <TableHead className="pr-4">收件人</TableHead>
+                <TableHead className="pr-4">發送時間</TableHead>
+                <TableHead>狀態</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.map((log) => (
+                <TableRow key={log.id} className="last:border-0">
+                  <TableCell className="pr-4 font-medium">{log.rule_name}</TableCell>
+                  <TableCell className="pr-4 text-muted-foreground">{log.recipient}</TableCell>
+                  <TableCell className="pr-4 text-muted-foreground">{log.sent_at}</TableCell>
+                  <TableCell
+                    className={cn(
+                      'text-sm font-medium',
+                      log.status === 'success'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400',
+                    )}
+                  >
+                    {log.status === 'success' ? '成功' : '失敗'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
     </div>

@@ -4,6 +4,14 @@ import type { DripSchedule } from '@/api/admin-learning'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useDripSchedules } from '@/hooks/useDripSchedules'
 
 export function DripContentPage() {
@@ -52,58 +60,53 @@ export function DripContentPage() {
             排程列表
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="pb-3 pr-4 font-medium">課程</th>
-                <th className="pb-3 pr-4 font-medium">Module</th>
-                <th className="pb-3 pr-4 font-medium">解鎖條件</th>
-                <th className="pb-3 pr-4 font-medium">已解鎖用戶</th>
-                <th className="pb-3 font-medium">等待中用戶</th>
-              </tr>
-            </thead>
-            <tbody>
-              {schedules.map((row) => (
-                <tr
-                  key={`${row.course}-${row.module}`}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                >
-                  <td className="py-3 pr-4 font-medium text-foreground">{row.course}</td>
-                  <td className="py-3 pr-4 text-foreground">{row.module}</td>
-                  <td className="py-3 pr-4">
-                    <span
-                      className={
-                        row.conditionType === 'days'
-                          ? 'inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary'
-                          : 'inline-flex items-center gap-1 rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-medium text-warning'
-                      }
-                    >
-                      {row.conditionType === 'days' ? (
-                        <Clock className="h-3 w-3" />
-                      ) : (
-                        <Calendar className="h-3 w-3" />
-                      )}
-                      {row.condition}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <span className="inline-flex items-center gap-1 text-success">
-                      <Unlock className="h-3 w-3" />
-                      {row.unlocked.toLocaleString()}
-                    </span>
-                  </td>
-                  <td className="py-3">
-                    <span className="inline-flex items-center gap-1 text-muted-foreground">
-                      <Lock className="h-3 w-3" />
-                      {row.waiting.toLocaleString()}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>課程</TableHead>
+              <TableHead>Module</TableHead>
+              <TableHead>解鎖條件</TableHead>
+              <TableHead>已解鎖用戶</TableHead>
+              <TableHead>等待中用戶</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {schedules.map((row) => (
+              <TableRow key={`${row.course}-${row.module}`}>
+                <TableCell className="font-medium text-foreground">{row.course}</TableCell>
+                <TableCell className="text-foreground">{row.module}</TableCell>
+                <TableCell>
+                  <span
+                    className={
+                      row.conditionType === 'days'
+                        ? 'inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary'
+                        : 'inline-flex items-center gap-1 rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-medium text-warning'
+                    }
+                  >
+                    {row.conditionType === 'days' ? (
+                      <Clock className="h-3 w-3" />
+                    ) : (
+                      <Calendar className="h-3 w-3" />
+                    )}
+                    {row.condition}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center gap-1 text-success">
+                    <Unlock className="h-3 w-3" />
+                    {row.unlocked.toLocaleString()}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                    <Lock className="h-3 w-3" />
+                    {row.waiting.toLocaleString()}
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {/* ── Manual unlock ──────────────────────────────── */}

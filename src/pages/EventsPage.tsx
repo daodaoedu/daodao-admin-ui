@@ -2,6 +2,14 @@ import { Calendar, Clock, Edit, MapPin, Plus, RefreshCw, Send, Users, Video } fr
 import { useEffect, useMemo, useState } from 'react'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useEventRSVPs, useEvents, useEventTemplates } from '@/hooks/useEvents'
 import { cn } from '@/lib/utils'
 
@@ -167,36 +175,31 @@ export function EventsPage() {
           {displayPastEvents.length === 0 ? (
             <p className="text-muted-foreground">暫無已結束活動</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="pb-3 font-medium text-muted-foreground">活動名稱</th>
-                    <th className="pb-3 font-medium text-muted-foreground">日期</th>
-                    <th className="pb-3 font-medium text-muted-foreground">地點</th>
-                    <th className="pb-3 font-medium text-muted-foreground">出席 / 報名</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayPastEvents.map((event) => (
-                    <tr
-                      key={event.id}
-                      className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                    >
-                      <td className="py-3 font-medium text-foreground">{event.name}</td>
-                      <td className="py-3 text-muted-foreground">
-                        {event.date} {event.time}
-                      </td>
-                      <td className="py-3 text-muted-foreground">{event.location}</td>
-                      <td className="py-3 text-muted-foreground">
-                        {event.rsvp}
-                        {event.capacity != null ? `/${event.capacity}` : ''}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow className="text-left">
+                  <TableHead>活動名稱</TableHead>
+                  <TableHead>日期</TableHead>
+                  <TableHead>地點</TableHead>
+                  <TableHead>出席 / 報名</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {displayPastEvents.map((event) => (
+                  <TableRow key={event.id}>
+                    <TableCell className="font-medium text-foreground">{event.name}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {event.date} {event.time}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{event.location}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {event.rsvp}
+                      {event.capacity != null ? `/${event.capacity}` : ''}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
       )}
@@ -207,38 +210,33 @@ export function EventsPage() {
           <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
             RSVP 詳情 — {selectedEvent.name}
           </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                  <th className="pb-3 font-medium text-muted-foreground">用戶</th>
-                  <th className="pb-3 font-medium text-muted-foreground">報名狀態</th>
-                  <th className="pb-3 font-medium text-muted-foreground">報名時間</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayRsvps.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                  >
-                    <td className="py-3 text-foreground">{row.user}</td>
-                    <td className="py-3">
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                          RSVP_STATUS_STYLES[row.status],
-                        )}
-                      >
-                        {RSVP_STATUS_LABELS[row.status]}
-                      </span>
-                    </td>
-                    <td className="py-3 text-muted-foreground">{row.time}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="text-left">
+                <TableHead>用戶</TableHead>
+                <TableHead>報名狀態</TableHead>
+                <TableHead>報名時間</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayRsvps.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="text-foreground">{row.user}</TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                        RSVP_STATUS_STYLES[row.status],
+                      )}
+                    >
+                      {RSVP_STATUS_LABELS[row.status]}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{row.time}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -251,31 +249,26 @@ export function EventsPage() {
               週期性模板
             </h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                  <th className="pb-3 font-medium text-muted-foreground">模板名稱</th>
-                  <th className="pb-3 font-medium text-muted-foreground">頻率</th>
-                  <th className="pb-3 font-medium text-muted-foreground">下次場次</th>
-                  <th className="pb-3 font-medium text-muted-foreground">已生成場次數</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayTemplates.map((tpl) => (
-                  <tr
-                    key={tpl.id}
-                    className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                  >
-                    <td className="py-3 font-medium text-foreground">{tpl.name}</td>
-                    <td className="py-3 text-muted-foreground">{tpl.frequency}</td>
-                    <td className="py-3 text-foreground">{tpl.nextSession}</td>
-                    <td className="py-3 text-muted-foreground">{tpl.totalGenerated} 場</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="text-left">
+                <TableHead>模板名稱</TableHead>
+                <TableHead>頻率</TableHead>
+                <TableHead>下次場次</TableHead>
+                <TableHead>已生成場次數</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayTemplates.map((tpl) => (
+                <TableRow key={tpl.id}>
+                  <TableCell className="font-medium text-foreground">{tpl.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{tpl.frequency}</TableCell>
+                  <TableCell className="text-foreground">{tpl.nextSession}</TableCell>
+                  <TableCell className="text-muted-foreground">{tpl.totalGenerated} 場</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

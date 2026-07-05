@@ -938,6 +938,40 @@ export interface PersonaUserProfile {
   answersNeeded?: number
 }
 
+export interface PersonaUser {
+  userId: number
+  externalId: string
+  name: string
+  photoUrl: string | null
+  personaType: 'D' | 'A' | 'O' | 'L' | 'C' | null
+  answerCount: number
+  lastAnsweredAt: string | null
+}
+
+export interface PersonaQuestionAnswerItem {
+  answerId: number
+  userId: string
+  name: string
+  photoURL: string | null
+  selectedValue: string | null
+  textAnswer: string | null
+  resonanceCount: number
+  answeredAt: string
+}
+
+export interface PersonaQuestionAnswers {
+  question: {
+    id: number
+    prompt: string
+    questionType: string
+    options: string[] | null
+    totalAnswerCount: number
+  }
+  answers: PersonaQuestionAnswerItem[]
+  hasMore: boolean
+  nextCursor: string | null
+}
+
 // ── Persona Question Admin ────────────────────────────────────────────────────
 export type PersonaQuestionType = 'choice' | 'sentence_completion' | 'scenario'
 
@@ -973,32 +1007,4 @@ export interface AdminPersonaQuestionUpdate {
 export interface AdminPersonaTranslationUpsert {
   prompt: string
   options?: string[] | null
-}
-
-// ── Admin User Detail ─────────────────────────────────────────────────
-export interface AdminUserDetail {
-  id: string
-  internalId: number
-  name: string | null
-  email: string | null
-  photoURL: string | null
-  emailVerified: boolean
-  isActive: boolean
-  roles: Array<{ id: number; name: string }>
-  permissions: string[]
-  createdAt: string
-  lastLoginAt: string | null
-  activityStats?: {
-    totalCheckins: number
-    totalPosts: number
-    totalComments: number
-    lastActiveAt: string | null
-  }
-}
-
-export interface AdminLoginHistoryItem {
-  id: number
-  loginAt: string
-  ipAddress: string | null
-  userAgent: string | null
 }

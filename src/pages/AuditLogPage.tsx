@@ -7,6 +7,14 @@ import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useAuditLogs } from '@/hooks/useAuditLogs'
 import { cn } from '@/lib/utils'
 
@@ -224,32 +232,27 @@ export function AuditLogPage() {
 
       {/* Log Table */}
       <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+        <Table>
+          <TableHeader>
+            <TableRow>
               {['時間', '管理員', '操作類型', '目標', '詳情', 'IP'].map((h) => (
-                <th key={h} className="px-4 py-3 text-left font-medium">
-                  {h}
-                </th>
+                <TableHead key={h}>{h}</TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {paginated.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   無符合條件的日誌
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               paginated.map((log) => (
-                <tr
-                  key={log.id}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0 transition-colors"
-                >
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">{log.time}</td>
-                  <td className="px-4 py-3 font-medium">{log.admin}</td>
-                  <td className="px-4 py-3">
+                <TableRow key={log.id}>
+                  <TableCell className="whitespace-nowrap font-mono text-xs">{log.time}</TableCell>
+                  <TableCell className="font-medium">{log.admin}</TableCell>
+                  <TableCell>
                     <span
                       className={cn(
                         'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium',
@@ -258,17 +261,17 @@ export function AuditLogPage() {
                     >
                       {log.actionType}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{log.target}</td>
-                  <td className="max-w-xs px-4 py-3 text-muted-foreground">{log.detail}</td>
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{log.target}</TableCell>
+                  <TableCell className="max-w-xs text-muted-foreground">{log.detail}</TableCell>
+                  <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                     {log.ip}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination */}

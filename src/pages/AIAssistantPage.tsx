@@ -23,6 +23,14 @@ import { Button } from '@/components/ui/button'
 import { Input, Textarea } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   useAIAssistantStats,
   useConversation,
   useConversations,
@@ -117,51 +125,41 @@ export function AIAssistantPage() {
                 知識庫
               </h2>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                    <th className="pb-3 font-medium text-muted-foreground">檔案名稱</th>
-                    <th className="pb-3 font-medium text-muted-foreground">類型</th>
-                    <th className="pb-3 font-medium text-muted-foreground">大小</th>
-                    <th className="pb-3 font-medium text-muted-foreground">上傳日期</th>
-                    <th className="pb-3 font-medium text-muted-foreground">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayKbFiles.map((file) => (
-                    <tr
-                      key={file.id}
-                      className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                    >
-                      <td className="py-3 font-medium text-foreground">{file.name}</td>
-                      <td className="py-3">
-                        <span
-                          className={cn(
-                            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                            FILE_TYPE_STYLES[file.type],
-                          )}
-                        >
-                          {file.type}
-                        </span>
-                      </td>
-                      <td className="py-3 text-muted-foreground">{file.size}</td>
-                      <td className="py-3 text-muted-foreground">{file.uploadedAt}</td>
-                      <td className="py-3">
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="xs"
-                          className="h-6 w-6 p-0"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>檔案名稱</TableHead>
+                  <TableHead>類型</TableHead>
+                  <TableHead>大小</TableHead>
+                  <TableHead>上傳日期</TableHead>
+                  <TableHead>操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {displayKbFiles.map((file) => (
+                  <TableRow key={file.id}>
+                    <TableCell className="font-medium text-foreground">{file.name}</TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                          FILE_TYPE_STYLES[file.type],
+                        )}
+                      >
+                        {file.type}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{file.size}</TableCell>
+                    <TableCell className="text-muted-foreground">{file.uploadedAt}</TableCell>
+                    <TableCell>
+                      <Button type="button" variant="destructive" size="xs" className="h-6 w-6 p-0">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
             <div className="mt-4">
               <Button type="button" variant="outline" size="sm">
                 <Upload className="h-4 w-4" />

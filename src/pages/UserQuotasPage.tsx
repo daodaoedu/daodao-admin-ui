@@ -6,6 +6,14 @@ import { ExportButton } from '@/components/ExportButton'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 const LIMIT = 50
 
@@ -85,10 +93,10 @@ export function UserQuotasPage() {
         />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
               {[
                 'ID',
                 'Nickname',
@@ -99,45 +107,40 @@ export function UserQuotasPage() {
                 'Daily Limit',
                 '操作',
               ].map((h) => (
-                <th key={h} className="px-4 py-3 text-left font-medium">
-                  {h}
-                </th>
+                <TableHead key={h}>{h}</TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   載入中...
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : users.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   無資料
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               users.map((u) => (
-                <tr
-                  key={u.id}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors transition-colors"
-                >
-                  <td className="px-4 py-2 font-mono text-xs">{u.id}</td>
-                  <td className="px-4 py-2 font-medium">{u.nickname ?? '-'}</td>
-                  <td className="px-4 py-2 font-mono text-xs truncate max-w-[120px]">
+                <TableRow key={u.id}>
+                  <TableCell className="font-mono text-xs">{u.id}</TableCell>
+                  <TableCell className="font-medium">{u.nickname ?? '-'}</TableCell>
+                  <TableCell className="font-mono text-xs truncate max-w-[120px]">
                     {u.mongo_id ?? '-'}
-                  </td>
-                  <td className="px-4 py-2">{u.role_id ?? '-'}</td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell>{u.role_id ?? '-'}</TableCell>
+                  <TableCell>
                     <span
                       className={`font-mono ${u.current_month_tokens_used > 0 ? 'text-foreground' : 'text-muted-foreground'}`}
                     >
                       {u.current_month_tokens_used.toLocaleString()}
                     </span>
-                  </td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell>
                     {u.quota ? (
                       <span className="font-mono">
                         {u.quota.monthly_token_limit.toLocaleString()}
@@ -145,8 +148,8 @@ export function UserQuotasPage() {
                     ) : (
                       <span className="text-muted-foreground text-xs">未設定</span>
                     )}
-                  </td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell>
                     {u.quota?.daily_token_limit ? (
                       <span className="font-mono">
                         {u.quota.daily_token_limit.toLocaleString()}
@@ -154,17 +157,17 @@ export function UserQuotasPage() {
                     ) : (
                       <span className="text-muted-foreground text-xs">不限</span>
                     )}
-                  </td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell>
                     <Button type="button" variant="secondary" size="xs" onClick={() => openEdit(u)}>
                       設定 Quota
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {pagination && (

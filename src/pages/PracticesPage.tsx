@@ -31,6 +31,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { getPracticePublicUrl } from '@/config'
 import { usePracticeStats } from '@/hooks/usePracticeStats'
 import { useUserTags } from '@/hooks/useUserTags'
@@ -140,8 +148,8 @@ function SortableHeader({
 }) {
   const isActive = currentSort === field
   return (
-    <th
-      className="px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
+    <TableHead
+      className="cursor-pointer select-none hover:text-foreground transition-colors"
       onClick={() => onSort(field)}
     >
       <div className={cn('flex items-center gap-1', align === 'right' && 'justify-end')}>
@@ -152,7 +160,7 @@ function SortableHeader({
           <ChevronsUpDown className="h-3 w-3 opacity-40" />
         )}
       </div>
-    </th>
+    </TableHead>
   )
 }
 
@@ -946,151 +954,146 @@ export function PracticesPage() {
           </p>
           {isFetching && <span className="text-xs text-muted-foreground">更新中...</span>}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left">
-                <th className="px-4 py-3 w-10">
-                  <input
-                    ref={checkAllRef}
-                    type="checkbox"
-                    checked={allPageSelected}
-                    onChange={toggleAll}
-                    className="rounded border-input accent-primary"
-                  />
-                </th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">標題</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">狀態</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">建立者</th>
-                <SortableHeader
-                  label="建立日期"
-                  field="createdAt"
-                  currentSort={sort}
-                  currentOrder={order}
-                  onSort={handleSort}
+        <Table>
+          <TableHeader>
+            <TableRow className="text-left">
+              <TableHead className="w-10">
+                <input
+                  ref={checkAllRef}
+                  type="checkbox"
+                  checked={allPageSelected}
+                  onChange={toggleAll}
+                  className="rounded border-input accent-primary"
                 />
-                <th className="px-4 py-3 font-medium text-muted-foreground text-right">實踐期間</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground text-right">打卡次數</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground text-right">瀏覽數</th>
-                <SortableHeader
-                  label="迴響數"
-                  field="likeCount"
-                  currentSort={sort}
-                  currentOrder={order}
-                  onSort={handleSort}
-                  align="right"
-                />
-                <th className="px-4 py-3 font-medium text-muted-foreground text-right">留言數</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {practices.map((practice) => {
-                const status = statusConfig[practice.status]
-                const isSelected = selectedIds.has(practice.id)
-                return (
-                  <tr
-                    key={practice.id}
-                    className={cn(
-                      'border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0',
-                      isSelected && 'bg-primary/5',
-                    )}
-                  >
-                    <td className="px-4 py-3 w-10">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleOne(practice.id)}
-                        className="rounded border-input accent-primary"
-                      />
-                    </td>
-                    <td className="px-4 py-3 max-w-[240px]">
-                      <a
-                        href={getPracticePublicUrl(practice.id)}
-                        className="font-medium text-foreground hover:text-primary transition-colors text-left leading-snug"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        {practice.title}
-                      </a>
-                      {practice.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {practice.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              className="inline-block bg-muted rounded px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                          {practice.tags.length > 3 && (
-                            <span className="text-[10px] text-muted-foreground">
-                              +{practice.tags.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          status.className,
+              </TableHead>
+              <TableHead>標題</TableHead>
+              <TableHead>狀態</TableHead>
+              <TableHead>建立者</TableHead>
+              <SortableHeader
+                label="建立日期"
+                field="createdAt"
+                currentSort={sort}
+                currentOrder={order}
+                onSort={handleSort}
+              />
+              <TableHead className="text-right">實踐期間</TableHead>
+              <TableHead className="text-right">打卡次數</TableHead>
+              <TableHead className="text-right">瀏覽數</TableHead>
+              <SortableHeader
+                label="迴響數"
+                field="likeCount"
+                currentSort={sort}
+                currentOrder={order}
+                onSort={handleSort}
+                align="right"
+              />
+              <TableHead className="text-right">留言數</TableHead>
+              <TableHead>操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {practices.map((practice) => {
+              const status = statusConfig[practice.status]
+              const isSelected = selectedIds.has(practice.id)
+              return (
+                <TableRow
+                  key={practice.id}
+                  className={cn('last:border-0', isSelected && 'bg-primary/5')}
+                >
+                  <TableCell className="w-10">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleOne(practice.id)}
+                      className="rounded border-input accent-primary"
+                    />
+                  </TableCell>
+                  <TableCell className="max-w-[240px]">
+                    <a
+                      href={getPracticePublicUrl(practice.id)}
+                      className="font-medium text-foreground hover:text-primary transition-colors text-left leading-snug"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {practice.title}
+                    </a>
+                    {practice.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {practice.tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-block bg-muted rounded px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                        {practice.tags.length > 3 && (
+                          <span className="text-[10px] text-muted-foreground">
+                            +{practice.tags.length - 3}
+                          </span>
                         )}
-                      >
-                        {status.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <UserLink
-                        userId={practice.user.id}
-                        name={practice.user.name}
-                        photoURL={practice.user.photoURL}
-                        className="text-muted-foreground max-w-[140px]"
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(practice.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">
-                      {practice.durationDays ? `${practice.durationDays} 天` : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {practice.checkInCount.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">
-                      {practice.stats.viewCount.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {practice.stats.likeCount.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">
-                      {practice.stats.commentCount.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedPractice(practice)}
-                      >
-                        查看
-                      </Button>
-                    </td>
-                  </tr>
-                )
-              })}
-              {practices.length === 0 && (
-                <tr>
-                  <td className="px-5 py-10 text-center text-muted-foreground" colSpan={10}>
-                    {isFetching ? '載入中...' : '沒有符合條件的實踐'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium',
+                        status.className,
+                      )}
+                    >
+                      {status.label}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <UserLink
+                      userId={practice.user.id}
+                      name={practice.user.name}
+                      photoURL={practice.user.photoURL}
+                      className="text-muted-foreground max-w-[140px]"
+                    />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(practice.createdAt)}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {practice.durationDays ? `${practice.durationDays} 天` : '—'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {practice.checkInCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {practice.stats.viewCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {practice.stats.likeCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {practice.stats.commentCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedPractice(practice)}
+                    >
+                      查看
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+            {practices.length === 0 && (
+              <TableRow>
+                <TableCell className="px-5 py-10 text-center text-muted-foreground" colSpan={10}>
+                  {isFetching ? '載入中...' : '沒有符合條件的實踐'}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       {/* ── Section 5: 分頁 ── */}

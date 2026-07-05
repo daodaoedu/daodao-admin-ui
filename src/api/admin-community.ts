@@ -4,7 +4,9 @@ import type {
   EmailOnboardingStats,
   EngagementStats,
   OnboardingStats,
+  PersonaQuestionAnswers,
   PersonaStats,
+  PersonaUser,
   PersonaUserProfile,
   QuizStats,
   UserOnboardingDetail,
@@ -37,16 +39,14 @@ export interface ProfileFieldUpdate {
 }
 
 export interface MemberDirectoryStats {
-  searchCount: number
-  profileViews: number
-  connectionRate: number
+  totalMembers: number
+  completedProfiles: number
+  averageFillRate: number
 }
 
 export interface MemberDirectoryAnalytics {
-  searchCount: number
-  profileViews: number
-  connectionRate: number
-  [key: string]: unknown
+  fieldFillRates: Array<{ fieldId: number; fieldName: string; fillRate: number }>
+  signupTrend: Array<{ date: string; count: number }>
 }
 
 export interface CommunityMapStats {
@@ -288,4 +288,22 @@ export const getEngagementStats = (params?: { days?: number }) =>
 export const getUserPersonaProfile = (userUuid: string) =>
   apiClient.get<ApiResponse<PersonaUserProfile>>(
     `/daodao-server/api/v1/persona/profile/${userUuid}`,
+  )
+
+export const listPersonaUsers = (params?: {
+  search?: string
+  sort?: string
+  order?: string
+  limit?: number
+  offset?: number
+}) =>
+  apiClient.get<ApiResponse<PersonaUser[]>>('/daodao-server/api/v1/admin/persona/users', { params })
+
+export const getPersonaQuestionAnswers = (
+  questionId: number,
+  params?: { limit?: number; cursor?: string },
+) =>
+  apiClient.get<ApiResponse<PersonaQuestionAnswers>>(
+    `/daodao-server/api/v1/persona/questions/${questionId}/answers`,
+    { params },
   )

@@ -10,6 +10,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 type PersonaType = 'L' | 'C' | 'A' | 'D' | 'O'
 
@@ -171,36 +179,36 @@ type UserManagementSortBy =
   | 'daysToComplete'
 
 const TABLE_HEADERS = [
-  'ID',
-  'Custom ID',
   '名稱',
   'Email',
   '狀態',
+  '最後登入',
+  '最後操作',
   '角色',
   '標籤',
   '學習風格',
+  'Onboarding',
   '註冊來源',
   '實踐建立方式',
-  'Onboarding',
   '完成天數',
-  '最後登入',
-  '最後操作',
+  'ID',
+  'Custom ID',
   '操作',
 ]
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-border/80">
+    <TableRow>
       {Array.from({ length: TABLE_COLS }).map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
-        <td key={i} className="px-4 py-3">
+        <TableCell key={i}>
           <div
             className="h-4 animate-pulse rounded bg-muted"
             style={{ width: `${60 + (i % 3) * 20}%` }}
           />
-        </td>
+        </TableCell>
       ))}
-    </tr>
+    </TableRow>
   )
 }
 
@@ -235,9 +243,22 @@ export function UserManagementPage() {
     useState<RecordPresenceFilter>(
       normalizePresenceFilter(searchParams.get('lastActivityPresence')),
     )
+  const initCreatedRange = (() => {
+    const preset = searchParams.get('datePreset')
+    if (preset) return getPresetDateRange(preset as DatePreset)
+    return {
+      from: searchParams.get('createdFrom') ?? '',
+      to: searchParams.get('createdTo') ?? '',
+    }
+  })()
+  const [createdFrom, setCreatedFrom] = useState(initCreatedRange.from)
+  const [createdTo, setCreatedTo] = useState(initCreatedRange.to)
+
   const [sortValue, setSortValue] = useState(searchParams.get('sort') ?? 'lastActiveAt_desc')
 
-  const [filterPanelOpen, setFilterPanelOpen] = useState(false)
+  const [filterPanelOpen, setFilterPanelOpen] = useState(
+    !!(searchParams.get('datePreset') || searchParams.get('createdFrom')),
+  )
   const [assigningUser, setAssigningUser] = useState<AdminUserListItem | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string>('')
   const [confirmDisableUser, setConfirmDisableUser] = useState<AdminUserListItem | null>(null)
@@ -270,6 +291,8 @@ export function UserManagementPage() {
     if (lastActivityTo) params.lastActivityTo = lastActivityTo
     if (lastActivityPresenceFilter !== 'all')
       params.lastActivityPresence = lastActivityPresenceFilter
+    if (createdFrom) params.createdFrom = createdFrom
+    if (createdTo) params.createdTo = createdTo
     if (sortValue !== 'lastActiveAt_desc') params.sort = sortValue
     setSearchParams(params, { replace: true })
   }, [
@@ -288,6 +311,8 @@ export function UserManagementPage() {
     lastActivityFrom,
     lastActivityTo,
     lastActivityPresenceFilter,
+    createdFrom,
+    createdTo,
     sortValue,
     setSearchParams,
   ])
@@ -314,6 +339,18 @@ export function UserManagementPage() {
   const isLastActivityPresetActive = (preset: DatePreset) => {
     const { from, to } = getPresetDateRange(preset)
     return lastActivityFrom === from && lastActivityTo === to
+  }
+
+  const setCreatedDatePreset = (preset: DatePreset) => {
+    const { from, to } = getPresetDateRange(preset)
+    setCreatedFrom(from)
+    setCreatedTo(to)
+    setPage(1)
+  }
+
+  const isCreatedPresetActive = (preset: DatePreset) => {
+    const { from, to } = getPresetDateRange(preset)
+    return createdFrom === from && createdTo === to
   }
 
   const [sortField, sortOrder] = useMemo(() => {
@@ -352,6 +389,8 @@ export function UserManagementPage() {
       lastActivityFrom,
       lastActivityTo,
       lastActivityPresenceFilter,
+      createdFrom,
+      createdTo,
       sortField,
       sortOrder,
     ],
@@ -376,6 +415,8 @@ export function UserManagementPage() {
         lastActivityTo: lastActivityTo || undefined,
         lastActivityPresence:
           lastActivityPresenceFilter === 'all' ? undefined : lastActivityPresenceFilter,
+        createdFrom: createdFrom || undefined,
+        createdTo: createdTo || undefined,
         sortBy: sortField,
         sortOrder,
       }).then((r) => r.data),
@@ -453,6 +494,8 @@ export function UserManagementPage() {
     setLastActivityFrom('')
     setLastActivityTo('')
     setLastActivityPresenceFilter('all')
+    setCreatedFrom('')
+    setCreatedTo('')
     setPage(1)
   }
 
@@ -561,6 +604,17 @@ export function UserManagementPage() {
       },
     })
   }
+  if (createdFrom || createdTo) {
+    const parts = [createdFrom || '...', createdTo || '...']
+    activeChips.push({
+      label: `註冊日期: ${parts[0]} ~ ${parts[1]}`,
+      onRemove: () => {
+        setCreatedFrom('')
+        setCreatedTo('')
+        setPage(1)
+      },
+    })
+  }
   if (lastLoginFrom || lastLoginTo) {
     const parts = [lastLoginFrom || '...', lastLoginTo || '...']
     activeChips.push({
@@ -622,11 +676,11 @@ export function UserManagementPage() {
           data={exportData as unknown as Record<string, unknown>[]}
           fileName="user-management"
           columns={[
-            { key: 'internalId', header: 'ID' },
-            { key: 'customId', header: 'Custom ID' },
             { key: 'name', header: '名稱' },
             { key: 'email', header: 'Email' },
             { key: 'isActive', header: '狀態' },
+            { key: 'lastLoginAt', header: '最後登入' },
+            { key: 'lastActiveAt', header: '最後操作' },
             { key: 'userSource', header: '來源' },
             { key: 'tags', header: '標籤' },
             { key: 'registrationFlow', header: '註冊來源' },
@@ -634,8 +688,8 @@ export function UserManagementPage() {
             { key: 'personaType', header: '學習風格' },
             { key: 'badgeGranted', header: 'Badge' },
             { key: 'daysToComplete', header: '完成天數' },
-            { key: 'lastLoginAt', header: '最後登入' },
-            { key: 'lastActiveAt', header: '最後操作' },
+            { key: 'internalId', header: 'ID' },
+            { key: 'customId', header: 'Custom ID' },
           ]}
         />
       </div>
@@ -715,6 +769,42 @@ export function UserManagementPage() {
           <div className="space-y-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
             <div className="space-y-2">
               <span className="text-sm font-medium text-foreground">快速時間區間</span>
+              <div className="space-y-2 rounded-md border border-border/80 bg-background/60 p-2">
+                <span className="text-xs text-muted-foreground">註冊日期</span>
+                <div className="flex flex-wrap gap-2">
+                  {DATE_PRESET_OPTIONS.map((preset) => (
+                    <Button
+                      key={`created-${preset.value}`}
+                      type="button"
+                      size="xs"
+                      variant={isCreatedPresetActive(preset.value) ? 'secondary' : 'outline'}
+                      onClick={() => setCreatedDatePreset(preset.value)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="date"
+                    aria-label="註冊起始日期"
+                    value={createdFrom}
+                    onChange={(e) => {
+                      setCreatedFrom(e.target.value)
+                      setPage(1)
+                    }}
+                  />
+                  <Input
+                    type="date"
+                    aria-label="註冊結束日期"
+                    value={createdTo}
+                    onChange={(e) => {
+                      setCreatedTo(e.target.value)
+                      setPage(1)
+                    }}
+                  />
+                </div>
+              </div>
               <div className="grid gap-2 md:grid-cols-2">
                 <div className="space-y-2 rounded-md border border-border/80 bg-background/60 p-2">
                   <span className="text-xs text-muted-foreground">最後登入</span>
@@ -953,59 +1043,64 @@ export function UserManagementPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <table className="min-w-[1400px] w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
+      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+        <Table className="min-w-[1400px]">
+          <TableHeader>
+            <TableRow>
               {TABLE_HEADERS.map((h) => (
-                <th key={h} className="px-3 py-3 text-left font-medium whitespace-nowrap">
+                <TableHead key={h} className="whitespace-nowrap">
                   {h}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
                 <SkeletonRow key={i} />
               ))
             ) : users.length === 0 ? (
-              <tr>
-                <td colSpan={TABLE_COLS} className="px-4 py-6 text-center text-muted-foreground">
+              <TableRow>
+                <TableCell colSpan={TABLE_COLS} className="text-center text-muted-foreground">
                   無符合條件的用戶
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               users.map((user) => {
                 const badgeLabel = getBadgeLabel(user)
                 return (
-                  <tr
-                    key={user.id}
-                    className="border-b border-border/80 transition-colors hover:bg-muted/45"
-                  >
-                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
-                      {user.internalId}
-                    </td>
-                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                      {user.customId ? `@${user.customId}` : '-'}
-                    </td>
-                    <td className="px-3 py-2 font-medium whitespace-nowrap">
+                  <TableRow key={user.id}>
+                    {/* 名稱 */}
+                    <TableCell className="font-medium whitespace-nowrap">
                       <UserLink
                         userId={user.internalId}
                         name={user.name ?? '-'}
                         showAvatar={false}
                       />
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                    </TableCell>
+                    {/* Email */}
+                    <TableCell className="text-muted-foreground whitespace-nowrap">
                       {user.email ?? '-'}
-                    </td>
-                    <td className="px-3 py-2">
+                    </TableCell>
+                    {/* 狀態 */}
+                    <TableCell>
                       <Badge variant={user.isActive ? 'success' : 'error'}>
                         {user.isActive ? '啟用' : '停用'}
                       </Badge>
-                    </td>
-                    <td className="px-3 py-2">
+                    </TableCell>
+                    {/* 最後登入 */}
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-'}
+                    </TableCell>
+                    {/* 最後操作 */}
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {user.lastActiveAt
+                        ? new Date(user.lastActiveAt).toLocaleString('zh-TW')
+                        : '-'}
+                    </TableCell>
+                    {/* 角色 */}
+                    <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {(Array.isArray(user.roles) ? user.roles : []).length > 0 ? (
                           user.roles.map((r) => (
@@ -1017,8 +1112,9 @@ export function UserManagementPage() {
                           <span className="text-xs text-muted-foreground">無角色</span>
                         )}
                       </div>
-                    </td>
-                    <td className="px-3 py-2">
+                    </TableCell>
+                    {/* 標籤 */}
+                    <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {(Array.isArray(user.tags) ? user.tags : []).length > 0 ? (
                           user.tags.map((tag) => (
@@ -1030,8 +1126,9 @@ export function UserManagementPage() {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </div>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    </TableCell>
+                    {/* 學習風格 */}
+                    <TableCell className="whitespace-nowrap">
                       {user.personaType ? (
                         <Badge variant="primary">
                           {user.personaType} {PERSONA_LABELS[user.personaType as PersonaType]}
@@ -1039,14 +1136,9 @@ export function UserManagementPage() {
                       ) : (
                         <span className="text-xs text-muted-foreground">未測驗</span>
                       )}
-                    </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                      {getRegistrationFlowLabel(user.registrationFlow ?? null)}
-                    </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                      {getCreationMethodLabel(user.creationMethod ?? null)}
-                    </td>
-                    <td className="px-3 py-2">
+                    </TableCell>
+                    {/* Onboarding */}
+                    <TableCell>
                       {badgeLabel === '-' ? (
                         <span className="text-xs text-muted-foreground">-</span>
                       ) : badgeLabel === '已完成' ? (
@@ -1054,19 +1146,29 @@ export function UserManagementPage() {
                       ) : (
                         <Badge variant="default">未完成</Badge>
                       )}
-                    </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                    </TableCell>
+                    {/* 註冊來源 */}
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {getRegistrationFlowLabel(user.registrationFlow ?? null)}
+                    </TableCell>
+                    {/* 實踐建立方式 */}
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {getCreationMethodLabel(user.creationMethod ?? null)}
+                    </TableCell>
+                    {/* 完成天數 */}
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                       {getDaysToCompleteLabel(user.daysToComplete ?? null)}
-                    </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-'}
-                    </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                      {user.lastActiveAt
-                        ? new Date(user.lastActiveAt).toLocaleString('zh-TW')
-                        : '-'}
-                    </td>
-                    <td className="px-3 py-2">
+                    </TableCell>
+                    {/* ID */}
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {user.internalId}
+                    </TableCell>
+                    {/* Custom ID */}
+                    <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+                      {user.customId ? `@${user.customId}` : '-'}
+                    </TableCell>
+                    {/* 操作 */}
+                    <TableCell>
                       <div className="flex gap-1 whitespace-nowrap">
                         <Button
                           type="button"
@@ -1092,13 +1194,13 @@ export function UserManagementPage() {
                           {user.isActive ? '停用' : '啟用'}
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )
               })
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination */}

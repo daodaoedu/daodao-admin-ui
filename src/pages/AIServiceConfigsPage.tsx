@@ -22,6 +22,14 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 const EMPTY_FORM: AIServiceConfigCreate = {
   service: '',
@@ -208,20 +216,20 @@ export function AIServiceConfigsPage() {
         <p className="text-sm text-muted-foreground">目前沒有設定</p>
       ) : (
         <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm overflow-hidden">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="px-4 py-2.5 font-medium text-muted-foreground">服務類型</th>
-                <th className="px-4 py-2.5 font-medium text-muted-foreground">設定名稱</th>
-                <th className="px-4 py-2.5 font-medium text-muted-foreground">模型</th>
-                <th className="px-4 py-2.5 font-medium text-muted-foreground">系統提示詞</th>
-                <th className="px-4 py-2.5 font-medium text-muted-foreground">參數</th>
-                <th className="px-4 py-2.5 font-medium text-muted-foreground">狀態</th>
-                <th className="px-4 py-2.5 font-medium text-muted-foreground">備註</th>
-                <th className="px-4 py-2.5 font-medium text-muted-foreground">操作</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>服務類型</TableHead>
+                <TableHead>設定名稱</TableHead>
+                <TableHead>模型</TableHead>
+                <TableHead>系統提示詞</TableHead>
+                <TableHead>參數</TableHead>
+                <TableHead>狀態</TableHead>
+                <TableHead>備註</TableHead>
+                <TableHead>操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map((cfg) => (
                 <ConfigRow
                   key={cfg.id}
@@ -235,8 +243,8 @@ export function AIServiceConfigsPage() {
                   isDeleting={deleteMut.isPending && deleteMut.variables === cfg.id}
                 />
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -680,12 +688,10 @@ function ConfigRow({
   const prompt = prompts.find((p) => p.id === cfg.system_prompt_id)
 
   return (
-    <tr
-      className={`border-b border-border/80 transition-colors ${cfg.is_active ? 'bg-success/10' : 'hover:bg-accent/30'}`}
-    >
-      <td className="px-4 py-2.5 font-mono text-xs">{cfg.service}</td>
-      <td className="px-4 py-2.5 font-medium">{cfg.name}</td>
-      <td className="px-4 py-2.5 text-sm">
+    <TableRow className={cfg.is_active ? 'bg-success/10' : 'hover:bg-accent/30'}>
+      <TableCell className="font-mono text-xs">{cfg.service}</TableCell>
+      <TableCell className="font-medium">{cfg.name}</TableCell>
+      <TableCell className="text-sm">
         {model ? (
           <span>
             {model.display_name ?? model.model_name}
@@ -694,19 +700,19 @@ function ConfigRow({
         ) : (
           <span className="text-muted-foreground">—</span>
         )}
-      </td>
-      <td className="px-4 py-2.5 text-sm text-muted-foreground max-w-[120px] truncate">
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground max-w-[120px] truncate">
         {prompt ? prompt.name : '—'}
-      </td>
-      <td className="px-4 py-2.5">
+      </TableCell>
+      <TableCell>
         <div className="flex flex-wrap gap-1">
           <ParamBadge label="max_tokens" value={cfg.max_tokens} />
           <ParamBadge label="temp" value={cfg.temperature} />
           <ParamBadge label="top_p" value={cfg.top_p} />
           <ParamBadge label="top_k" value={cfg.top_k} />
         </div>
-      </td>
-      <td className="px-4 py-2.5">
+      </TableCell>
+      <TableCell>
         {cfg.is_active ? (
           <Badge variant="success" className="px-1.5">
             active
@@ -716,11 +722,11 @@ function ConfigRow({
             inactive
           </Badge>
         )}
-      </td>
-      <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[120px] truncate">
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate">
         {cfg.notes ?? '—'}
-      </td>
-      <td className="px-4 py-2.5">
+      </TableCell>
+      <TableCell>
         <div className="flex items-center gap-2">
           <Button type="button" size="xs" variant="ghost" onClick={onEdit}>
             編輯
@@ -747,7 +753,7 @@ function ConfigRow({
             {isDeleting ? '刪除中…' : '刪除'}
           </Button>
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }

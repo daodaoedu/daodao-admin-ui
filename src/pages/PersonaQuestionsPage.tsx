@@ -14,6 +14,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 const QUESTION_TYPE_LABELS: Record<PersonaQuestionType, string> = {
   choice: '選擇題',
@@ -178,41 +186,39 @@ export function PersonaQuestionsPage() {
         </div>
       ) : (
         <div className="rounded-md border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50 text-left">
-                <th className="px-4 py-3 w-12 font-medium text-muted-foreground">ID</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">中文題目</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">英文題目</th>
-                <th className="px-4 py-3 w-28 font-medium text-muted-foreground">類型</th>
-                <th className="px-4 py-3 w-24 font-medium text-muted-foreground">新用戶優先</th>
-                <th className="px-4 py-3 w-24 text-right font-medium text-muted-foreground">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 text-left">
+                <TableHead className="w-12">ID</TableHead>
+                <TableHead>中文題目</TableHead>
+                <TableHead>英文題目</TableHead>
+                <TableHead className="w-28">類型</TableHead>
+                <TableHead className="w-24">新用戶優先</TableHead>
+                <TableHead className="w-24 text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {questions.map((q) => {
                 const zh = getTranslation(q, 'zh-TW')
                 const en = getTranslation(q, 'en')
                 return (
-                  <tr key={q.id} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="px-4 py-3 text-muted-foreground">{q.id}</td>
-                    <td className="px-4 py-3 max-w-xs">
+                  <TableRow key={q.id} className="last:border-0">
+                    <TableCell className="text-muted-foreground">{q.id}</TableCell>
+                    <TableCell className="max-w-xs">
                       <span className="line-clamp-2">{zh?.prompt ?? '—'}</span>
-                    </td>
-                    <td className="px-4 py-3 max-w-xs text-muted-foreground">
+                    </TableCell>
+                    <TableCell className="max-w-xs text-muted-foreground">
                       <span className="line-clamp-2">{en?.prompt ?? '—'}</span>
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="default">
                         {QUESTION_TYPE_LABELS[q.questionType] ?? q.questionType}
                       </Badge>
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       {q.isNewUserPriority && <Badge variant="success">優先</Badge>}
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                    </TableCell>
+                    <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button
                           type="button"
@@ -232,19 +238,19 @@ export function PersonaQuestionsPage() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
               {questions.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                     尚無題目
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 

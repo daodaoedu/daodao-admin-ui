@@ -2,6 +2,14 @@ import type { LucideIcon } from 'lucide-react'
 import { Award, Plus, Target } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useBadges } from '@/hooks/useBadges'
 import { cn } from '@/lib/utils'
 
@@ -71,42 +79,37 @@ export function BadgesPage() {
         <h2 className="mb-4 text-base leading-none font-semibold tracking-tight text-foreground">
           最近頒發
         </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-sm font-medium text-muted-foreground">
-                <th className="pb-3 font-medium text-muted-foreground">用戶</th>
-                <th className="pb-3 font-medium text-muted-foreground">徽章</th>
-                <th className="pb-3 font-medium text-muted-foreground">頒發方式</th>
-                <th className="pb-3 font-medium text-muted-foreground">時間</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentAwards.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-border/80 hover:bg-muted/45 transition-colors last:border-0"
-                >
-                  <td className="py-3 text-foreground">{row.user}</td>
-                  <td className="py-3 text-foreground">{row.badge}</td>
-                  <td className="py-3">
-                    <span
-                      className={cn(
-                        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                        row.method === '自動' || row.method === 'auto'
-                          ? 'bg-success/15 text-success'
-                          : 'bg-warning/15 text-warning',
-                      )}
-                    >
-                      {row.method}
-                    </span>
-                  </td>
-                  <td className="py-3 text-muted-foreground">{row.time}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>用戶</TableHead>
+              <TableHead>徽章</TableHead>
+              <TableHead>頒發方式</TableHead>
+              <TableHead>時間</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {recentAwards.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell className="text-foreground">{row.user}</TableCell>
+                <TableCell className="text-foreground">{row.badge}</TableCell>
+                <TableCell>
+                  <span
+                    className={cn(
+                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                      row.method === '自動' || row.method === 'auto'
+                        ? 'bg-success/15 text-success'
+                        : 'bg-warning/15 text-warning',
+                    )}
+                  >
+                    {row.method}
+                  </span>
+                </TableCell>
+                <TableCell className="text-muted-foreground">{row.time}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )
