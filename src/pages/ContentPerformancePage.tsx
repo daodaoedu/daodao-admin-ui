@@ -560,7 +560,7 @@ export function ContentPerformancePage() {
                         })}
                       </TableBody>
                     </Table>
-                    {checkinListData.pagination &&
+                    {checkinListData?.pagination &&
                       checkinListData.pagination.total_count > checkinLimit && (
                         <div className="flex items-center justify-between border-t border-border px-5 py-2.5">
                           <span className="text-xs text-muted-foreground">
