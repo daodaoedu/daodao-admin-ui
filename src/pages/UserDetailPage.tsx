@@ -4,15 +4,18 @@ import {
   BookOpen,
   Brain,
   Clock,
+  Eye,
   FileText,
   Heart,
   Loader2,
   LogIn,
   MapPin,
+  MessageSquare,
   Monitor,
   Shield,
   Star,
   UserCheck,
+  UserPlus,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -39,6 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { APP_BASE_URL } from '@/config'
 import {
   useActivityTimeline,
   useAdminActivityStats,
@@ -55,21 +59,39 @@ const PERSONA_LABELS: Record<string, string> = {
   C: '連連島',
 }
 
-type EventType = '登入' | '打卡' | '發文' | 'AI 查詢' | '角色變更'
+type EventType =
+  | '登入'
+  | '打卡'
+  | '實踐'
+  | '人物誌'
+  | '瀏覽'
+  | '反應'
+  | '留言'
+  | 'AI 查詢'
+  | '角色變更'
+  | '註冊'
+  | '操作'
 
 interface TimelineEvent {
   id: number
   type: EventType
   description: string
   timestamp: string
+  url?: string
 }
 
 const eventTypeConfig: Record<EventType, { color: string; icon: typeof LogIn }> = {
   登入: { color: 'border-info', icon: LogIn },
   打卡: { color: 'border-success', icon: MapPin },
-  發文: { color: 'border-info', icon: FileText },
+  實踐: { color: 'border-info', icon: BookOpen },
+  人物誌: { color: 'border-warning', icon: Star },
+  瀏覽: { color: 'border-muted', icon: Eye },
+  反應: { color: 'border-warning', icon: Heart },
+  留言: { color: 'border-info', icon: MessageSquare },
   'AI 查詢': { color: 'border-warning', icon: Brain },
   角色變更: { color: 'border-destructive', icon: Shield },
+  註冊: { color: 'border-success', icon: UserPlus },
+  操作: { color: 'border-info', icon: Monitor },
 }
 
 const tabs = [
@@ -86,10 +108,23 @@ type Tab = (typeof tabs)[number]
 const TIMELINE_TYPE_MAP: Record<string, EventType> = {
   login: '登入',
   checkin: '打卡',
-  post: '發文',
+  practice: '實踐',
+  persona: '人物誌',
+  view: '瀏覽',
+  reaction: '反應',
+  comment: '留言',
 }
 
-const eventFilterOptions: ('全部' | EventType)[] = ['全部', '登入', '打卡', '發文']
+const eventFilterOptions: ('全部' | EventType)[] = [
+  '全部',
+  '登入',
+  '打卡',
+  '實踐',
+  '人物誌',
+  '瀏覽',
+  '反應',
+  '留言',
+]
 
 function ActivityTimeline({ events }: { events: TimelineEvent[] }) {
   const [filter, setFilter] = useState<'全部' | EventType>('全部')
@@ -137,10 +172,23 @@ function ActivityTimeline({ events }: { events: TimelineEvent[] }) {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">{event.type}</span>
                   </div>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{event.description}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {event.url ? (
+                      <a
+                        href={`${APP_BASE_URL}${event.url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline decoration-muted-foreground/40 hover:text-foreground"
+                      >
+                        {event.description}
+                      </a>
+                    ) : (
+                      event.description
+                    )}
+                  </p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {event.timestamp}
+                    {new Date(event.timestamp).toLocaleString('zh-TW')}
                   </p>
                 </div>
               </div>
@@ -204,7 +252,9 @@ function LoginHistoryTab({
         <TableBody>
           {rows.map((row) => (
             <TableRow key={row.id}>
-              <TableCell className="whitespace-nowrap text-foreground">{row.time}</TableCell>
+              <TableCell className="whitespace-nowrap text-foreground">
+                {row.time ? new Date(row.time).toLocaleString('zh-TW') : '-'}
+              </TableCell>
               <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                 {row.ip}
               </TableCell>
@@ -874,12 +924,49 @@ export function UserDetailPage() {
       device: item.userAgent ?? '-',
     }),
   )
-  const timelineEvents: TimelineEvent[] = (activityTimeline.data ?? []).map((event, idx) => ({
-    id: idx,
-    type: TIMELINE_TYPE_MAP[event.type] ?? '登入',
-    description: event.description,
-    timestamp: event.timestamp,
-  }))
+  const timelineEvents: TimelineEvent[] = (() => {
+    const apiEvents: TimelineEvent[] = (activityTimeline.data ?? []).map((event, idx) => ({
+      id: idx,
+      type: TIMELINE_TYPE_MAP[event.type] ?? '登入',
+      description: event.description,
+      timestamp: event.timestamp,
+      url: event.url,
+    }))
+
+    const syntheticEvents: TimelineEvent[] = []
+    let synId = -1
+
+    if (userDetail.data?.createdAt) {
+      syntheticEvents.push({
+        id: synId--,
+        type: '註冊',
+        description: '帳號建立',
+        timestamp: userDetail.data.createdAt,
+      })
+    }
+
+    if (activityStats.data?.lastLoginAt && !apiEvents.some((e) => e.type === '登入')) {
+      syntheticEvents.push({
+        id: synId--,
+        type: '登入',
+        description: '使用者登入',
+        timestamp: activityStats.data.lastLoginAt,
+      })
+    }
+
+    if (activityStats.data?.lastActiveAt) {
+      syntheticEvents.push({
+        id: synId--,
+        type: '操作',
+        description: '最近一次系統操作',
+        timestamp: activityStats.data.lastActiveAt,
+      })
+    }
+
+    return [...apiEvents, ...syntheticEvents].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    )
+  })()
 
   const isLoading = userDetail.isLoading
 

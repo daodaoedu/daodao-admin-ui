@@ -3,8 +3,12 @@ import {
   BarChart3,
   BookOpen,
   Brain,
+  ChevronLeft,
+  ChevronRight,
   Eye,
+  Heart,
   Layers,
+  MessageSquare,
   SmilePlus,
   Star,
   Timer,
@@ -24,7 +28,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useContentPerformance, useSetContentFeatured } from '@/hooks/useContentPerformance'
+import {
+  useCheckinList,
+  useContentPerformance,
+  useSetContentFeatured,
+} from '@/hooks/useContentPerformance'
 import { usePersonaStats } from '@/hooks/useOnboardingAnalytics'
 import { cn } from '@/lib/utils'
 
@@ -76,9 +84,16 @@ export function ContentPerformancePage() {
   const [tab, setTab] = useState<TabKey>('practice')
   const [sortBy, setSortBy] = useState<SortField>('views')
   const [preset, setPreset] = useState<DatePreset>('7')
+  const [checkinPage, setCheckinPage] = useState(0)
+  const checkinLimit = 20
   const { data, isLoading } = useContentPerformance(Number(preset))
   const { mutate: setFeatured } = useSetContentFeatured()
   const { data: personaAnalytics } = usePersonaStats(Number(preset))
+  const { data: checkinListData, isLoading: checkinListLoading } = useCheckinList(
+    Number(preset),
+    checkinLimit,
+    checkinPage * checkinLimit,
+  )
 
   const content = data?.items ?? []
   const collections = data?.collections ?? []
@@ -437,6 +452,144 @@ export function ContentPerformancePage() {
                       )
                     })}
                   </div>
+                )}
+              </div>
+
+              {/* ── Checkin Records Table ── */}
+              <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 shadow-sm">
+                <div className="border-b border-border px-5 py-2.5 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-foreground">打卡明細</h3>
+                  {checkinListData?.pagination && (
+                    <span className="text-xs text-muted-foreground">
+                      共 {checkinListData.pagination.total_count} 則
+                    </span>
+                  )}
+                </div>
+                {checkinListLoading ? (
+                  <div className="py-12 text-center text-sm text-muted-foreground">載入中...</div>
+                ) : !checkinListData?.items?.length ? (
+                  <div className="py-12 text-center text-sm text-muted-foreground">
+                    目前尚無打卡記錄
+                  </div>
+                ) : (
+                  <>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="text-left">
+                          <TableHead>用戶</TableHead>
+                          <TableHead>Practice</TableHead>
+                          <TableHead>心情</TableHead>
+                          <TableHead>內容</TableHead>
+                          <TableHead>互動</TableHead>
+                          <TableHead>時間</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {checkinListData.items.map((record) => {
+                          const moodCfg = record.mood
+                            ? (MOOD_LABELS[record.mood] ?? {
+                                label: record.mood,
+                                color: 'bg-muted text-muted-foreground',
+                              })
+                            : null
+                          return (
+                            <TableRow key={record.id} className="hover:bg-muted/30">
+                              <TableCell className="max-w-[160px]">
+                                <div className="truncate text-sm">{record.userName ?? '—'}</div>
+                                {record.userEmail && (
+                                  <div className="truncate text-xs text-muted-foreground">
+                                    {record.userEmail}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium max-w-[200px] truncate">
+                                {record.practiceTitle}
+                              </TableCell>
+                              <TableCell>
+                                {moodCfg ? (
+                                  <span
+                                    className={cn(
+                                      'inline-block rounded-full px-2 py-0.5 text-xs font-medium',
+                                      moodCfg.color,
+                                    )}
+                                  >
+                                    {moodCfg.label}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground/40">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="max-w-[240px]">
+                                {record.content ? (
+                                  <span
+                                    className="text-xs text-muted-foreground truncate block"
+                                    title={record.content}
+                                  >
+                                    {record.content}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground/40 text-xs">無內容</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span className="inline-flex items-center gap-0.5">
+                                    <Heart className="h-3 w-3" />
+                                    {record.reactionCount}
+                                  </span>
+                                  <span className="inline-flex items-center gap-0.5">
+                                    <MessageSquare className="h-3 w-3" />
+                                    {record.commentCount}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                                {new Date(record.createdAt).toLocaleDateString('zh-TW', {
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                    {checkinListData.pagination &&
+                      checkinListData.pagination.total_count > checkinLimit && (
+                        <div className="flex items-center justify-between border-t border-border px-5 py-2.5">
+                          <span className="text-xs text-muted-foreground">
+                            第 {checkinPage * checkinLimit + 1}–
+                            {Math.min(
+                              (checkinPage + 1) * checkinLimit,
+                              checkinListData.pagination.total_count,
+                            )}{' '}
+                            筆
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="xs"
+                              disabled={checkinPage === 0}
+                              onClick={() => setCheckinPage((p) => p - 1)}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="xs"
+                              disabled={!checkinListData.pagination.has_next}
+                              onClick={() => setCheckinPage((p) => p + 1)}
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                  </>
                 )}
               </div>
             </div>

@@ -41,9 +41,9 @@ export function StatCard({
           {description && (
             <div className="group relative">
               <Info className="h-3 w-3 cursor-help text-muted-foreground/40 transition-colors group-hover:text-muted-foreground/70" />
-              <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 w-52 -translate-x-1/2 rounded-lg border border-border bg-popover px-3 py-2 text-xs text-foreground shadow-md opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
+              <div className="pointer-events-none invisible absolute bottom-full left-0 z-50 mb-2 w-52 rounded-lg border border-border bg-popover px-3 py-2 text-xs text-foreground shadow-md opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
                 {description}
-                <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border" />
+                <span className="absolute top-full left-3 border-4 border-transparent border-t-border" />
               </div>
             </div>
           )}

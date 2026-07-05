@@ -561,11 +561,7 @@ function UsersTable({
                   onClick={() => onSelect(u)}
                 >
                   <TableCell className="py-1.5 px-2">
-                    <UserLink
-                      userId={u.externalId}
-                      name={u.name || '未命名'}
-                      photoURL={u.photoUrl}
-                    />
+                    <UserLink userId={u.userId} name={u.name || '未命名'} photoURL={u.photoUrl} />
                   </TableCell>
                   <TableCell className="py-1.5 px-2">
                     {u.personaType ? (

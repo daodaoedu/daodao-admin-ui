@@ -6,12 +6,13 @@ import {
   ChevronRight,
   CircleDollarSign,
   Database,
+  Eye,
   Flame,
   Hash,
+  Heart,
   LogIn,
   Mail,
   MessageSquare,
-  PenLine,
   Server,
   Target,
   UserCheck,
@@ -136,10 +137,14 @@ const REG_FLOW_LABEL: Record<RegistrationFlow, string> = {
   action_maker: 'Action Maker',
 }
 
-const TIMELINE_ICON: Record<ActivityTimelineEvent['type'], typeof LogIn> = {
+const TIMELINE_ICON: Partial<Record<ActivityTimelineEvent['type'], typeof LogIn>> = {
   login: LogIn,
   checkin: CheckCircle,
-  post: PenLine,
+  practice: CheckCircle,
+  persona: Users,
+  view: Eye,
+  reaction: Heart,
+  comment: MessageSquare,
 }
 
 function relativeTime(ts: string | null | undefined) {
@@ -175,7 +180,7 @@ function DrawerUserRow({ user }: { user: AdminUserListItem }) {
         onClick={handleToggle}
         className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
       >
-        <UserLink userId={user.id} name={user.name ?? '未命名'} photoURL={user.photoURL} />
+        <UserLink userId={user.internalId} name={user.name ?? '未命名'} photoURL={user.photoURL} />
         <div className="ml-auto flex items-center gap-3">
           <div className="flex flex-col items-end gap-0.5">
             {user.email && <span className="text-xs text-muted-foreground">{user.email}</span>}
@@ -261,7 +266,7 @@ function TodayRegistrationsDrawer({
 // ── Drill-down types ─────────────────────────────────────
 type DrillDownState =
   | { type: 'active'; title: string; date: string; period: 'day' | 'week' | 'month' }
-  | { type: 'metric'; title: string; metric: string }
+  | { type: 'metric'; title: string; metric: string; period?: string }
 
 // ── Main ──────────────────────────────────────────────────
 export function DashboardPage() {
@@ -302,8 +307,12 @@ export function DashboardPage() {
     () => (drillDown?.type === 'metric' ? drillDown.metric : null),
     [drillDown],
   )
+  const metricPeriod = useMemo(
+    () => (drillDown?.type === 'metric' ? drillDown.period : undefined),
+    [drillDown],
+  )
   const activeResult = useActiveUsersList(activeQuery)
-  const metricResult = useMetricDrillDown(metricQuery)
+  const metricResult = useMetricDrillDown(metricQuery, metricPeriod)
 
   const drillDownUsers = drillDown?.type === 'active' ? activeResult.data : metricResult.data
   const isDrillDownLoading =
@@ -461,7 +470,7 @@ export function DashboardPage() {
             title="總用戶"
             value={onboarding?.totalUsers.toLocaleString() ?? '—'}
             icon={UserCheck}
-            description="平台上所有已完成 Onboarding 流程的用戶總數"
+            description="平台上所有註冊用戶總數"
             onClick={() => setDrillDown({ type: 'metric', title: '全部用戶', metric: 'all_users' })}
           />
         </div>
@@ -479,7 +488,7 @@ export function DashboardPage() {
             changeLabel="vs 上期"
             description="所選期間內的迴響總數（對打卡、內容等的情感迴響）"
             onClick={() =>
-              setDrillDown({ type: 'metric', title: '有迴響的用戶', metric: 'reactions' })
+              setDrillDown({ type: 'metric', title: '有迴響的用戶', metric: 'reactions', period })
             }
           />
           <StatCard
@@ -490,7 +499,7 @@ export function DashboardPage() {
             changeLabel="vs 上期"
             description="所選期間內的留言總數"
             onClick={() =>
-              setDrillDown({ type: 'metric', title: '有留言的用戶', metric: 'comments' })
+              setDrillDown({ type: 'metric', title: '有留言的用戶', metric: 'comments', period })
             }
           />
           <StatCard
@@ -501,7 +510,7 @@ export function DashboardPage() {
             changeLabel="vs 上期"
             description="所選期間內的追蹤動作總數（用戶追蹤其他用戶或主題）"
             onClick={() =>
-              setDrillDown({ type: 'metric', title: '有追蹤的用戶', metric: 'follows' })
+              setDrillDown({ type: 'metric', title: '有追蹤的用戶', metric: 'follows', period })
             }
           />
           <StatCard
@@ -512,7 +521,7 @@ export function DashboardPage() {
             changeLabel="vs 上期"
             description="所選期間內的互相連結數（雙向關係建立）"
             onClick={() =>
-              setDrillDown({ type: 'metric', title: '有連結的用戶', metric: 'connects' })
+              setDrillDown({ type: 'metric', title: '有連結的用戶', metric: 'connects', period })
             }
           />
         </div>
@@ -548,7 +557,7 @@ export function DashboardPage() {
             title="人物誌解鎖率"
             value={pct(personaStats?.unlockedRate)}
             icon={CheckCircle}
-            description="完成人物誌問卷（persona_answers）並解鎖個人人物誌的用戶比例"
+            description="回答至少 5 題人物誌問卷並解鎖個人人物誌的用戶比例"
             onClick={() =>
               setDrillDown({
                 type: 'metric',
@@ -565,7 +574,7 @@ export function DashboardPage() {
                 : '—'
             }
             icon={Target}
-            description="每位用戶平均加入的主題實踐數，反映用戶的內容參與深度"
+            description="有加入實踐的用戶中，平均每人加入的主題實踐數"
             onClick={() =>
               setDrillDown({ type: 'metric', title: '有加入實踐的用戶', metric: 'has_practices' })
             }

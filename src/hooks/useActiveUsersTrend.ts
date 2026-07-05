@@ -42,12 +42,12 @@ export function useActiveUsersList(
   })
 }
 
-export function useMetricDrillDown(metric: string | null) {
+export function useMetricDrillDown(metric: string | null, period?: string) {
   return useQuery({
-    queryKey: ['admin', 'metric-drilldown', metric],
+    queryKey: ['admin', 'metric-drilldown', metric, period],
     queryFn: () => {
       if (!metric) throw new Error('metric required')
-      return getMetricDrillDown(metric).then((r) => r.data.data)
+      return getMetricDrillDown(metric, period).then((r) => r.data.data)
     },
     enabled: metric !== null,
   })
