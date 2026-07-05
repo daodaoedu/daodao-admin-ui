@@ -119,10 +119,10 @@ export const getActiveUsersList = (params: { date: string; period: 'day' | 'week
     { params },
   )
 
-export const getMetricDrillDown = (metric: string) =>
+export const getMetricDrillDown = (metric: string, period?: string) =>
   apiClient.get<ApiResponse<ActiveUserListItem[]>>(
     '/daodao-server/api/v1/admin/metrics/drilldown',
-    { params: { metric } },
+    { params: { metric, period } },
   )
 
 export const getActiveUsersFunnel = (params?: { startDate?: string; endDate?: string }) =>
