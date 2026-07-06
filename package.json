@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "lint": "biome check src",
     "lint:fix": "biome check --fix src",
+    "typecheck": "tsc --noEmit",
     "format": "biome format --write src",
     "check:fix": "biome check --fix --unsafe src",
     "test": "vitest run",
