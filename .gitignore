@@ -42,4 +42,5 @@ tsconfig.tsbuildinfo
 
 # OMC / Claude artifacts
 .omc/
-.claude/
+# .claude/ 是版控內的制度檔（skills、hooks、settings），只忽略本機個人設定
+.claude/settings.local.json
