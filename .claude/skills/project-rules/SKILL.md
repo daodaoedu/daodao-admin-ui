@@ -30,29 +30,31 @@ description: daodao-admin-ui 專案開發規範，涵蓋技術棧、API 模式�
 
 ```
 src/
-├── api/            # API client、型別定義、各 endpoint 函式
-│   ├── client.ts   # axios instance（JWT 注入、403 自動登出）
-│   ├── admin.ts    # 所有 admin API 函式
-│   └── types.ts    # API 型別定義
-├── auth/           # AuthContext、ProtectedRoute
-├── components/     # 共用元件
-│   ├── layout/     # 版面元件（AppShell、Sidebar）
-│   └── ui/         # 通用 UI 元件（Button、Input、Dialog 等）
-├── hooks/          # 共用 custom hooks
-├── lib/            # 工具函式（cn、format 等）
-├── types/          # 共用型別（非 API 專屬）
-├── constants/      # 常數定義
-├── pages/          # 頁面元件（一頁一檔）
-├── index.css       # Tailwind base + CSS variables
-├── App.tsx         # Root component + routes
-└── main.tsx        # App entry
+├── api/                # API client、型別定義、各 endpoint 函式
+│   ├── client.ts       # axios instance（apiClient 30s + slowApiClient 120s、JWT 注入、401/403 自動登出）
+│   ├── admin.ts        # 核心/auth/AI 管理 API 函式
+│   ├── admin-*.ts      # 各 domain 的 endpoint 函式（一域一檔，16+ 檔）
+│   └── types.ts        # 所有 API 型別（集中一檔）
+├── auth/               # AuthContext、ProtectedRoute
+├── components/         # 共用元件
+│   ├── layout/         # 版面元件（AppShell、Sidebar）
+│   └── ui/             # shadcn 元件（Button、Input、Dialog 等）
+├── hooks/              # React Query custom hooks（一域一檔）
+├── lib/                # 工具函式（cn、number 等）
+├── constants/          # 常數定義
+├── pages/              # 頁面元件（一頁一檔）
+├── index.css           # Tailwind base + CSS variables
+├── App.tsx             # Root component + routes
+└── main.tsx            # App entry
 ```
+
+目錄現況與更完整的觸點對照見 `.claude/skills/codebase-map/SKILL.md`。
 
 ## API 規範
 
 ### HTTP Client
 
-所有 API 呼叫必須透過 `src/api/client.ts` 的 `apiClient`（axios instance），禁止直接用 `fetch` 或另建 axios instance。
+所有 API 呼叫必須透過 `src/api/client.ts` 的 `apiClient`（axios instance），禁止直接用 `fetch` 或另建 axios instance。LLM/Playground 這類慢回應改用同檔的 `slowApiClient`（timeout 120s），誤用 `apiClient`（30s）會逾時。
 
 ```typescript
 import apiClient from '@/api/client'
@@ -60,11 +62,18 @@ import apiClient from '@/api/client'
 
 `apiClient` 已內建：
 - JWT token 自動注入（從 localStorage 讀取）
-- 403 自動登出並跳轉 `/admin/login`
+- 401/403 自動登出並跳轉 `/admin/login`
+
+### 雙後端前綴（寫錯會打到錯的後端）
+
+- `/api/v1/admin/*` → daodao-ai-backend（AI/LLM 管理域）
+- `/daodao-server/api/v1/*` → daodao-server（其餘 admin 域）
+
+domain 歸屬對照見 `.claude/skills/codebase-map/SKILL.md`。
 
 ### API 函式風格
 
-所有 endpoint 函式集中在 `src/api/admin.ts`，格式：
+endpoint 函式放在對應 domain 的 `src/api/admin-<domain>.ts`（核心/auth 在 `admin.ts`），格式：
 
 ```typescript
 export const listSomething = (params?: { limit?: number; offset?: number }) =>
@@ -166,4 +175,6 @@ import { listUsers } from '@/api/admin'
 - `pnpm run lint:fix` — Biome check + auto fix
 - `pnpm run format` — Biome format
 - `pnpm run check:fix` — Biome check + fix（含 unsafe fixes）
+- `pnpm run typecheck` — TypeScript 類型檢查（tsc --noEmit）
 - `pnpm run build` — TypeScript 類型檢查 + Vite build
+- `pnpm test` — Vitest
