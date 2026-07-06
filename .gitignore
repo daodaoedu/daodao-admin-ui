@@ -42,4 +42,5 @@ tsconfig.tsbuildinfo
 
 # OMC / Claude artifacts
 .omc/
-.claude/
+.claude/projects/
+.claude/settings.local.json
