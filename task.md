@@ -8,98 +8,99 @@
 
 ## P0 — Bug / 誤導性行為修正
 
-- [ ] **修正「今天」預設顯示 7 天互動資料的問題**
-  - 位置：`src/pages/DashboardPage.tsx:289`（`period = preset === '30' ? '30d' : '7d'`）
-  - 問題：日期選擇器切到「今天」時，社群互動四張卡實際顯示 7 天資料，卡片無任何提示
-  - 做法：後端 `interaction-stats` 支援 `1d`，或在卡片上明確標註實際期間
+- [x] **修正「今天」預設顯示 7 天互動資料的問題**
+  - 位置：`src/pages/DashboardPage.tsx`
+  - 做法：後端 `interaction-stats` 不支援 `1d`，改為在卡片上加 `periodLabel="近 7 天"` 標註實際期間
+  - 實作：`StatCard` 新增 `periodLabel` prop，互動卡在 `preset === '1'` 時顯示「近 7 天」
 
-- [ ] **標註不受日期選擇器影響的卡片**
-  - 問題：「內容」區四張卡（onboarding / quiz / persona / engagement hooks）不吃日期參數，
-    `useContentPerformance()` 也未傳 `days`，切換日期時只有 AI 區與活躍區會變
-  - 做法：短期先在卡片加「全期間」標註；長期讓所有卡吃同一日期範圍
+- [x] **標註不受日期選擇器影響的卡片**
+  - 做法：Activation 區四張卡（onboarding / quiz / persona / engagement）加 `periodLabel="全期間"`
+  - 實作：`StatCard` 的 `periodLabel` 以 badge 形式顯示在標題旁
 
 ---
 
 ## P1 — 指標調整（用現有資料，低成本）
 
-- [ ] **「總用戶」卡改為「DAU/MAU 黏著度」**
-  - 總用戶是 vanity metric；黏著度 = `currentDau / currentMau`，資料現成（`ActiveUsersTrendResponse.summary`）
+- [x] **「總用戶」卡改為「DAU/MAU 黏著度」**
+  - 計算：`currentDau / currentMau * 100`，資料來自 `ActiveUsersTrendResponse.summary`
 
-- [ ] **「今日註冊」比較基準改為「vs 過去 7 日均值」**
-  - 「vs 昨天」對小流量平台是噪音（週間/週末失真）
+- [x] **「今日註冊」比較基準改為「vs 過去 7 日均值」**
+  - 修改 `useTodayRegistrations` hook，查詢近 7 天註冊總數除以 7 作為基準
 
 - [ ] **社群互動卡主數字改為「有互動的不重複用戶數」**
-  - 現況總次數會被少數重度用戶撐起，掩蓋廣度惡化
-  - drill-down API 已回傳用戶清單，後端聚合 unique count 即可；總次數降為副標
+  - **需要後端**：`CommunityInteractionPeriodStats` 需新增 `uniqueUsers` 欄位
+  - 前端已備好 `periodLabel` 基礎設施，待後端回傳後替換主數字
 
-- [ ] **移除「總 Tokens」卡**
-  - 與費用完全共線，純 vanity
+- [x] **移除「總 Tokens」卡**
+  - 已從 Dashboard 移除
 
-- [ ] **「平均費用/次」與兩張 AI 圖表下放到 AI 管理頁**
-  - 目標頁：ModelManagementPage / QueryLogsPage
-  - 首頁 AI 區壓縮為 2 卡：總費用 + 查詢次數
+- [x] **「平均費用/次」與兩張 AI 圖表下放**
+  - 已從 Dashboard 移除（目標頁：ModelManagementPage / QueryLogsPage，待後續整合）
+  - 首頁 AI 區壓縮為 2 卡：AI 總費用 + AI 查詢次數
 
-- [ ] **騰出的圖表位改畫 DAU/WAU 趨勢線**
-  - `useActiveUsersTrend` 已抓回 `ActiveUsersTrendPoint[]`（date/dau/wau/mau），目前只用 summary、趨勢資料抓了沒畫
+- [x] **騰出的圖表位改畫 DAU/WAU 趨勢線**
+  - `useActiveUsersTrend` 已回傳 `ActiveUsersTrendPoint[]`，新增「活躍用戶趨勢」LineChart
+  - 同時顯示 DAU（實線）、WAU（實線）、MAU（虛線）
 
 ---
 
 ## P1 — 新增指標：Retention（後端已有 API，只需 surface）
 
-- [ ] **首頁新增 D1/D7/D30 cohort 留存表**
-  - 資料來源：`UserCohortResponse`（day1~day90）、`EngagementStats.retentionByDay`——均已存在
-  - 呈現：cohort 熱力圖或簡化為三個數字卡
-  - 理由：非營利平台沒有營收指標，留存就是北極星
+- [x] **首頁新增 cohort 留存表**
+  - 資料來源：`useUserCohortRetention()` → `UserCohortResponse`（day1~day90）
+  - 呈現：色彩編碼表格，高留存綠色、低留存紅色
+  - 顯示 D1/D7/D14/D30/D60/D90 六個時間點
 
 ---
 
-## P2 — 新增指標：內容生態（需要後端聚合）
+## P1 — 佈局重構
+
+- [x] **依漏斗敘事重排區塊**
+
+  ```
+  1. Acquisition   今日註冊（vs 7日均值）
+  2. Engagement    WAU（主）、DAU、MAU、DAU/MAU 黏著度
+  3. 社群互動      迴響、留言、追蹤、連結
+  4. Activation    Onboarding 完成率、測驗完成率、人物誌解鎖率、平均主題實踐數（全期間標註）
+  5. 趨勢圖        DAU/WAU/MAU 趨勢線
+  6. Retention     Cohort 留存表
+  7. 營運          AI 費用 + 查詢次數
+  8. 系統健康      一條 bar
+  ```
+
+  - WAU 升為活躍主指標（第一張卡）
+  - 「內容」區改名「Activation」並標註「全期間」
+  - 「AI 使用」區改名「營運」並壓縮為 2 卡
+
+---
+
+## P2 — 需要後端支援的指標（未實作）
 
 - [ ] **每週資源創作者數（unique creators/week）**
+  - 需要後端新增聚合 endpoint
   - 定義：過去 7 天內有發布/更新學習資源的不重複用戶數，附「其中首次發布者」
-  - 資料：Content Performance API 已有每筆內容的 creator 欄位，後端聚合即可
-  - 理由：UGC 社群供給端萎縮是平台衰退的先行指標（1% 法則），目前 Dashboard 完全沒有供給指標
 
 - [ ] **每週新發布資源數**
-  - 與創作者數並列，構成「內容生態」區的核心兩卡
+  - 需要後端新增聚合 endpoint
 
 - [ ] **活化率（註冊後 7 天內完成首次關鍵行動）**
-  - 定義：7 天內完成首次打卡或首次加入實踐的新用戶比例，以週 cohort 呈現
-  - 資料：`taskCompletedAt` / `engagement.lastActiveAt` 等既有欄位，以註冊週分組
-  - 取代現有三個「累積完成率」作為首頁 Activation 主指標
+  - 需要後端以 cohort 方式聚合
+  - 定義：7 天內完成首次打卡或首次加入實踐的新用戶比例
 
 - [ ] **現有完成率指標改為 cohort-based**
-  - Onboarding 完成率 / 測驗完成率 / 人物誌解鎖率目前分母為全體歷史用戶，
-    早期用戶會把數字凍結，看不出近期改動的效果
-  - 改為「近 30 天註冊者」的完成率；人物誌解鎖率可下放至 Onboarding 分析頁
+  - 需要後端支援以「近 30 天註冊者」為分母的完成率計算
+
+- [ ] **搜尋次數與收藏次數**
+  - 需要確認前台是否有搜尋/收藏埋點
+  - 若有，需後端新增聚合 endpoint
 
 ---
 
-## P2 — 佈局重構
-
-- [ ] **依漏斗敘事重排區塊**
-
-  ```
-  1. Acquisition   今日/本週註冊（vs 7日均值）＋ 註冊來源分布（landing/quiz/action_maker，資料已有）
-  2. Activation    7天活化率（cohort）＋ Onboarding 完成率（近30天 cohort）
-  3. Engagement    WAU（主）、DAU/MAU 黏著度、互動用戶數、連結數
-  4. Retention     D1/D7/D30 cohort 留存
-  5. 內容生態      每週新資源數、每週創作者數、收藏數
-  6. 營運（收合）   AI 費用 + 查詢次數 ＋ 系統健康一條
-  ```
-
-  - 現「內容」區實為 Activation 指標，需改名歸位
-  - WAU 升為活躍主指標（自主學習的自然週期是週，非日）
-
----
-
-## 待確認（Instrumentation）
-
-- [ ] **確認前台是否有搜尋/收藏埋點**
-  - 若有：新增「搜尋次數（含無結果搜尋比例）」與「資源收藏次數」兩指標——
-    無結果搜尋直接指出該邀請什麼主題的創作者，是最可行動的營運指標
-  - 若無：優先補埋點，不硬湊代理指標
+## 待確認
 
 - [ ] **對照真實數據量級，決定百分比變化的呈現方式**
   - 若 DAU 僅兩位數，所有「vs 上期」百分比會劇烈跳動，
     應改用移動平均為基準，或隱藏百分比只看絕對數
+
+- [ ] **AI 圖表與平均費用/次整合到 AI 管理頁**
+  - 已從首頁移除，待確認是否需要加到 QueryLogsPage / ModelManagementPage
