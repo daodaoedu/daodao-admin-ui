@@ -10,6 +10,7 @@ interface StatCardProps {
   description?: string
   iconClassName?: string
   onClick?: () => void
+  periodLabel?: string
 }
 
 export function StatCard({
@@ -21,6 +22,7 @@ export function StatCard({
   description,
   iconClassName,
   onClick,
+  periodLabel,
 }: StatCardProps) {
   const isPositive = change !== undefined && change >= 0
 
@@ -38,6 +40,11 @@ export function StatCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <p className="text-sm text-muted-foreground">{title}</p>
+          {periodLabel && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/70">
+              {periodLabel}
+            </span>
+          )}
           {description && (
             <div className="group relative">
               <Info className="h-3 w-3 cursor-help text-muted-foreground/40 transition-colors group-hover:text-muted-foreground/70" />
