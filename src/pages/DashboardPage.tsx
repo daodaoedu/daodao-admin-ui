@@ -432,7 +432,7 @@ export function DashboardPage() {
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
             title="WAU"
-            value={trend?.currentWau.toLocaleString() ?? '—'}
+            value={trend?.currentWau?.toLocaleString() ?? '—'}
             icon={Users}
             change={trend?.wauChangePercent}
             changeLabel="vs 上期"
@@ -448,7 +448,7 @@ export function DashboardPage() {
           />
           <StatCard
             title="DAU"
-            value={trend?.currentDau.toLocaleString() ?? '—'}
+            value={trend?.currentDau?.toLocaleString() ?? '—'}
             icon={Users}
             change={trend?.dauChangePercent}
             changeLabel="vs 上期"
@@ -464,7 +464,7 @@ export function DashboardPage() {
           />
           <StatCard
             title="MAU"
-            value={trend?.currentMau.toLocaleString() ?? '—'}
+            value={trend?.currentMau?.toLocaleString() ?? '—'}
             icon={Users}
             change={trend?.mauChangePercent}
             changeLabel="vs 上期"
@@ -622,7 +622,7 @@ export function DashboardPage() {
       </div>
 
       {/* ── 5. DAU/WAU 趨勢 ──────────────────────────────── */}
-      {userTrend?.data && userTrend.data.length > 0 && (
+      {userTrend?.data && userTrend.data.length > 1 && (
         <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
           <h3 className="mb-4 text-sm font-semibold text-foreground">活躍用戶趨勢</h3>
           <ResponsiveContainer width="100%" height={260}>
@@ -699,7 +699,7 @@ export function DashboardPage() {
                               retentionCellStyle(rate),
                             )}
                           >
-                            {rate > 0 ? `${rate.toFixed(1)}%` : '—'}
+                            {typeof rate === 'number' ? `${rate.toFixed(1)}%` : '—'}
                           </span>
                         </td>
                       )

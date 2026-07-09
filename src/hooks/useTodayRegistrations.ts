@@ -34,18 +34,18 @@ export function useTodayRegistrations() {
   })
 
   const todayCount = todayQuery.data?.pagination.totalItems ?? 0
-  const weekTotal = weekQuery.data?.pagination.totalItems ?? 0
-  const weekAvg = weekTotal / 7
+  const weekTotal = weekQuery.data?.pagination.totalItems
+  const weekAvg = weekTotal !== undefined ? weekTotal / 7 : undefined
 
   let changePercent: number | undefined
-  if (weekAvg > 0) {
+  if (weekAvg !== undefined && weekAvg > 0) {
     changePercent = ((todayCount - weekAvg) / weekAvg) * 100
   }
 
   return {
     users: todayQuery.data?.data ?? [],
     todayCount,
-    weekAvg: Math.round(weekAvg * 10) / 10,
+    weekAvg: weekAvg !== undefined ? Math.round(weekAvg * 10) / 10 : undefined,
     changePercent,
     isLoading: todayQuery.isLoading,
   }
