@@ -12,6 +12,11 @@ import type {
   FeedRankingConfigCreate,
   FeedRankingConfigUpdate,
 } from '@/api/types'
+import {
+  FeedRankingPreview,
+  type PreviewWeights,
+  SIGNAL_COLORS,
+} from '@/components/FeedRankingPreview'
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -49,6 +54,43 @@ const WEIGHT_FIELDS: {
   { key: 'w_decay', label: '時間衰退', hint: '越舊分數越低' },
   { key: 'w_freshness', label: '新內容加分', hint: '視窗內線性遞減，獎勵新發布內容' },
 ]
+
+// 程式碼預設值（無 active 設定時 feed 實際使用的權重）
+const DEFAULT_PREVIEW: PreviewWeights = {
+  w_social: 0.35,
+  w_engagement: 0.3,
+  w_content: 0.15,
+  w_decay: 0.2,
+  w_freshness: 0.3,
+  freshness_window_hours: 72,
+}
+
+const formToPreview = (v: FeedRankingConfigCreate | FeedRankingConfigUpdate): PreviewWeights => ({
+  w_social: v.w_social ?? DEFAULT_PREVIEW.w_social,
+  w_engagement: v.w_engagement ?? DEFAULT_PREVIEW.w_engagement,
+  w_content: v.w_content ?? DEFAULT_PREVIEW.w_content,
+  w_decay: v.w_decay ?? DEFAULT_PREVIEW.w_decay,
+  w_freshness: v.w_freshness ?? DEFAULT_PREVIEW.w_freshness,
+  freshness_window_hours: v.freshness_window_hours ?? DEFAULT_PREVIEW.freshness_window_hours,
+})
+
+const configToPreview = (c: FeedRankingConfig): PreviewWeights => ({
+  w_social: Number(c.w_social),
+  w_engagement: Number(c.w_engagement),
+  w_content: Number(c.w_content),
+  w_decay: Number(c.w_decay),
+  w_freshness: Number(c.w_freshness),
+  freshness_window_hours: c.freshness_window_hours,
+})
+
+function SignalDot({ signalKey }: { signalKey: string }) {
+  return (
+    <span
+      className="mr-1.5 inline-block h-2 w-2 rounded-sm align-baseline"
+      style={{ backgroundColor: SIGNAL_COLORS[signalKey] }}
+    />
+  )
+}
 
 function WeightBadge({ label, value }: { label: string; value: string | number }) {
   return (
@@ -147,6 +189,8 @@ export function FeedRankingConfigsPage() {
     setCreateError(null)
     createMut.mutate(form)
   }
+
+  const activeConfig = data.find((c) => c.is_active) ?? null
 
   return (
     <div className="space-y-4">
@@ -256,6 +300,31 @@ export function FeedRankingConfigsPage() {
         </div>
       )}
 
+      {/* Active config preview */}
+      {!isLoading && (
+        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-semibold">目前生效設定的效果預覽</h2>
+            {activeConfig ? (
+              <>
+                <Badge variant="success" className="px-1.5">
+                  active
+                </Badge>
+                <span className="text-xs text-muted-foreground">{activeConfig.name}</span>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                （無 active 設定，使用程式碼內建預設權重）
+              </span>
+            )}
+          </div>
+          <FeedRankingPreview
+            weights={activeConfig ? configToPreview(activeConfig) : DEFAULT_PREVIEW}
+            showSignalGuide
+          />
+        </div>
+      )}
+
       {/* Create dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
@@ -268,84 +337,94 @@ export function FeedRankingConfigsPage() {
               ✕
             </DialogClose>
           </div>
-          <div className="px-5 py-4 space-y-3 overflow-y-auto flex-1">
-            <div>
-              <label
-                htmlFor="frc-name"
-                className="mb-1 block text-xs font-medium text-muted-foreground"
-              >
-                設定名稱 *
-              </label>
-              <Input
-                id="frc-name"
-                value={form.name}
-                onChange={(e) => setField('name', e.target.value)}
-                placeholder="例：加強新內容曝光 v2"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {WEIGHT_FIELDS.map((f) => (
-                <div key={f.key}>
+          <div className="px-5 py-4 overflow-y-auto flex-1">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-3">
+                <div>
                   <label
-                    htmlFor={`frc-${f.key}`}
+                    htmlFor="frc-name"
                     className="mb-1 block text-xs font-medium text-muted-foreground"
-                    title={f.hint}
                   >
-                    {f.label}
+                    設定名稱 *
                   </label>
                   <Input
-                    id={`frc-${f.key}`}
-                    type="number"
-                    step="0.05"
-                    min="0"
-                    value={form[f.key] ?? ''}
-                    onChange={(e) =>
-                      setField(f.key, e.target.value ? Number(e.target.value) : undefined)
-                    }
+                    id="frc-name"
+                    value={form.name}
+                    onChange={(e) => setField('name', e.target.value)}
+                    placeholder="例：加強新內容曝光 v2"
                   />
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">{f.hint}</p>
                 </div>
-              ))}
-              <div>
-                <label
-                  htmlFor="frc-window"
-                  className="mb-1 block text-xs font-medium text-muted-foreground"
-                >
-                  新內容視窗（小時）
-                </label>
-                <Input
-                  id="frc-window"
-                  type="number"
-                  min="1"
-                  max="720"
-                  value={form.freshness_window_hours ?? ''}
-                  onChange={(e) =>
-                    setField(
-                      'freshness_window_hours',
-                      e.target.value ? Number(e.target.value) : undefined,
-                    )
-                  }
-                />
-                <p className="mt-0.5 text-[10px] text-muted-foreground">
-                  發布超過此時數後不再獲得新內容加分
-                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {WEIGHT_FIELDS.map((f) => (
+                    <div key={f.key}>
+                      <label
+                        htmlFor={`frc-${f.key}`}
+                        className="mb-1 block text-xs font-medium text-muted-foreground"
+                        title={f.hint}
+                      >
+                        <SignalDot signalKey={f.key} />
+                        {f.label}
+                      </label>
+                      <Input
+                        id={`frc-${f.key}`}
+                        type="number"
+                        step="0.05"
+                        min="0"
+                        value={form[f.key] ?? ''}
+                        onChange={(e) =>
+                          setField(f.key, e.target.value ? Number(e.target.value) : undefined)
+                        }
+                      />
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">{f.hint}</p>
+                    </div>
+                  ))}
+                  <div>
+                    <label
+                      htmlFor="frc-window"
+                      className="mb-1 block text-xs font-medium text-muted-foreground"
+                    >
+                      <SignalDot signalKey="w_freshness" />
+                      新內容視窗（小時）
+                    </label>
+                    <Input
+                      id="frc-window"
+                      type="number"
+                      min="1"
+                      max="720"
+                      value={form.freshness_window_hours ?? ''}
+                      onChange={(e) =>
+                        setField(
+                          'freshness_window_hours',
+                          e.target.value ? Number(e.target.value) : undefined,
+                        )
+                      }
+                    />
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      發布超過此時數後不再獲得新內容加分
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <label
+                    htmlFor="frc-notes"
+                    className="mb-1 block text-xs font-medium text-muted-foreground"
+                  >
+                    備註
+                  </label>
+                  <Input
+                    id="frc-notes"
+                    value={form.notes ?? ''}
+                    onChange={(e) => setField('notes', e.target.value || null)}
+                    placeholder="選填"
+                  />
+                </div>
+                {createError && <p className="text-xs text-destructive">{createError}</p>}
+              </div>
+              <div className="rounded-lg border border-border bg-background/50 p-4">
+                <p className="mb-3 text-xs font-semibold">即時預覽（隨左側數值變化）</p>
+                <FeedRankingPreview weights={formToPreview(form)} />
               </div>
             </div>
-            <div>
-              <label
-                htmlFor="frc-notes"
-                className="mb-1 block text-xs font-medium text-muted-foreground"
-              >
-                備註
-              </label>
-              <Input
-                id="frc-notes"
-                value={form.notes ?? ''}
-                onChange={(e) => setField('notes', e.target.value || null)}
-                placeholder="選填"
-              />
-            </div>
-            {createError && <p className="text-xs text-destructive">{createError}</p>}
           </div>
           <div className="border-t border-border px-5 py-3 flex gap-2 shrink-0">
             <Button type="button" onClick={handleCreate} disabled={createMut.isPending}>
@@ -375,81 +454,91 @@ export function FeedRankingConfigsPage() {
               ✕
             </DialogClose>
           </div>
-          <div className="px-5 py-4 space-y-3 overflow-y-auto flex-1">
-            <div>
-              <label
-                htmlFor="edit-frc-name"
-                className="mb-1 block text-xs font-medium text-muted-foreground"
-              >
-                設定名稱 *
-              </label>
-              <Input
-                id="edit-frc-name"
-                value={editForm.name ?? ''}
-                onChange={(e) => setEditField('name', e.target.value)}
-                placeholder="設定名稱"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {WEIGHT_FIELDS.map((f) => (
-                <div key={f.key}>
+          <div className="px-5 py-4 overflow-y-auto flex-1">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-3">
+                <div>
                   <label
-                    htmlFor={`edit-frc-${f.key}`}
+                    htmlFor="edit-frc-name"
                     className="mb-1 block text-xs font-medium text-muted-foreground"
-                    title={f.hint}
                   >
-                    {f.label}
+                    設定名稱 *
                   </label>
                   <Input
-                    id={`edit-frc-${f.key}`}
-                    type="number"
-                    step="0.05"
-                    min="0"
-                    value={editForm[f.key] ?? ''}
-                    onChange={(e) =>
-                      setEditField(f.key, e.target.value ? Number(e.target.value) : undefined)
-                    }
+                    id="edit-frc-name"
+                    value={editForm.name ?? ''}
+                    onChange={(e) => setEditField('name', e.target.value)}
+                    placeholder="設定名稱"
                   />
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">{f.hint}</p>
                 </div>
-              ))}
-              <div>
-                <label
-                  htmlFor="edit-frc-window"
-                  className="mb-1 block text-xs font-medium text-muted-foreground"
-                >
-                  新內容視窗（小時）
-                </label>
-                <Input
-                  id="edit-frc-window"
-                  type="number"
-                  min="1"
-                  max="720"
-                  value={editForm.freshness_window_hours ?? ''}
-                  onChange={(e) =>
-                    setEditField(
-                      'freshness_window_hours',
-                      e.target.value ? Number(e.target.value) : undefined,
-                    )
-                  }
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  {WEIGHT_FIELDS.map((f) => (
+                    <div key={f.key}>
+                      <label
+                        htmlFor={`edit-frc-${f.key}`}
+                        className="mb-1 block text-xs font-medium text-muted-foreground"
+                        title={f.hint}
+                      >
+                        <SignalDot signalKey={f.key} />
+                        {f.label}
+                      </label>
+                      <Input
+                        id={`edit-frc-${f.key}`}
+                        type="number"
+                        step="0.05"
+                        min="0"
+                        value={editForm[f.key] ?? ''}
+                        onChange={(e) =>
+                          setEditField(f.key, e.target.value ? Number(e.target.value) : undefined)
+                        }
+                      />
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">{f.hint}</p>
+                    </div>
+                  ))}
+                  <div>
+                    <label
+                      htmlFor="edit-frc-window"
+                      className="mb-1 block text-xs font-medium text-muted-foreground"
+                    >
+                      <SignalDot signalKey="w_freshness" />
+                      新內容視窗（小時）
+                    </label>
+                    <Input
+                      id="edit-frc-window"
+                      type="number"
+                      min="1"
+                      max="720"
+                      value={editForm.freshness_window_hours ?? ''}
+                      onChange={(e) =>
+                        setEditField(
+                          'freshness_window_hours',
+                          e.target.value ? Number(e.target.value) : undefined,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-frc-notes"
+                    className="mb-1 block text-xs font-medium text-muted-foreground"
+                  >
+                    備註
+                  </label>
+                  <Input
+                    id="edit-frc-notes"
+                    value={editForm.notes ?? ''}
+                    onChange={(e) => setEditField('notes', e.target.value || null)}
+                    placeholder="選填"
+                  />
+                </div>
+                {editError && <p className="text-xs text-destructive">{editError}</p>}
+              </div>
+              <div className="rounded-lg border border-border bg-background/50 p-4">
+                <p className="mb-3 text-xs font-semibold">即時預覽（隨左側數值變化）</p>
+                <FeedRankingPreview weights={formToPreview(editForm)} />
               </div>
             </div>
-            <div>
-              <label
-                htmlFor="edit-frc-notes"
-                className="mb-1 block text-xs font-medium text-muted-foreground"
-              >
-                備註
-              </label>
-              <Input
-                id="edit-frc-notes"
-                value={editForm.notes ?? ''}
-                onChange={(e) => setEditField('notes', e.target.value || null)}
-                placeholder="選填"
-              />
-            </div>
-            {editError && <p className="text-xs text-destructive">{editError}</p>}
           </div>
           <div className="border-t border-border px-5 py-3 flex gap-2 shrink-0">
             <Button
