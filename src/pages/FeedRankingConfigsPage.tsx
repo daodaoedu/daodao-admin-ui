@@ -39,12 +39,13 @@ const EMPTY_FORM: FeedRankingConfigCreate = {
   w_decay: 0.2,
   w_freshness: 0.3,
   freshness_window_hours: 72,
+  w_featured: 0.5,
   is_active: false,
   notes: null,
 }
 
 const WEIGHT_FIELDS: {
-  key: 'w_social' | 'w_engagement' | 'w_content' | 'w_decay' | 'w_freshness'
+  key: 'w_social' | 'w_engagement' | 'w_content' | 'w_decay' | 'w_freshness' | 'w_featured'
   label: string
   hint: string
 }[] = [
@@ -53,6 +54,7 @@ const WEIGHT_FIELDS: {
   { key: 'w_content', label: '內容完整度', hint: '圖片、長文字、進度等' },
   { key: 'w_decay', label: '時間衰退', hint: '越舊分數越低' },
   { key: 'w_freshness', label: '新內容加分', hint: '視窗內線性遞減，獎勵新發布內容' },
+  { key: 'w_featured', label: '精選加分', hint: '內容分析頁標記的精選實踐加分' },
 ]
 
 // 程式碼預設值（無 active 設定時 feed 實際使用的權重）
@@ -63,6 +65,7 @@ const DEFAULT_PREVIEW: PreviewWeights = {
   w_decay: 0.2,
   w_freshness: 0.3,
   freshness_window_hours: 72,
+  w_featured: 0.5,
 }
 
 const formToPreview = (v: FeedRankingConfigCreate | FeedRankingConfigUpdate): PreviewWeights => ({
@@ -72,6 +75,7 @@ const formToPreview = (v: FeedRankingConfigCreate | FeedRankingConfigUpdate): Pr
   w_decay: v.w_decay ?? DEFAULT_PREVIEW.w_decay,
   w_freshness: v.w_freshness ?? DEFAULT_PREVIEW.w_freshness,
   freshness_window_hours: v.freshness_window_hours ?? DEFAULT_PREVIEW.freshness_window_hours,
+  w_featured: v.w_featured ?? DEFAULT_PREVIEW.w_featured,
 })
 
 const configToPreview = (c: FeedRankingConfig): PreviewWeights => ({
@@ -81,6 +85,7 @@ const configToPreview = (c: FeedRankingConfig): PreviewWeights => ({
   w_decay: Number(c.w_decay),
   w_freshness: Number(c.w_freshness),
   freshness_window_hours: c.freshness_window_hours,
+  w_featured: Number(c.w_featured),
 })
 
 function SignalDot({ signalKey }: { signalKey: string }) {
@@ -167,6 +172,7 @@ export function FeedRankingConfigsPage() {
       w_decay: Number(cfg.w_decay),
       w_freshness: Number(cfg.w_freshness),
       freshness_window_hours: cfg.freshness_window_hours,
+      w_featured: Number(cfg.w_featured),
       notes: cfg.notes,
     })
   }
@@ -244,6 +250,7 @@ export function FeedRankingConfigsPage() {
                       <WeightBadge label="內容" value={cfg.w_content} />
                       <WeightBadge label="衰退" value={cfg.w_decay} />
                       <WeightBadge label="新內容" value={cfg.w_freshness} />
+                      <WeightBadge label="精選" value={cfg.w_featured} />
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">{cfg.freshness_window_hours} 小時</TableCell>

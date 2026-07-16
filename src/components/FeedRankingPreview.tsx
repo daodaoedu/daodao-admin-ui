@@ -7,6 +7,7 @@ export interface PreviewWeights {
   w_decay: number
   w_freshness: number
   freshness_window_hours: number
+  w_featured: number
 }
 
 export const SIGNAL_META = [
@@ -40,6 +41,12 @@ export const SIGNAL_META = [
     label: '新內容加分',
     desc: '發布當下加滿分，視窗內線性遞減至 0，獎勵新發布內容',
   },
+  {
+    key: 'w_featured' as const,
+    color: '#7c4dbc',
+    label: '精選加分',
+    desc: '管理員標記的精選實踐固定加分（內容分析頁設定）；0 表示不影響排序',
+  },
 ]
 
 export const SIGNAL_COLORS: Record<string, string> = Object.fromEntries(
@@ -60,22 +67,29 @@ interface Contribution {
   w_content: number
   w_decay: number
   w_freshness: number
+  w_featured: number
 }
 
 const total = (c: Contribution) =>
-  c.w_social + c.w_engagement + c.w_content + c.w_decay + c.w_freshness
+  c.w_social + c.w_engagement + c.w_content + c.w_decay + c.w_freshness + c.w_featured
 
 /**
- * 兩個示範情境（皆為陌生人的內容，social = 0、content 0.7）：
- * A：剛發布 1 小時、0 互動；B：3 天前發布、2 reactions + 1 comment
+ * 三個示範情境（皆為陌生人的內容，social = 0、content 0.7）：
+ * A：剛發布 1 小時、0 互動；B：3 天前發布、2 reactions + 1 comment；
+ * C：5 天前發布的精選實踐、0 互動
  */
-function scenarioScores(w: PreviewWeights): { fresh: Contribution; hot: Contribution } {
+function scenarioScores(w: PreviewWeights): {
+  fresh: Contribution
+  hot: Contribution
+  featured: Contribution
+} {
   const fresh: Contribution = {
     w_social: 0,
     w_engagement: 0,
     w_content: w.w_content * 0.7,
     w_decay: w.w_decay * timeDecay(1),
     w_freshness: freshnessBoost(1, w),
+    w_featured: 0,
   }
   const hot: Contribution = {
     w_social: 0,
@@ -83,8 +97,17 @@ function scenarioScores(w: PreviewWeights): { fresh: Contribution; hot: Contribu
     w_content: w.w_content * 0.7,
     w_decay: w.w_decay * timeDecay(3),
     w_freshness: freshnessBoost(72, w),
+    w_featured: 0,
   }
-  return { fresh, hot }
+  const featured: Contribution = {
+    w_social: 0,
+    w_engagement: 0,
+    w_content: w.w_content * 0.7,
+    w_decay: w.w_decay * timeDecay(5),
+    w_freshness: freshnessBoost(120, w),
+    w_featured: w.w_featured,
+  }
+  return { fresh, hot, featured }
 }
 
 // ── 遞減曲線 ────────────────────────────────────────────────
@@ -229,10 +252,11 @@ function FreshnessCurve({ weights }: { weights: PreviewWeights }) {
 
 // ── 分數對決 ────────────────────────────────────────────────
 function ScoreDuel({ weights }: { weights: PreviewWeights }) {
-  const { fresh, hot } = scenarioScores(weights)
+  const { fresh, hot, featured } = scenarioScores(weights)
   const totalFresh = total(fresh)
   const totalHot = total(hot)
-  const maxT = Math.max(totalFresh, totalHot, 0.9)
+  const totalFeatured = total(featured)
+  const maxT = Math.max(totalFresh, totalHot, totalFeatured, 0.9)
   const freshWins = totalFresh >= totalHot
   const diff = Math.abs(totalFresh - totalHot).toFixed(2)
 
@@ -282,6 +306,12 @@ function ScoreDuel({ weights }: { weights: PreviewWeights }) {
         title="🔥 三天前的打卡"
         subtitle="2 reactions＋1 留言"
         score={totalHot}
+      />
+      <Bar
+        contribution={featured}
+        title="⭐ 五天前的精選實踐"
+        subtitle="管理員精選・0 互動"
+        score={totalFeatured}
       />
       <p
         className={`rounded-md px-3 py-1.5 text-xs font-medium ${

@@ -317,6 +317,7 @@ export interface FeedRankingConfig {
   w_decay: string
   w_freshness: string
   freshness_window_hours: number
+  w_featured: string
   is_active: boolean
   notes: string | null
   created_at: string
@@ -331,6 +332,7 @@ export interface FeedRankingConfigCreate {
   w_decay?: number
   w_freshness?: number
   freshness_window_hours?: number
+  w_featured?: number
   is_active?: boolean
   notes?: string | null
 }
@@ -343,6 +345,7 @@ export interface FeedRankingConfigUpdate {
   w_decay?: number
   w_freshness?: number
   freshness_window_hours?: number
+  w_featured?: number
   is_active?: boolean
   notes?: string | null
 }
