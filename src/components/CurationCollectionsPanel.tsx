@@ -40,6 +40,7 @@ export function CurationCollectionsPanel({
   const [editing, setEditing] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [addPracticeId, setAddPracticeId] = useState('')
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const { data: collections = [], isLoading } = useQuery({
     queryKey: ['admin', 'content', 'collections'],
@@ -101,19 +102,29 @@ export function CurationCollectionsPanel({
     onSuccess: (r) => {
       applyDetail(r.data.data)
       setAddPracticeId('')
+      setActionError(null)
     },
+    onError: (e: Error) => setActionError(e.message ?? '加入失敗'),
   })
 
   const removeItemMut = useMutation({
     mutationFn: ({ id, itemId }: { id: number; itemId: number }) =>
       removeCurationCollectionItem(id, itemId),
-    onSuccess: (r) => applyDetail(r.data.data),
+    onSuccess: (r) => {
+      applyDetail(r.data.data)
+      setActionError(null)
+    },
+    onError: (e: Error) => setActionError(e.message ?? '移除失敗'),
   })
 
   const reorderMut = useMutation({
     mutationFn: ({ id, itemIds }: { id: number; itemIds: number[] }) =>
       reorderCurationCollectionItems(id, itemIds),
-    onSuccess: (r) => applyDetail(r.data.data),
+    onSuccess: (r) => {
+      applyDetail(r.data.data)
+      setActionError(null)
+    },
+    onError: (e: Error) => setActionError(e.message ?? '排序失敗'),
   })
 
   const moveItem = (index: number, dir: -1 | 1) => {
@@ -237,6 +248,8 @@ export function CurationCollectionsPanel({
                     <Plus className="h-3.5 w-3.5" /> 加入
                   </Button>
                 </div>
+
+                {actionError && <p className="text-xs text-destructive">{actionError}</p>}
 
                 {/* Items */}
                 {detail.items.length === 0 ? (
