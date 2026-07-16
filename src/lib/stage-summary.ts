@@ -7,6 +7,8 @@
 export interface StageSummary {
   stage: string
   content: string
+  /** 區塊在原文中的起始位置，作為穩定唯一的 render key */
+  offset: number
 }
 
 export interface ParsedMessage {
@@ -20,8 +22,8 @@ const STAGE_SUMMARY_RE = /<stage_summary\s+stage="([^"]*)"\s*>([\s\S]*?)<\/stage
 export function parseStageSummaries(content: string): ParsedMessage {
   const summaries: StageSummary[] = []
   const clean = content
-    .replace(STAGE_SUMMARY_RE, (_match, stage: string, body: string) => {
-      summaries.push({ stage, content: body.trim() })
+    .replace(STAGE_SUMMARY_RE, (_match, stage: string, body: string, offset: number) => {
+      summaries.push({ stage, content: body.trim(), offset })
       return ''
     })
     .trim()

@@ -900,7 +900,7 @@ function AssistantContent({ content }: { content: string }) {
       {clean}
       {summaries.map((s) => (
         <details
-          key={`${s.stage}-${s.content.slice(0, 20)}`}
+          key={`${s.stage}-${s.offset}`}
           className="mt-2 rounded-md border border-border bg-background/50 px-3 py-2"
         >
           <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
@@ -915,17 +915,29 @@ function AssistantContent({ content }: { content: string }) {
 
 const CHAT_STORAGE_KEY = 'playground-chat-session'
 
-function _loadChatSession(): { messages: ChatMessage[]; promptId: number | null } {
+function _loadChatSession(): {
+  messages: ChatMessage[]
+  promptId: number | null
+  modelId: number | null
+} {
   try {
     const raw = sessionStorage.getItem(CHAT_STORAGE_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw) as { messages?: ChatMessage[]; promptId?: number | null }
-      return { messages: parsed.messages ?? [], promptId: parsed.promptId ?? null }
+      const parsed = JSON.parse(raw) as {
+        messages?: ChatMessage[]
+        promptId?: number | null
+        modelId?: number | null
+      }
+      return {
+        messages: parsed.messages ?? [],
+        promptId: parsed.promptId ?? null,
+        modelId: parsed.modelId ?? null,
+      }
     }
   } catch {
     // 快取毀損時視同無快取
   }
-  return { messages: [], promptId: null }
+  return { messages: [], promptId: null, modelId: null }
 }
 
 export function PlaygroundPage() {
@@ -933,7 +945,10 @@ export function PlaygroundPage() {
   const [activeTab, setActiveTab] = useState<'chat' | 'insight'>('chat')
   const [messages, setMessages] = useState<ChatMessage[]>(() => _loadChatSession().messages)
   const [input, setInput] = useState('')
-  const [selectedModelId, setSelectedModelId] = useState<number | null>(null)
+  // model 也入 session：重新整理後續聊若默默換模型，會污染試行數據
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(
+    () => _loadChatSession().modelId,
+  )
   const [selectedPromptId, setSelectedPromptId] = useState<number | null>(
     () => _loadChatSession().promptId,
   )
@@ -988,13 +1003,13 @@ export function PlaygroundPage() {
       } else {
         sessionStorage.setItem(
           CHAT_STORAGE_KEY,
-          JSON.stringify({ messages, promptId: selectedPromptId }),
+          JSON.stringify({ messages, promptId: selectedPromptId, modelId: selectedModelId }),
         )
       }
     } catch {
       // sessionStorage 不可用（如隱私模式）時略過快取
     }
-  }, [messages, selectedPromptId])
+  }, [messages, selectedPromptId, selectedModelId])
 
   const handleSend = async () => {
     if (!input.trim() || !selectedModelId || isSending) return
@@ -1006,7 +1021,10 @@ export function PlaygroundPage() {
     setIsSending(true)
 
     // 多輪對話：把送出前的完整對話串作為 history（後端上限 60 則，超過取最近的）
-    const history = messages.slice(-60).map((m) => ({ role: m.role, content: m.content }))
+    // 單則截斷至 8000 字元（後端上限），避免超長藍圖回覆讓後續每輪都 422 卡死對話
+    const history = messages
+      .slice(-60)
+      .map((m) => ({ role: m.role, content: m.content.slice(0, 8000) }))
 
     try {
       const res = await playgroundChat({
