@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  Folders,
   Heart,
   Layers,
   MessageSquare,
@@ -16,10 +17,14 @@ import {
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
+import type { ContentPerformanceItem } from '@/api/admin-content'
+import { CurationCollectionsPanel } from '@/components/CurationCollectionsPanel'
 import { ExportButton } from '@/components/ExportButton'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -37,7 +42,7 @@ import { usePersonaStats } from '@/hooks/useOnboardingAnalytics'
 import { cn } from '@/lib/utils'
 
 type SortField = 'views' | 'depth' | 'avgTime' | 'interactionRate'
-type TabKey = 'practice' | 'checkin' | 'quiz' | 'persona' | 'category'
+type TabKey = 'practice' | 'checkin' | 'quiz' | 'persona' | 'category' | 'collections'
 type DatePreset = '1' | '7' | '30'
 
 const DATE_PRESETS: { label: string; value: DatePreset }[] = [
@@ -80,11 +85,56 @@ const ROLE_LABELS: Record<string, string> = {
   C: 'Creator',
 }
 
+function isoToLocalInput(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function formatScheduleTime(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function FeaturedStatusChip({ item }: { item: ContentPerformanceItem }) {
+  if (!item.featured) return null
+  if (item.featuredActive) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+        <Star className="h-3 w-3 fill-current" /> 精選中
+        {item.featuredEndAt && (
+          <span className="font-normal text-[10px]">
+            至 {formatScheduleTime(item.featuredEndAt)}
+          </span>
+        )}
+      </span>
+    )
+  }
+  if (item.featuredStartAt && new Date(item.featuredStartAt) > new Date()) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
+        <Star className="h-3 w-3" /> 排程 {formatScheduleTime(item.featuredStartAt)} 起
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+      <Star className="h-3 w-3" /> 已到期
+    </span>
+  )
+}
+
 export function ContentPerformancePage() {
   const [tab, setTab] = useState<TabKey>('practice')
   const [sortBy, setSortBy] = useState<SortField>('views')
   const [preset, setPresetState] = useState<DatePreset>('7')
   const [checkinPage, setCheckinPage] = useState(0)
+  const [featuredDialog, setFeaturedDialog] = useState<ContentPerformanceItem | null>(null)
+  const [scheduleStart, setScheduleStart] = useState('')
+  const [scheduleEnd, setScheduleEnd] = useState('')
+  const [scheduleError, setScheduleError] = useState<string | null>(null)
   const setPreset = (val: DatePreset) => {
     setPresetState(val)
     setCheckinPage(0)
@@ -163,7 +213,37 @@ export function ContentPerformancePage() {
       summary: `${collections.length} 個`,
       desc: '主題分布',
     },
+    {
+      key: 'collections',
+      label: '策展合輯',
+      icon: Folders,
+      summary: '策展',
+      desc: '主題合輯',
+    },
   ]
+
+  const openFeaturedDialog = (item: ContentPerformanceItem) => {
+    setFeaturedDialog(item)
+    setScheduleStart(isoToLocalInput(item.featuredStartAt))
+    setScheduleEnd(isoToLocalInput(item.featuredEndAt))
+    setScheduleError(null)
+  }
+
+  const submitFeatured = () => {
+    if (!featuredDialog) return
+    const startIso = scheduleStart ? new Date(scheduleStart).toISOString() : null
+    const endIso = scheduleEnd ? new Date(scheduleEnd).toISOString() : null
+    if (startIso && endIso && endIso <= startIso) {
+      setScheduleError('結束時間必須晚於開始時間')
+      return
+    }
+    setFeatured({
+      id: featuredDialog.id,
+      featured: true,
+      schedule: { featuredStartAt: startIso, featuredEndAt: endIso },
+    })
+    setFeaturedDialog(null)
+  }
 
   return (
     <div className="space-y-5">
@@ -380,22 +460,31 @@ export function ContentPerformancePage() {
                             {item.copiedFromTitle ?? '—'}
                           </TableCell>
                           <TableCell>
-                            {item.featured && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                <Star className="h-3 w-3 fill-current" /> 精選
-                              </span>
-                            )}
+                            <FeaturedStatusChip item={item} />
                           </TableCell>
                           <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="xs"
-                              className="h-auto px-0 py-0 font-medium text-primary hover:text-primary/80"
-                              onClick={() => setFeatured({ id: item.id, featured: !item.featured })}
-                            >
-                              {item.featured ? '取消精選' : '設為精選'}
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="xs"
+                                className="h-auto px-0 py-0 font-medium text-primary hover:text-primary/80"
+                                onClick={() => openFeaturedDialog(item)}
+                              >
+                                {item.featured ? '編輯排程' : '設為精選'}
+                              </Button>
+                              {item.featured && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="xs"
+                                  className="h-auto px-0 py-0 font-medium text-muted-foreground hover:text-destructive"
+                                  onClick={() => setFeatured({ id: item.id, featured: false })}
+                                >
+                                  取消精選
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -809,8 +898,82 @@ export function ContentPerformancePage() {
               )}
             </div>
           )}
+
+          {/* ─ Curation Collections ─ */}
+          {tab === 'collections' && (
+            <CurationCollectionsPanel
+              practiceOptions={content.map((i) => ({ id: i.id, title: i.title }))}
+            />
+          )}
         </>
       )}
+
+      {/* ─ Featured schedule dialog ─ */}
+      <Dialog
+        open={featuredDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) setFeaturedDialog(null)
+        }}
+      >
+        <DialogContent className="h-auto max-w-md">
+          <div className="flex items-center justify-between border-b border-border px-5 py-3 shrink-0">
+            <span className="font-semibold text-sm">
+              {featuredDialog?.featured ? '編輯精選排程' : '設為精選'}
+            </span>
+            <DialogClose
+              className="text-muted-foreground hover:text-foreground text-lg leading-none px-1"
+              aria-label="關閉"
+            >
+              ✕
+            </DialogClose>
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            <p className="text-sm truncate font-medium">{featuredDialog?.title}</p>
+            <p className="text-xs text-muted-foreground">
+              兩個時間都留空＝立即精選、不自動到期。設定結束時間後，到期會自動取消精選效果，無需手動操作。
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label
+                  htmlFor="featured-start"
+                  className="mb-1 block text-xs font-medium text-muted-foreground"
+                >
+                  開始時間
+                </label>
+                <Input
+                  id="featured-start"
+                  type="datetime-local"
+                  value={scheduleStart}
+                  onChange={(e) => setScheduleStart(e.target.value)}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="featured-end"
+                  className="mb-1 block text-xs font-medium text-muted-foreground"
+                >
+                  結束時間
+                </label>
+                <Input
+                  id="featured-end"
+                  type="datetime-local"
+                  value={scheduleEnd}
+                  onChange={(e) => setScheduleEnd(e.target.value)}
+                />
+              </div>
+            </div>
+            {scheduleError && <p className="text-xs text-destructive">{scheduleError}</p>}
+          </div>
+          <div className="border-t border-border px-5 py-3 flex gap-2 shrink-0">
+            <Button type="button" onClick={submitFeatured}>
+              儲存
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setFeaturedDialog(null)}>
+              取消
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
