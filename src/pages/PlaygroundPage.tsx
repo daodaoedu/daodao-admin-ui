@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
 import { Input, Textarea } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import { parseStageSummaries } from '@/lib/stage-summary'
 
 /** 將原始後端錯誤訊息轉為使用者友善文字 */
 function _toFriendlyError(raw: string | null | undefined): string {
@@ -887,13 +888,55 @@ function InsightTab() {
   )
 }
 
+/**
+ * assistant 訊息內容：將 <stage_summary> 區塊抽出為預設收合的摺疊區。
+ * 注意：只影響顯示；msg.content 保留原文，送回 API 的 history 因此不失真。
+ */
+function AssistantContent({ content }: { content: string }) {
+  const { clean, summaries } = parseStageSummaries(content)
+  if (summaries.length === 0) return <>{content}</>
+  return (
+    <>
+      {clean}
+      {summaries.map((s) => (
+        <details
+          key={`${s.stage}-${s.content.slice(0, 20)}`}
+          className="mt-2 rounded-md border border-border bg-background/50 px-3 py-2"
+        >
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+            階段小結（{s.stage}）
+          </summary>
+          <div className="mt-1 text-xs whitespace-pre-wrap">{s.content}</div>
+        </details>
+      ))}
+    </>
+  )
+}
+
+const CHAT_STORAGE_KEY = 'playground-chat-session'
+
+function _loadChatSession(): { messages: ChatMessage[]; promptId: number | null } {
+  try {
+    const raw = sessionStorage.getItem(CHAT_STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as { messages?: ChatMessage[]; promptId?: number | null }
+      return { messages: parsed.messages ?? [], promptId: parsed.promptId ?? null }
+    }
+  } catch {
+    // 快取毀損時視同無快取
+  }
+  return { messages: [], promptId: null }
+}
+
 export function PlaygroundPage() {
   const { adminInfo } = useAuth()
   const [activeTab, setActiveTab] = useState<'chat' | 'insight'>('chat')
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>(() => _loadChatSession().messages)
   const [input, setInput] = useState('')
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null)
-  const [selectedPromptId, setSelectedPromptId] = useState<number | null>(null)
+  const [selectedPromptId, setSelectedPromptId] = useState<number | null>(
+    () => _loadChatSession().promptId,
+  )
   const [isSending, setIsSending] = useState(false)
   const [lastStats, setLastStats] = useState<PlaygroundChatResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -908,9 +951,11 @@ export function PlaygroundPage() {
     queryFn: () => listLLMModels().then((r) => r.data.data),
   })
 
+  // 列出全部 prompt（不限 is_active）：playground 以 system_prompt_id 明確指定，
+  // 且全局僅允許一個 active，試行用 prompt（如 life_design_coach）不會啟用
   const { data: prompts = [] } = useQuery({
-    queryKey: ['system-prompts', { is_active: true }],
-    queryFn: () => listSystemPrompts({ is_active: true }).then((r) => r.data.data),
+    queryKey: ['system-prompts', 'all'],
+    queryFn: () => listSystemPrompts().then((r) => r.data.data),
   })
 
   // 使用者 quota（有 userId 才查）
@@ -935,6 +980,22 @@ export function PlaygroundPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
+  // 對話串與 prompt 選擇存 sessionStorage，重新整理後可續聊
+  useEffect(() => {
+    try {
+      if (messages.length === 0) {
+        sessionStorage.removeItem(CHAT_STORAGE_KEY)
+      } else {
+        sessionStorage.setItem(
+          CHAT_STORAGE_KEY,
+          JSON.stringify({ messages, promptId: selectedPromptId }),
+        )
+      }
+    } catch {
+      // sessionStorage 不可用（如隱私模式）時略過快取
+    }
+  }, [messages, selectedPromptId])
+
   const handleSend = async () => {
     if (!input.trim() || !selectedModelId || isSending) return
     setError(null)
@@ -944,11 +1005,15 @@ export function PlaygroundPage() {
     setInput('')
     setIsSending(true)
 
+    // 多輪對話：把送出前的完整對話串作為 history（後端上限 60 則，超過取最近的）
+    const history = messages.slice(-60).map((m) => ({ role: m.role, content: m.content }))
+
     try {
       const res = await playgroundChat({
         model_id: selectedModelId,
         system_prompt_id: selectedPromptId ?? undefined,
         message: userMsg.content,
+        history: history.length > 0 ? history : undefined,
         max_tokens: chatMaxTokens ?? undefined,
         temperature: chatTemperature ?? undefined,
         top_p: chatTopP ?? undefined,
@@ -1075,7 +1140,13 @@ export function PlaygroundPage() {
                   ...prompts.map((p) => ({ value: p.id.toString(), label: p.name })),
                 ]}
                 placeholder="不使用"
+                disabled={messages.length > 0}
               />
+              {messages.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  對話進行中無法切換 prompt，請先清除對話
+                </p>
+              )}
             </div>
 
             {/* 參數設定 */}
@@ -1255,7 +1326,11 @@ export function PlaygroundPage() {
                         : 'bg-muted text-foreground'
                     }`}
                   >
-                    {msg.content}
+                    {msg.role === 'assistant' ? (
+                      <AssistantContent content={msg.content} />
+                    ) : (
+                      msg.content
+                    )}
                     {msg.role === 'assistant' && msg.meta && (
                       <div className="mt-1 text-xs opacity-60">
                         {(msg.meta.input_tokens + msg.meta.output_tokens).toLocaleString()} tokens

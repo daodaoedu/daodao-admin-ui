@@ -149,6 +149,8 @@ export interface PlaygroundChatRequest {
   model_id: number
   system_prompt_id?: number | null
   message: string
+  /** 先前的對話紀錄（依時間先後排序），提供時後端進行多輪對話。上限 60 則、單則 8000 字元 */
+  history?: { role: 'user' | 'assistant'; content: string }[]
   max_tokens?: number | null
   temperature?: number | null
   top_p?: number | null
