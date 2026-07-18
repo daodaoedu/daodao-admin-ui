@@ -80,6 +80,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/content-performance', label: '內容分析', icon: TrendingUp },
       { to: '/practices', label: '主題實踐', icon: Target },
+      { to: '/feed-ranking', label: 'Feed 演算法', icon: Settings },
     ],
   },
   {

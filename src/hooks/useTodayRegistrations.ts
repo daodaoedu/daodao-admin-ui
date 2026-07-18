@@ -9,6 +9,7 @@ function toDateStr(d: Date) {
 export function useTodayRegistrations() {
   const today = toDateStr(new Date())
   const yesterday = toDateStr(subDays(new Date(), 1))
+  const sevenDaysAgo = toDateStr(subDays(new Date(), 7))
 
   const todayQuery = useQuery({
     queryKey: ['admin', 'today-registrations', today],
@@ -22,28 +23,29 @@ export function useTodayRegistrations() {
       }).then((r) => r.data),
   })
 
-  const yesterdayQuery = useQuery({
-    queryKey: ['admin', 'yesterday-registrations', yesterday],
+  const weekQuery = useQuery({
+    queryKey: ['admin', 'week-registrations', sevenDaysAgo, yesterday],
     queryFn: () =>
       listAdminUsers({
-        createdFrom: yesterday,
+        createdFrom: sevenDaysAgo,
         createdTo: yesterday,
         limit: 1,
       }).then((r) => r.data),
   })
 
   const todayCount = todayQuery.data?.pagination.totalItems ?? 0
-  const yesterdayCount = yesterdayQuery.data?.pagination.totalItems ?? 0
+  const weekTotal = weekQuery.data?.pagination.totalItems
+  const weekAvg = weekTotal !== undefined ? weekTotal / 7 : undefined
 
   let changePercent: number | undefined
-  if (yesterdayCount > 0) {
-    changePercent = ((todayCount - yesterdayCount) / yesterdayCount) * 100
+  if (weekAvg !== undefined && weekAvg > 0) {
+    changePercent = ((todayCount - weekAvg) / weekAvg) * 100
   }
 
   return {
     users: todayQuery.data?.data ?? [],
     todayCount,
-    yesterdayCount,
+    weekAvg: weekAvg !== undefined ? Math.round(weekAvg * 10) / 10 : undefined,
     changePercent,
     isLoading: todayQuery.isLoading,
   }
