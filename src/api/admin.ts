@@ -12,6 +12,9 @@ import type {
   AuthMeData,
   CursorResponse,
   DashboardStats,
+  FeedRankingConfig,
+  FeedRankingConfigCreate,
+  FeedRankingConfigUpdate,
   InsightPractice,
   InsightUser,
   LLMModel,
@@ -172,6 +175,26 @@ export const deleteAIServiceConfig = (id: number) =>
 
 export const activateAIServiceConfig = (id: number) =>
   apiClient.post<ApiResponse<AIServiceConfig>>(`/api/v1/admin/ai-service-configs/${id}/activate`)
+
+// ── Feed Ranking Configs ────────────────────────────────
+export const listFeedRankingConfigs = () =>
+  apiClient.get<ApiResponse<FeedRankingConfig[]>>('/api/v1/admin/feed-ranking-configs')
+
+export const createFeedRankingConfig = (data: FeedRankingConfigCreate) =>
+  apiClient.post<ApiResponse<FeedRankingConfig>>('/api/v1/admin/feed-ranking-configs', data)
+
+export const updateFeedRankingConfig = (id: number, data: FeedRankingConfigUpdate) =>
+  apiClient.put<ApiResponse<FeedRankingConfig>>(`/api/v1/admin/feed-ranking-configs/${id}`, data)
+
+export const deleteFeedRankingConfig = (id: number) =>
+  apiClient.delete<ApiResponse<{ deleted: boolean; id: number }>>(
+    `/api/v1/admin/feed-ranking-configs/${id}`,
+  )
+
+export const activateFeedRankingConfig = (id: number) =>
+  apiClient.post<ApiResponse<FeedRankingConfig>>(
+    `/api/v1/admin/feed-ranking-configs/${id}/activate`,
+  )
 
 // ── Roles (daodao-server) ─────────────────────────────────
 export const listRoles = () =>

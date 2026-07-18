@@ -307,6 +307,49 @@ export interface AIServiceConfigUpdate {
   notes?: string | null
 }
 
+// ── Feed Ranking Configs ────────────────────────────────────
+export interface FeedRankingConfig {
+  id: number
+  name: string
+  w_social: string
+  w_engagement: string
+  w_content: string
+  w_decay: string
+  w_freshness: string
+  freshness_window_hours: number
+  w_featured: string
+  is_active: boolean
+  notes: string | null
+  created_at: string
+  updated_at: string | null
+}
+
+export interface FeedRankingConfigCreate {
+  name: string
+  w_social?: number
+  w_engagement?: number
+  w_content?: number
+  w_decay?: number
+  w_freshness?: number
+  freshness_window_hours?: number
+  w_featured?: number
+  is_active?: boolean
+  notes?: string | null
+}
+
+export interface FeedRankingConfigUpdate {
+  name?: string
+  w_social?: number
+  w_engagement?: number
+  w_content?: number
+  w_decay?: number
+  w_freshness?: number
+  freshness_window_hours?: number
+  w_featured?: number
+  is_active?: boolean
+  notes?: string | null
+}
+
 // ── Roles & Permissions (daodao-server) ────────────────────────────────
 export interface Role {
   id: number

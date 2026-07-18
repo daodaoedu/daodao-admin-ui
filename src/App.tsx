@@ -19,6 +19,9 @@ const SystemPromptsPage = lazy(() =>
 const AIServiceConfigsPage = lazy(() =>
   import('@/pages/AIServiceConfigsPage').then((m) => ({ default: m.AIServiceConfigsPage })),
 )
+const FeedRankingConfigsPage = lazy(() =>
+  import('@/pages/FeedRankingConfigsPage').then((m) => ({ default: m.FeedRankingConfigsPage })),
+)
 const ModelManagementPage = lazy(() =>
   import('@/pages/ModelManagementPage').then((m) => ({ default: m.ModelManagementPage })),
 )
@@ -194,6 +197,14 @@ export function App() {
             element={
               <LazyPage>
                 <AIServiceConfigsPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/feed-ranking"
+            element={
+              <LazyPage>
+                <FeedRankingConfigsPage />
               </LazyPage>
             }
           />

@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { listCheckins, listContentPerformance, setContentFeatured } from '@/api/admin-content'
+import {
+  type FeaturedSchedule,
+  listCheckins,
+  listContentPerformance,
+  setContentFeatured,
+} from '@/api/admin-content'
 
 export function useContentPerformance(days?: number) {
   return useQuery({
@@ -22,8 +27,15 @@ export function useCheckinList(days?: number, limit = 50, offset = 0) {
 export function useSetContentFeatured() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, featured }: { id: number; featured: boolean }) =>
-      setContentFeatured(id, featured),
+    mutationFn: ({
+      id,
+      featured,
+      schedule,
+    }: {
+      id: number
+      featured: boolean
+      schedule?: FeaturedSchedule
+    }) => setContentFeatured(id, featured, schedule),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'content', 'performance'] }),
   })
 }
