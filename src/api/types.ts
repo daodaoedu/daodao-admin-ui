@@ -326,13 +326,13 @@ export interface FeedRankingConfig {
 
 export interface FeedRankingConfigCreate {
   name: string
-  w_social?: number
-  w_engagement?: number
-  w_content?: number
-  w_decay?: number
-  w_freshness?: number
-  freshness_window_hours?: number
-  w_featured?: number
+  w_social: number
+  w_engagement: number
+  w_content: number
+  w_decay: number
+  w_freshness: number
+  freshness_window_hours: number
+  w_featured: number
   is_active?: boolean
   notes?: string | null
 }

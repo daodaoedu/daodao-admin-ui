@@ -379,7 +379,7 @@ export function FeedRankingConfigsPage() {
                         min="0"
                         value={form[f.key] ?? ''}
                         onChange={(e) =>
-                          setField(f.key, e.target.value ? Number(e.target.value) : undefined)
+                          setField(f.key, e.target.value ? Number(e.target.value) : 0)
                         }
                       />
                       <p className="mt-0.5 text-[10px] text-muted-foreground">{f.hint}</p>
@@ -402,7 +402,7 @@ export function FeedRankingConfigsPage() {
                       onChange={(e) =>
                         setField(
                           'freshness_window_hours',
-                          e.target.value ? Number(e.target.value) : undefined,
+                          e.target.value ? Number(e.target.value) : 0,
                         )
                       }
                     />
@@ -551,6 +551,10 @@ export function FeedRankingConfigsPage() {
             <Button
               type="button"
               onClick={() => {
+                if (!editForm.name?.trim()) {
+                  setEditError('設定名稱為必填')
+                  return
+                }
                 if (editingConfig) updateMut.mutate({ id: editingConfig.id, data: editForm })
               }}
               disabled={updateMut.isPending}

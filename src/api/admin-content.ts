@@ -68,11 +68,21 @@ export interface FeaturedSchedule {
   featuredEndAt?: string | null
 }
 
-export const setContentFeatured = (id: number, featured: boolean, schedule?: FeaturedSchedule) =>
-  apiClient.patch<ApiResponse<ContentPerformanceItem>>(
+export const setContentFeatured = (id: number, featured: boolean, schedule?: FeaturedSchedule) => {
+  if (schedule) {
+    const { featuredStartAt, featuredEndAt } = schedule
+    if (featuredStartAt && Number.isNaN(new Date(featuredStartAt).getTime())) {
+      return Promise.reject(new Error('Invalid featuredStartAt date'))
+    }
+    if (featuredEndAt && Number.isNaN(new Date(featuredEndAt).getTime())) {
+      return Promise.reject(new Error('Invalid featuredEndAt date'))
+    }
+  }
+  return apiClient.patch<ApiResponse<ContentPerformanceItem>>(
     `/daodao-server/api/v1/admin/content/${id}/featured`,
     { featured, ...schedule },
   )
+}
 
 // ── Curation Collections（策展合輯）───────────────────────
 

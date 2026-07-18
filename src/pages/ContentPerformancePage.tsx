@@ -231,8 +231,17 @@ export function ContentPerformancePage() {
 
   const submitFeatured = () => {
     if (!featuredDialog) return
-    const startIso = scheduleStart ? new Date(scheduleStart).toISOString() : null
-    const endIso = scheduleEnd ? new Date(scheduleEnd).toISOString() : null
+    const startDate = scheduleStart ? new Date(scheduleStart) : null
+    const endDate = scheduleEnd ? new Date(scheduleEnd) : null
+    if (
+      (startDate && Number.isNaN(startDate.getTime())) ||
+      (endDate && Number.isNaN(endDate.getTime()))
+    ) {
+      setScheduleError('請輸入有效的日期與時間')
+      return
+    }
+    const startIso = startDate ? startDate.toISOString() : null
+    const endIso = endDate ? endDate.toISOString() : null
     if (startIso && endIso && endIso <= startIso) {
       setScheduleError('結束時間必須晚於開始時間')
       return
