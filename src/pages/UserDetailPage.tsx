@@ -750,7 +750,11 @@ function OnboardingTab({ userId }: { userId: string }) {
           />
           <InfoRow
             label="從哪知道島島"
-            value={data.referralSource ? (REFERRAL_SOURCE_LABEL[data.referralSource] ?? data.referralSource) : '-'}
+            value={
+              data.referralSource
+                ? (REFERRAL_SOURCE_LABEL[data.referralSource] ?? data.referralSource)
+                : '-'
+            }
           />
           <InfoRow
             label="實踐建立方式"
@@ -1108,7 +1112,9 @@ export function UserDetailPage() {
                         </span>
                       ))}
                     </div>
-                  ) : '—'
+                  ) : (
+                    '—'
+                  )
                 }
               />
               <InfoRow
@@ -1122,7 +1128,9 @@ export function UserDetailPage() {
                         </Badge>
                       ))}
                     </div>
-                  ) : '—'
+                  ) : (
+                    '—'
+                  )
                 }
               />
               <InfoRow
@@ -1148,13 +1156,18 @@ export function UserDetailPage() {
               {userDetail.data?.userSource && (
                 <InfoRow
                   label="來源"
-                  value={USER_SOURCE_LABEL[userDetail.data.userSource] ?? userDetail.data.userSource}
+                  value={
+                    USER_SOURCE_LABEL[userDetail.data.userSource] ?? userDetail.data.userSource
+                  }
                 />
               )}
               {userDetail.data?.referralSource && (
                 <InfoRow
                   label="從哪知道島島"
-                  value={REFERRAL_SOURCE_LABEL[userDetail.data.referralSource] ?? userDetail.data.referralSource}
+                  value={
+                    REFERRAL_SOURCE_LABEL[userDetail.data.referralSource] ??
+                    userDetail.data.referralSource
+                  }
                 />
               )}
             </div>
