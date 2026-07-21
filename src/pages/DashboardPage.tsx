@@ -380,8 +380,8 @@ export function DashboardPage() {
             <ExportButton
               data={
                 [
-                  { label: 'WAU', value: trend?.currentWau ?? '—' },
                   { label: 'DAU', value: trend?.currentDau ?? '—' },
+                  { label: 'WAU', value: trend?.currentWau ?? '—' },
                   { label: 'MAU', value: trend?.currentMau ?? '—' },
                   {
                     label: 'DAU/MAU 黏著度',
@@ -431,22 +431,6 @@ export function DashboardPage() {
         <SectionLabel>Engagement</SectionLabel>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
-            title="WAU"
-            value={trend?.currentWau?.toLocaleString() ?? '—'}
-            icon={Users}
-            change={trend?.wauChangePercent}
-            changeLabel="vs 上期"
-            description="Weekly Active Users：過去 7 天內有互動的不重複用戶數"
-            onClick={() =>
-              setDrillDown({
-                type: 'active',
-                title: 'WAU — 近 7 天活躍用戶',
-                date: today,
-                period: 'week',
-              })
-            }
-          />
-          <StatCard
             title="DAU"
             value={trend?.currentDau?.toLocaleString() ?? '—'}
             icon={Users}
@@ -459,6 +443,22 @@ export function DashboardPage() {
                 title: 'DAU — 今日活躍用戶',
                 date: today,
                 period: 'day',
+              })
+            }
+          />
+          <StatCard
+            title="WAU"
+            value={trend?.currentWau?.toLocaleString() ?? '—'}
+            icon={Users}
+            change={trend?.wauChangePercent}
+            changeLabel="vs 上期"
+            description="Weekly Active Users：過去 7 天內有互動的不重複用戶數"
+            onClick={() =>
+              setDrillDown({
+                type: 'active',
+                title: 'WAU — 近 7 天活躍用戶',
+                date: today,
+                period: 'week',
               })
             }
           />
