@@ -1146,9 +1146,9 @@ export function UserManagementPage() {
                                 {tag.name}
                               </Badge>
                             ))}
-                            {(user.tags ?? []).length + (user.entityTags ?? []).length > 4 && (
+                            {Math.max(0, (user.tags ?? []).length - 2) + Math.max(0, (user.entityTags ?? []).length - 2) > 0 && (
                               <span className="text-xs text-muted-foreground">
-                                +{(user.tags ?? []).length + (user.entityTags ?? []).length - 4}
+                                +{Math.max(0, (user.tags ?? []).length - 2) + Math.max(0, (user.entityTags ?? []).length - 2)}
                               </span>
                             )}
                           </>
