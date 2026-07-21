@@ -1130,7 +1130,7 @@ export function UserManagementPage() {
                     {/* 標籤 */}
                     <TableCell>
                       <div className="flex flex-wrap gap-1 max-w-[240px]">
-                        {((user.tags ?? []).length > 0 || (user.entityTags ?? []).length > 0) ? (
+                        {(user.tags ?? []).length > 0 || (user.entityTags ?? []).length > 0 ? (
                           <>
                             {(user.tags ?? []).slice(0, 2).map((tag) => (
                               <span
@@ -1146,9 +1146,13 @@ export function UserManagementPage() {
                                 {tag.name}
                               </Badge>
                             ))}
-                            {Math.max(0, (user.tags ?? []).length - 2) + Math.max(0, (user.entityTags ?? []).length - 2) > 0 && (
+                            {Math.max(0, (user.tags ?? []).length - 2) +
+                              Math.max(0, (user.entityTags ?? []).length - 2) >
+                              0 && (
                               <span className="text-xs text-muted-foreground">
-                                +{Math.max(0, (user.tags ?? []).length - 2) + Math.max(0, (user.entityTags ?? []).length - 2)}
+                                +
+                                {Math.max(0, (user.tags ?? []).length - 2) +
+                                  Math.max(0, (user.entityTags ?? []).length - 2)}
                               </span>
                             )}
                           </>
