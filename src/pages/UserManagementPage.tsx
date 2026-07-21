@@ -1129,13 +1129,29 @@ export function UserManagementPage() {
                     </TableCell>
                     {/* 標籤 */}
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {(Array.isArray(user.tags) ? user.tags : []).length > 0 ? (
-                          user.tags.map((tag) => (
-                            <Badge key={tag.id} variant="default">
-                              {tag.name}
-                            </Badge>
-                          ))
+                      <div className="flex flex-wrap gap-1 max-w-[240px]">
+                        {((user.tags ?? []).length > 0 || (user.entityTags ?? []).length > 0) ? (
+                          <>
+                            {(user.tags ?? []).slice(0, 2).map((tag) => (
+                              <span
+                                key={`admin-${tag.id}`}
+                                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-white"
+                                style={{ backgroundColor: tag.color }}
+                              >
+                                {tag.name}
+                              </span>
+                            ))}
+                            {(user.entityTags ?? []).slice(0, 2).map((tag) => (
+                              <Badge key={`entity-${tag.id}`} variant="default">
+                                {tag.name}
+                              </Badge>
+                            ))}
+                            {(user.tags ?? []).length + (user.entityTags ?? []).length > 4 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{(user.tags ?? []).length + (user.entityTags ?? []).length - 4}
+                              </span>
+                            )}
+                          </>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
@@ -1333,7 +1349,7 @@ export function UserManagementPage() {
                               const currentTags = prev.tags ?? []
                               const newTags = hasTag
                                 ? currentTags.filter((t) => t.id !== tag.id)
-                                : [...currentTags, { id: tag.id, name: tag.name }]
+                                : [...currentTags, { id: tag.id, name: tag.name, color: tag.color }]
                               return { ...prev, tags: newTags }
                             })
                           },
