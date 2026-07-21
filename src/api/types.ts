@@ -885,6 +885,7 @@ export interface UserOnboardingDetail {
   registrationFlow: RegistrationFlow | null
   userSource: 'S1' | 'S2' | 'S3'
   creationMethod: CreationMethod | null
+  referralSource: string | null
   taskStates: Record<string, 'done' | 'pending'>
   taskCompletedAt: Record<string, string>
   badgeGranted: boolean
