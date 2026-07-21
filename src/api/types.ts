@@ -393,7 +393,8 @@ export interface AdminUserListItem {
   personaType: 'L' | 'C' | 'A' | 'D' | 'O' | null
   badgeGranted: boolean | null
   userSource: string | null
-  tags: Array<{ id: number; name: string }>
+  tags: Array<{ id: number; name: string; color: string }>
+  entityTags: Array<{ id: number; name: string }>
   lastActiveAt: string | null
   registrationFlow: 'landing_page' | 'quiz' | 'action_maker' | null
   creationMethod: 'self_created' | 'copied' | 'action_generator' | null
@@ -417,6 +418,9 @@ export interface AdminUserDetail {
   personaType: 'L' | 'C' | 'A' | 'D' | 'O' | null
   badgeGranted: boolean | null
   userSource: string | null
+  referralSource: string | null
+  tags: Array<{ id: number; name: string; color: string }>
+  entityTags: Array<{ id: number; name: string }>
   activityStats?: {
     totalCheckins: number
     totalPosts: number
@@ -881,6 +885,7 @@ export interface UserOnboardingDetail {
   registrationFlow: RegistrationFlow | null
   userSource: 'S1' | 'S2' | 'S3'
   creationMethod: CreationMethod | null
+  referralSource: string | null
   taskStates: Record<string, 'done' | 'pending'>
   taskCompletedAt: Record<string, string>
   badgeGranted: boolean

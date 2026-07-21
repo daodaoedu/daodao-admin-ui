@@ -3,6 +3,7 @@ import { SlidersHorizontal, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin-server'
+import { bulkTagUsers } from '@/api/admin-users'
 import type { AdminUserListItem, CreationMethod, RegistrationFlow } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
 import { UserLink } from '@/components/UserLink'
@@ -18,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useUserTags } from '@/hooks/useUserTags'
 
 type PersonaType = 'L' | 'C' | 'A' | 'D' | 'O'
 
@@ -262,6 +264,7 @@ export function UserManagementPage() {
   const [assigningUser, setAssigningUser] = useState<AdminUserListItem | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string>('')
   const [confirmDisableUser, setConfirmDisableUser] = useState<AdminUserListItem | null>(null)
+  const [taggingUser, setTaggingUser] = useState<AdminUserListItem | null>(null)
 
   // Debounce search input → search state
   useEffect(() => {
@@ -522,6 +525,17 @@ export function UserManagementPage() {
       qc.invalidateQueries({ queryKey: ['admin-server-users'] })
       setAssigningUser(null)
       setSelectedRoleId('')
+    },
+  })
+
+  const { data: allTags = [] } = useUserTags()
+
+  const tagMut = useMutation({
+    mutationFn: (data: { userIds: number[]; tagId: number; action: 'add' | 'remove' }) =>
+      bulkTagUsers(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-server-users'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'tags'] })
     },
   })
 
@@ -1115,13 +1129,33 @@ export function UserManagementPage() {
                     </TableCell>
                     {/* 標籤 */}
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {(Array.isArray(user.tags) ? user.tags : []).length > 0 ? (
-                          user.tags.map((tag) => (
-                            <Badge key={tag.id} variant="default">
-                              {tag.name}
-                            </Badge>
-                          ))
+                      <div className="flex flex-wrap gap-1 max-w-[240px]">
+                        {(user.tags ?? []).length > 0 || (user.entityTags ?? []).length > 0 ? (
+                          <>
+                            {(user.tags ?? []).slice(0, 2).map((tag) => (
+                              <span
+                                key={`admin-${tag.id}`}
+                                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-white"
+                                style={{ backgroundColor: tag.color }}
+                              >
+                                {tag.name}
+                              </span>
+                            ))}
+                            {(user.entityTags ?? []).slice(0, 2).map((tag) => (
+                              <Badge key={`entity-${tag.id}`} variant="default">
+                                {tag.name}
+                              </Badge>
+                            ))}
+                            {Math.max(0, (user.tags ?? []).length - 2) +
+                              Math.max(0, (user.entityTags ?? []).length - 2) >
+                              0 && (
+                              <span className="text-xs text-muted-foreground">
+                                +
+                                {Math.max(0, (user.tags ?? []).length - 2) +
+                                  Math.max(0, (user.entityTags ?? []).length - 2)}
+                              </span>
+                            )}
+                          </>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
@@ -1170,6 +1204,14 @@ export function UserManagementPage() {
                     {/* 操作 */}
                     <TableCell>
                       <div className="flex gap-1 whitespace-nowrap">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="xs"
+                          onClick={() => setTaggingUser(user)}
+                        >
+                          標籤
+                        </Button>
                         <Button
                           type="button"
                           variant="secondary"
@@ -1275,6 +1317,73 @@ export function UserManagementPage() {
                   setSelectedRoleId('')
                 }}
               >
+                關閉
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Tags Modal — toggles on click */}
+      {taggingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-6 shadow-lg">
+            <h3 className="mb-4 font-semibold">
+              指派標籤 — {taggingUser.name ?? taggingUser.email ?? `#${taggingUser.internalId}`}
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => {
+                const hasTag = (taggingUser.tags ?? []).some((t) => t.id === tag.id)
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    disabled={tagMut.isPending}
+                    onClick={() =>
+                      tagMut.mutate(
+                        {
+                          userIds: [taggingUser.internalId],
+                          tagId: tag.id,
+                          action: hasTag ? 'remove' : 'add',
+                        },
+                        {
+                          onSuccess: () => {
+                            setTaggingUser((prev) => {
+                              if (!prev) return null
+                              const currentTags = prev.tags ?? []
+                              const newTags = hasTag
+                                ? currentTags.filter((t) => t.id !== tag.id)
+                                : [...currentTags, { id: tag.id, name: tag.name, color: tag.color }]
+                              return { ...prev, tags: newTags }
+                            })
+                          },
+                        },
+                      )
+                    }
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      hasTag
+                        ? 'border-transparent text-white'
+                        : 'border-border text-muted-foreground hover:border-foreground/30'
+                    }`}
+                    style={hasTag ? { backgroundColor: tag.color } : undefined}
+                  >
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: tag.color }}
+                    />
+                    {tag.name}
+                  </button>
+                )
+              })}
+              {allTags.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  尚無標籤，請先到「用戶標籤」頁面建立
+                </p>
+              )}
+            </div>
+            {tagMut.isPending && <p className="mt-3 text-xs text-muted-foreground">儲存中...</p>}
+            <div className="mt-5 flex justify-end">
+              <Button type="button" variant="secondary" onClick={() => setTaggingUser(null)}>
                 關閉
               </Button>
             </div>

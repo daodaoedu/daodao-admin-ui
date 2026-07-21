@@ -686,6 +686,21 @@ const CREATION_METHOD_LABEL: Record<string, string> = {
   action_generator: '產生器',
 }
 
+const USER_SOURCE_LABEL: Record<string, string> = {
+  S1: '直接註冊',
+  S2: '測驗導向',
+  S3: '工具導向',
+}
+
+const REFERRAL_SOURCE_LABEL: Record<string, string> = {
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  discord: 'Discord',
+  linkedin: 'LinkedIn',
+  friend_referral: '朋友推薦',
+  others: '其他',
+}
+
 const EMAIL_STATUS_LABEL: Record<string, string> = {
   sent: '已寄送',
   failed: '寄送失敗',
@@ -729,7 +744,18 @@ function OnboardingTab({ userId }: { userId: string }) {
                 : '未知'
             }
           />
-          <InfoRow label="任務排序" value={data.userSource ?? '-'} />
+          <InfoRow
+            label="用戶來源"
+            value={data.userSource ? (USER_SOURCE_LABEL[data.userSource] ?? data.userSource) : '-'}
+          />
+          <InfoRow
+            label="從哪知道島島"
+            value={
+              data.referralSource
+                ? (REFERRAL_SOURCE_LABEL[data.referralSource] ?? data.referralSource)
+                : '-'
+            }
+          />
           <InfoRow
             label="實踐建立方式"
             value={
@@ -1072,6 +1098,42 @@ export function UserDetailPage() {
               />
               <InfoRow label="角色" value={user.role} />
               <InfoRow
+                label="管理標籤"
+                value={
+                  userDetail.data?.tags?.length ? (
+                    <div className="flex flex-wrap gap-1">
+                      {userDetail.data.tags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-white"
+                          style={{ backgroundColor: tag.color }}
+                        >
+                          {tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+              <InfoRow
+                label="內容標籤"
+                value={
+                  userDetail.data?.entityTags?.length ? (
+                    <div className="flex flex-wrap gap-1">
+                      {userDetail.data.entityTags.map((tag) => (
+                        <Badge key={tag.id} variant="default">
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+              <InfoRow
                 label="人物誌"
                 value={
                   userDetail.data?.personaType
@@ -1092,7 +1154,21 @@ export function UserDetailPage() {
                 }
               />
               {userDetail.data?.userSource && (
-                <InfoRow label="來源" value={userDetail.data.userSource} />
+                <InfoRow
+                  label="來源"
+                  value={
+                    USER_SOURCE_LABEL[userDetail.data.userSource] ?? userDetail.data.userSource
+                  }
+                />
+              )}
+              {userDetail.data?.referralSource && (
+                <InfoRow
+                  label="從哪知道島島"
+                  value={
+                    REFERRAL_SOURCE_LABEL[userDetail.data.referralSource] ??
+                    userDetail.data.referralSource
+                  }
+                />
               )}
             </div>
 

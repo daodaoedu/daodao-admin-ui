@@ -90,18 +90,35 @@ export const deleteTag = (id: number) =>
 export const listTagRules = () =>
   apiClient.get<ApiResponse<TagRule[]>>('/daodao-server/api/v1/admin/tag-rules')
 
-export const createTagRule = (data: { name: string; condition: string }) =>
-  apiClient.post<ApiResponse<TagRule>>('/daodao-server/api/v1/admin/tag-rules', data)
+export const createTagRule = (data: {
+  tagId: number
+  conditionType: string
+  conditionOperator?: string
+  conditionValue: string
+  logicOperator?: 'AND' | 'OR'
+  isEnabled?: boolean
+}) => apiClient.post<ApiResponse<TagRule>>('/daodao-server/api/v1/admin/tag-rules', data)
+
+export const patchTagRule = (
+  id: number,
+  data: {
+    conditionType?: string
+    conditionOperator?: string
+    conditionValue?: string
+    logicOperator?: 'AND' | 'OR'
+    isEnabled?: boolean
+  },
+) => apiClient.patch<ApiResponse<TagRule>>(`/daodao-server/api/v1/admin/tag-rules/${id}`, data)
 
 export const deleteTagRule = (id: number) =>
   apiClient.delete<ApiResponse<{ deleted: boolean }>>(`/daodao-server/api/v1/admin/tag-rules/${id}`)
 
 export const bulkTagUsers = (data: {
   userIds: number[]
-  tagIds: number[]
+  tagId: number
   action: 'add' | 'remove'
 }) =>
-  apiClient.post<ApiResponse<{ success: boolean }>>(
+  apiClient.post<ApiResponse<{ affected: number }>>(
     '/daodao-server/api/v1/admin/users/bulk-tag',
     data,
   )
