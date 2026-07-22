@@ -1153,23 +1153,23 @@ export function UserDetailPage() {
                   )
                 }
               />
-              {userDetail.data?.userSource && (
-                <InfoRow
-                  label="來源"
-                  value={
-                    USER_SOURCE_LABEL[userDetail.data.userSource] ?? userDetail.data.userSource
-                  }
-                />
-              )}
-              {userDetail.data?.referralSource && (
-                <InfoRow
-                  label="從哪知道島島"
-                  value={
-                    REFERRAL_SOURCE_LABEL[userDetail.data.referralSource] ??
-                    userDetail.data.referralSource
-                  }
-                />
-              )}
+              <InfoRow
+                label="來源"
+                value={
+                  userDetail.data?.userSource
+                    ? (USER_SOURCE_LABEL[userDetail.data.userSource] ?? userDetail.data.userSource)
+                    : '—'
+                }
+              />
+              <InfoRow
+                label="從哪知道島島"
+                value={
+                  userDetail.data?.referralSource
+                    ? (REFERRAL_SOURCE_LABEL[userDetail.data.referralSource] ??
+                      userDetail.data.referralSource)
+                    : '—'
+                }
+              />
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
