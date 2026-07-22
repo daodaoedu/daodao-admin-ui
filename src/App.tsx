@@ -37,6 +37,11 @@ const RolesPermissionsPage = lazy(() =>
 const UserManagementPage = lazy(() =>
   import('@/pages/UserManagementPage').then((m) => ({ default: m.UserManagementPage })),
 )
+const OrganizationManagementPage = lazy(() =>
+  import('@/pages/OrganizationManagementPage').then((m) => ({
+    default: m.OrganizationManagementPage,
+  })),
+)
 
 // New pages (Phase 1+)
 const UserAnalyticsPage = lazy(() =>
@@ -231,6 +236,14 @@ export function App() {
             element={
               <LazyPage>
                 <UserManagementPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/organizations"
+            element={
+              <LazyPage>
+                <OrganizationManagementPage />
               </LazyPage>
             }
           />

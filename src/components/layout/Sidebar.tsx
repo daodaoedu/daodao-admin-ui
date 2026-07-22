@@ -4,6 +4,7 @@ import {
   BookOpen,
   Bot,
   Brain,
+  Building2,
   Calendar,
   ChevronDown,
   ClipboardList,
@@ -59,6 +60,7 @@ const navGroups: NavGroup[] = [
     title: '用戶',
     items: [
       { to: '/user-management', label: '用戶管理', icon: UserCog },
+      { to: '/organizations', label: '組織設定', icon: Building2 },
       { to: '/user-analytics', label: '用戶分析', icon: TrendingUp },
       { to: '/user-tags', label: '用戶標籤', icon: Users },
       { to: '/roles-permissions', label: '角色權限', icon: Shield },
