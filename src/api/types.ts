@@ -10,6 +10,40 @@ export interface ApiResponse<T> {
   requestId: string
 }
 
+// ── Lighthouse Organization ────────────────────────────────────────────────
+export interface Organization {
+  id: number
+  name: string
+  bio: string | null
+  externalLink: string | null
+  status: 'active' | 'suspended'
+  approvedBy: number | null
+  approvedAt: string | null
+  createdAt: string
+}
+
+export interface OrganizationMember {
+  id: number
+  userId: number
+  nickname: string | null
+  role: 'owner'
+  createdAt: string
+}
+
+export interface OrganizationCreate {
+  name: string
+  bio?: string | null
+  externalLink?: string | null
+  ownerUserId: number
+}
+
+export interface OrganizationUpdate {
+  name?: string
+  bio?: string | null
+  externalLink?: string | null
+  status?: Organization['status']
+}
+
 export interface OffsetPagination {
   total_count: number
   limit: number
