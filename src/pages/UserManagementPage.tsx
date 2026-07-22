@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { SlidersHorizontal, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin-server'
 import { bulkTagUsers } from '@/api/admin-users'
@@ -114,7 +114,7 @@ type DatePreset = (typeof DATE_PRESET_OPTIONS)[number]['value']
 type RecordPresenceFilter = 'all' | 'with' | 'without'
 
 const LIMIT = 20
-const TABLE_COLS = 15
+const TABLE_COLS = 16
 const USER_MANAGEMENT_SORT_FIELDS: UserManagementSortBy[] = [
   'createdAt',
   'lastLoginAt',
@@ -265,6 +265,9 @@ export function UserManagementPage() {
   const [selectedRoleId, setSelectedRoleId] = useState<string>('')
   const [confirmDisableUser, setConfirmDisableUser] = useState<AdminUserListItem | null>(null)
   const [taggingUser, setTaggingUser] = useState<AdminUserListItem | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [batchTagModalOpen, setBatchTagModalOpen] = useState(false)
+  const checkAllRef = useRef<HTMLInputElement>(null)
 
   // Debounce search input → search state
   useEffect(() => {
@@ -538,6 +541,37 @@ export function UserManagementPage() {
       qc.invalidateQueries({ queryKey: ['admin', 'tags'] })
     },
   })
+
+  const allPageSelected = users.length > 0 && users.every((u) => selectedIds.has(u.internalId))
+  const somePageSelected = users.some((u) => selectedIds.has(u.internalId)) && !allPageSelected
+
+  if (checkAllRef.current) {
+    checkAllRef.current.indeterminate = somePageSelected
+  }
+
+  const toggleAll = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (allPageSelected) {
+        for (const u of users) next.delete(u.internalId)
+      } else {
+        for (const u of users) next.add(u.internalId)
+      }
+      return next
+    })
+  }
+
+  const toggleOne = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   const openAssignRole = (user: AdminUserListItem) => {
     setAssigningUser(user)
@@ -1056,11 +1090,41 @@ export function UserManagementPage() {
         )}
       </div>
 
+      {/* Batch Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium text-primary shrink-0">
+            已選 {selectedIds.size} 位用戶
+          </span>
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            <Button type="button" size="sm" onClick={() => setBatchTagModalOpen(true)}>
+              批次上標籤
+            </Button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
         <Table className="min-w-[1400px]">
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <input
+                  ref={checkAllRef}
+                  type="checkbox"
+                  checked={allPageSelected}
+                  onChange={toggleAll}
+                  className="rounded border-input accent-primary"
+                />
+              </TableHead>
               {TABLE_HEADERS.map((h) => (
                 <TableHead key={h} className="whitespace-nowrap">
                   {h}
@@ -1083,8 +1147,18 @@ export function UserManagementPage() {
             ) : (
               users.map((user) => {
                 const badgeLabel = getBadgeLabel(user)
+                const isSelected = selectedIds.has(user.internalId)
                 return (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className={isSelected ? 'bg-primary/5' : undefined}>
+                    {/* 勾選 */}
+                    <TableCell className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleOne(user.internalId)}
+                        className="rounded border-input accent-primary"
+                      />
+                    </TableCell>
                     {/* 名稱 */}
                     <TableCell className="font-medium whitespace-nowrap">
                       <UserLink
@@ -1384,6 +1458,60 @@ export function UserManagementPage() {
             {tagMut.isPending && <p className="mt-3 text-xs text-muted-foreground">儲存中...</p>}
             <div className="mt-5 flex justify-end">
               <Button type="button" variant="secondary" onClick={() => setTaggingUser(null)}>
+                關閉
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Tag Modal */}
+      {batchTagModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-6 shadow-lg">
+            <h3 className="mb-2 font-semibold">批次上標籤</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              已選 {selectedIds.size} 位用戶，點擊標籤即可批次新增
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => (
+                <button
+                  key={tag.id}
+                  type="button"
+                  disabled={tagMut.isPending}
+                  onClick={() =>
+                    tagMut.mutate(
+                      {
+                        userIds: Array.from(selectedIds),
+                        tagId: tag.id,
+                        action: 'add',
+                      },
+                      {
+                        onSuccess: () => {
+                          setBatchTagModalOpen(false)
+                          setSelectedIds(new Set())
+                        },
+                      },
+                    )
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium transition-colors hover:border-foreground/30"
+                >
+                  <span
+                    className="inline-block h-2 w-2 rounded-full"
+                    style={{ backgroundColor: tag.color }}
+                  />
+                  {tag.name}
+                </button>
+              ))}
+              {allTags.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  尚無標籤，請先到「用戶標籤」頁面建立
+                </p>
+              )}
+            </div>
+            {tagMut.isPending && <p className="mt-3 text-xs text-muted-foreground">套用中...</p>}
+            <div className="mt-5 flex justify-end">
+              <Button type="button" variant="secondary" onClick={() => setBatchTagModalOpen(false)}>
                 關閉
               </Button>
             </div>
