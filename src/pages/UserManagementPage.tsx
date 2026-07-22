@@ -573,15 +573,6 @@ export function UserManagementPage() {
     })
   }
 
-  const batchTagMut = useMutation({
-    mutationFn: (data: { userIds: number[]; tagId: number; action: 'add' | 'remove' }) =>
-      bulkTagUsers(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-server-users'] })
-      qc.invalidateQueries({ queryKey: ['admin', 'tags'] })
-    },
-  })
-
   const openAssignRole = (user: AdminUserListItem) => {
     setAssigningUser(user)
     const userRoles = Array.isArray(user.roles) ? user.roles : []
@@ -1480,16 +1471,16 @@ export function UserManagementPage() {
           <div className="w-full max-w-sm rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-6 shadow-lg">
             <h3 className="mb-2 font-semibold">批次上標籤</h3>
             <p className="mb-4 text-sm text-muted-foreground">
-              已選 {selectedIds.size} 位用戶，點擊標籤即可批次新增或移除
+              已選 {selectedIds.size} 位用戶，點擊標籤即可批次新增
             </p>
             <div className="flex flex-wrap gap-2">
               {allTags.map((tag) => (
                 <button
                   key={tag.id}
                   type="button"
-                  disabled={batchTagMut.isPending}
+                  disabled={tagMut.isPending}
                   onClick={() =>
-                    batchTagMut.mutate(
+                    tagMut.mutate(
                       {
                         userIds: Array.from(selectedIds),
                         tagId: tag.id,
@@ -1518,9 +1509,7 @@ export function UserManagementPage() {
                 </p>
               )}
             </div>
-            {batchTagMut.isPending && (
-              <p className="mt-3 text-xs text-muted-foreground">套用中...</p>
-            )}
+            {tagMut.isPending && <p className="mt-3 text-xs text-muted-foreground">套用中...</p>}
             <div className="mt-5 flex justify-end">
               <Button type="button" variant="secondary" onClick={() => setBatchTagModalOpen(false)}>
                 關閉
