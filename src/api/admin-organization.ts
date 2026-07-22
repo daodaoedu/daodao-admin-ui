@@ -13,7 +13,7 @@ export const listOrganizations = () =>
   apiClient.get<ApiResponse<Organization[]>>(`${BASE_PATH}/admin/organizations`)
 
 export const createOrganization = (data: OrganizationCreate) =>
-  apiClient.post<ApiResponse<Organization>>(`${BASE_PATH}/organizations`, data)
+  apiClient.post<ApiResponse<Organization>>(`${BASE_PATH}/admin/organizations`, data)
 
 export const updateOrganization = (organizationId: number, data: OrganizationUpdate) =>
   apiClient.patch<ApiResponse<Organization>>(
