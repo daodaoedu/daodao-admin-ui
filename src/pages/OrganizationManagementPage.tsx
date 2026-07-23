@@ -111,6 +111,10 @@ function OrganizationFormDialog({
       await updateMutation.mutateAsync({ organizationId: organization.id, data })
     } else {
       const email = form.ownerEmail.trim().toLowerCase()
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setEmailError('請輸入有效的 Email 格式。')
+        return
+      }
       setIsResolvingEmail(true)
       setEmailError('')
       try {
