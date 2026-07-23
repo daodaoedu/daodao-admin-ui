@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { listAdminUsers } from '@/api/admin'
 import type { Organization, OrganizationCreate, OrganizationUpdate } from '@/api/types'
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
@@ -40,14 +41,14 @@ interface OrganizationFormState {
   name: string
   bio: string
   externalLink: string
-  ownerUserId: string
+  ownerEmail: string
 }
 
 const EMPTY_FORM: OrganizationFormState = {
   name: '',
   bio: '',
   externalLink: '',
-  ownerUserId: '',
+  ownerEmail: '',
 }
 
 function formatDate(value: string | null): string {
@@ -70,9 +71,11 @@ function OrganizationFormDialog({
   const createMutation = useCreateOrganization()
   const updateMutation = useUpdateOrganization()
   const [form, setForm] = useState<OrganizationFormState>(EMPTY_FORM)
+  const [emailError, setEmailError] = useState('')
+  const [isResolvingEmail, setIsResolvingEmail] = useState(false)
   const isEditing = organization !== null
   const mutationError = createMutation.isError || updateMutation.isError
-  const isSaving = createMutation.isPending || updateMutation.isPending
+  const isSaving = createMutation.isPending || updateMutation.isPending || isResolvingEmail
 
   useEffect(() => {
     if (!open) return
@@ -81,15 +84,18 @@ function OrganizationFormDialog({
         name: organization.name,
         bio: organization.bio ?? '',
         externalLink: organization.externalLink ?? '',
-        ownerUserId: '',
+        ownerEmail: '',
       })
+      setEmailError('')
       return
     }
     setForm(EMPTY_FORM)
+    setEmailError('')
   }, [open, organization])
 
   function setField(field: keyof OrganizationFormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
+    if (field === 'ownerEmail') setEmailError('')
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -104,11 +110,24 @@ function OrganizationFormDialog({
       const data: OrganizationUpdate = shared
       await updateMutation.mutateAsync({ organizationId: organization.id, data })
     } else {
-      const data: OrganizationCreate = {
-        ...shared,
-        ownerUserId: Number(form.ownerUserId),
+      const email = form.ownerEmail.trim().toLowerCase()
+      setIsResolvingEmail(true)
+      setEmailError('')
+      try {
+        const res = await listAdminUsers({ search: email, limit: 10 })
+        const match = res.data.data?.find((u) => u.email?.toLowerCase() === email)
+        if (!match) {
+          setEmailError('找不到此 Email 對應的使用者。')
+          return
+        }
+        const data: OrganizationCreate = {
+          ...shared,
+          ownerUserId: match.internalId,
+        }
+        await createMutation.mutateAsync(data)
+      } finally {
+        setIsResolvingEmail(false)
       }
-      await createMutation.mutateAsync(data)
     }
     onOpenChange(false)
   }
@@ -180,23 +199,24 @@ function OrganizationFormDialog({
           {!isEditing && (
             <div>
               <label htmlFor="organization-owner" className="mb-1.5 block text-sm font-medium">
-                首位 owner 的使用者 ID
+                首位 owner 的 Email
               </label>
               <Input
                 id="organization-owner"
-                type="number"
-                min={1}
+                type="email"
                 required
-                value={form.ownerUserId}
-                onChange={(event) => setField('ownerUserId', event.target.value)}
+                placeholder="user@example.com"
+                value={form.ownerEmail}
+                onChange={(event) => setField('ownerEmail', event.target.value)}
                 className="w-full"
               />
+              {emailError && <p className="mt-1.5 text-sm text-destructive">{emailError}</p>}
             </div>
           )}
 
           {mutationError && (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              儲存失敗，請確認組織資料與使用者 ID 後再試一次。
+              儲存失敗，請確認組織資料後再試一次。
             </p>
           )}
 
