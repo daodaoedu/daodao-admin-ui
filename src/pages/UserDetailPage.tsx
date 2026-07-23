@@ -42,7 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { APP_BASE_URL } from '@/config'
+import { APP_BASE_URL, getPracticePublicUrl } from '@/config'
 import {
   useActivityTimeline,
   useAdminActivityStats,
@@ -474,7 +474,14 @@ function PracticesTab({ userId }: { userId: string }) {
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-sm font-medium text-foreground">{p.title}</span>
+                    <a
+                      href={getPracticePublicUrl(p.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                    >
+                      {p.title}
+                    </a>
                     {dormantDays !== null && dormantDays > DORMANT_DAYS && (
                       <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
                         停滯 {dormantDays} 天

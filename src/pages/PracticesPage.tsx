@@ -79,6 +79,7 @@ const statusConfig: Record<PracticeStatus, { label: string; className: string; c
 const exportColumns = [
   { key: 'title', header: '標題' },
   { key: 'status', header: '狀態' },
+  { key: 'privacy', header: '隱私' },
   { key: 'creator', header: '建立者' },
   { key: 'createdAt', header: '建立日期' },
   { key: 'durationDays', header: '實踐期間' },
@@ -101,10 +102,28 @@ function formatDate(value?: string) {
   return value.split('T')[0] ?? value
 }
 
+const privacyConfig: Record<string, { label: string; className: string }> = {
+  public: { label: '公開', className: 'bg-success/15 text-success' },
+  private: { label: '私密', className: 'bg-muted text-muted-foreground' },
+  delayed: { label: '完成後公開', className: 'bg-info/15 text-info' },
+}
+
 function getPrivacyLabel(privacyStatus: string): string {
-  if (privacyStatus === 'public') return '公開'
-  if (privacyStatus === 'private') return '私密'
-  return privacyStatus
+  return privacyConfig[privacyStatus]?.label ?? privacyStatus
+}
+
+function PrivacyBadge({ privacyStatus }: { privacyStatus: string }) {
+  const config = privacyConfig[privacyStatus]
+  return (
+    <span
+      className={cn(
+        'inline-block rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap',
+        config?.className ?? 'bg-muted text-muted-foreground',
+      )}
+    >
+      {config?.label ?? privacyStatus}
+    </span>
+  )
 }
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
@@ -328,7 +347,6 @@ function PracticeDetail({
   isChangingStatus: boolean
 }) {
   const status = statusConfig[practice.status]
-  const privacyLabel = getPrivacyLabel(practice.privacyStatus)
 
   const socialStats = [
     { icon: Eye, label: '瀏覽', value: practice.stats.viewCount },
@@ -353,7 +371,16 @@ function PracticeDetail({
       {/* Header */}
       <div className="flex items-start justify-between gap-3 p-5 border-b border-border">
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-semibold text-foreground leading-snug">{practice.title}</h2>
+          <h2 className="text-base font-semibold text-foreground leading-snug">
+            <a
+              href={getPracticePublicUrl(practice.id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              {practice.title}
+            </a>
+          </h2>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <span
               className={cn(
@@ -363,7 +390,7 @@ function PracticeDetail({
             >
               {status.label}
             </span>
-            <Badge variant="default">{privacyLabel}</Badge>
+            <PrivacyBadge privacyStatus={practice.privacyStatus} />
             {practice.hasResources && <Badge variant="primary">有資源</Badge>}
           </div>
         </div>
@@ -722,6 +749,7 @@ export function PracticesPage() {
   const exportData = practices.map((p) => ({
     title: p.title,
     status: statusConfig[p.status].label,
+    privacy: getPrivacyLabel(p.privacyStatus),
     creator: p.user.name,
     createdAt: formatDate(p.createdAt),
     participants: p.checkInCount,
@@ -852,6 +880,7 @@ export function PracticesPage() {
                 { value: 'all', label: '全部隱私' },
                 { value: 'public', label: '公開' },
                 { value: 'private', label: '私密' },
+                { value: 'delayed', label: '完成後公開' },
               ]}
               triggerClassName="w-full"
             />
@@ -968,6 +997,7 @@ export function PracticesPage() {
               </TableHead>
               <TableHead>標題</TableHead>
               <TableHead>狀態</TableHead>
+              <TableHead>隱私</TableHead>
               <TableHead>建立者</TableHead>
               <SortableHeader
                 label="建立日期"
@@ -1047,6 +1077,9 @@ export function PracticesPage() {
                     </span>
                   </TableCell>
                   <TableCell>
+                    <PrivacyBadge privacyStatus={practice.privacyStatus} />
+                  </TableCell>
+                  <TableCell>
                     <UserLink
                       userId={practice.user.id}
                       name={practice.user.name}
@@ -1087,7 +1120,7 @@ export function PracticesPage() {
             })}
             {practices.length === 0 && (
               <TableRow>
-                <TableCell className="px-5 py-10 text-center text-muted-foreground" colSpan={10}>
+                <TableCell className="px-5 py-10 text-center text-muted-foreground" colSpan={12}>
                   {isFetching ? '載入中...' : '沒有符合條件的實踐'}
                 </TableCell>
               </TableRow>

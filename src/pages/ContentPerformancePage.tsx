@@ -33,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { getPracticePublicUrl } from '@/config'
 import {
   useCheckinList,
   useContentPerformance,
@@ -417,7 +418,18 @@ export function ContentPerformancePage() {
                           )}
                         >
                           <TableCell className="font-medium max-w-[220px] truncate">
-                            {item.title}
+                            {item.externalId ? (
+                              <a
+                                href={getPracticePublicUrl(item.externalId)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-primary transition-colors"
+                              >
+                                {item.title}
+                              </a>
+                            ) : (
+                              item.title
+                            )}
                           </TableCell>
                           <TableCell className="max-w-[160px]">
                             <div className="truncate text-sm">{item.creatorName ?? '—'}</div>
@@ -605,7 +617,18 @@ export function ContentPerformancePage() {
                                 )}
                               </TableCell>
                               <TableCell className="font-medium max-w-[200px] truncate">
-                                {record.practiceTitle}
+                                {record.practiceExternalId ? (
+                                  <a
+                                    href={getPracticePublicUrl(record.practiceExternalId)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:text-primary transition-colors"
+                                  >
+                                    {record.practiceTitle}
+                                  </a>
+                                ) : (
+                                  record.practiceTitle
+                                )}
                               </TableCell>
                               <TableCell>
                                 {moodCfg ? (
