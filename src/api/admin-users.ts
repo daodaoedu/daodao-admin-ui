@@ -172,12 +172,12 @@ export const listPractices = (params?: {
   sort?: 'createdAt' | 'updatedAt' | 'likeCount'
   order?: 'asc' | 'desc'
 }) =>
-  apiClient.get<PaginatedApiResponse<PracticeEntity>>('/daodao-server/api/v1/practices', {
+  apiClient.get<PaginatedApiResponse<PracticeEntity>>('/daodao-server/api/v1/admin/practices', {
     params,
   })
 
 export const updatePracticeStatus = (id: string, status: PracticeStatus) =>
-  apiClient.patch<ApiResponse<PracticeEntity>>(
+  apiClient.patch<ApiResponse<{ id: string; status: PracticeStatus; privacyStatus: string }>>(
     `/daodao-server/api/v1/admin/practices/${id}/status`,
     { status },
   )

@@ -5,6 +5,7 @@ import type { ApiResponse } from './types'
 
 export interface ContentPerformanceItem {
   id: number
+  externalId: string | null
   title: string
   creatorName: string | null
   creatorEmail: string | null
@@ -148,6 +149,7 @@ export interface CheckinRecord {
   userName: string | null
   userEmail: string | null
   practiceId: number
+  practiceExternalId: string | null
   practiceTitle: string
   mood: string | null
   content: string | null
