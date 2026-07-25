@@ -26,6 +26,8 @@ export interface OrganizationMember {
   id: number
   userId: number
   nickname: string | null
+  /** 只有 admin 端點會回傳；組織自己的成員清單不含 email */
+  email: string | null
   role: 'owner'
   createdAt: string
 }
