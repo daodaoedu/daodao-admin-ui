@@ -51,6 +51,17 @@ const EMPTY_FORM: OrganizationFormState = {
   ownerEmail: '',
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const INVALID_EMAIL_MESSAGE = '請輸入有效的 Email 格式。'
+const UNKNOWN_EMAIL_MESSAGE = '找不到此 Email 對應的使用者。'
+
+/** 後端成員 API 只吃 user id，這裡先用 admin 使用者查詢把 email 換成 internalId */
+async function resolveUserIdByEmail(email: string): Promise<number | null> {
+  const res = await listAdminUsers({ search: email, limit: 10 })
+  const match = res.data.data?.find((user) => user.email?.toLowerCase() === email)
+  return match?.internalId ?? null
+}
+
 function formatDate(value: string | null): string {
   if (!value) return '—'
   return new Intl.DateTimeFormat('zh-TW', {
@@ -111,23 +122,19 @@ function OrganizationFormDialog({
       await updateMutation.mutateAsync({ organizationId: organization.id, data })
     } else {
       const email = form.ownerEmail.trim().toLowerCase()
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        setEmailError('請輸入有效的 Email 格式。')
+      if (!EMAIL_PATTERN.test(email)) {
+        setEmailError(INVALID_EMAIL_MESSAGE)
         return
       }
       setIsResolvingEmail(true)
       setEmailError('')
       try {
-        const res = await listAdminUsers({ search: email, limit: 10 })
-        const match = res.data.data?.find((u) => u.email?.toLowerCase() === email)
-        if (!match) {
-          setEmailError('找不到此 Email 對應的使用者。')
+        const ownerUserId = await resolveUserIdByEmail(email)
+        if (ownerUserId === null) {
+          setEmailError(UNKNOWN_EMAIL_MESSAGE)
           return
         }
-        const data: OrganizationCreate = {
-          ...shared,
-          ownerUserId: match.internalId,
-        }
+        const data: OrganizationCreate = { ...shared, ownerUserId }
         await createMutation.mutateAsync(data)
       } finally {
         setIsResolvingEmail(false)
@@ -245,13 +252,34 @@ function MemberPanel({ organization }: { organization: Organization }) {
   const { data: members, isLoading, isError } = useOrganizationMembers(organization.id)
   const addMutation = useAddOrganizationMember()
   const removeMutation = useRemoveOrganizationMember()
-  const [userId, setUserId] = useState('')
+  const [email, setEmail] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [isResolvingEmail, setIsResolvingEmail] = useState(false)
   const mutationError = addMutation.isError || removeMutation.isError
+  const isAdding = addMutation.isPending || isResolvingEmail
 
   async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    await addMutation.mutateAsync({ organizationId: organization.id, userId: Number(userId) })
-    setUserId('')
+    const value = email.trim().toLowerCase()
+    if (!EMAIL_PATTERN.test(value)) {
+      setEmailError(INVALID_EMAIL_MESSAGE)
+      return
+    }
+    setIsResolvingEmail(true)
+    setEmailError('')
+    try {
+      const userId = await resolveUserIdByEmail(value)
+      if (userId === null) {
+        setEmailError(UNKNOWN_EMAIL_MESSAGE)
+        return
+      }
+      await addMutation.mutateAsync({ organizationId: organization.id, userId })
+      setEmail('')
+    } catch {
+      // 失敗原因（已是成員、使用者不存在）由下方 mutationError 提示
+    } finally {
+      setIsResolvingEmail(false)
+    }
   }
 
   function handleRemove(memberUserId: number, nickname: string | null) {
@@ -276,25 +304,24 @@ function MemberPanel({ organization }: { organization: Organization }) {
 
         <form className="mt-4 flex gap-2" onSubmit={handleAdd}>
           <div className="min-w-0 flex-1">
-            <label htmlFor="member-user-id" className="sr-only">
-              使用者 ID
+            <label htmlFor="member-email" className="sr-only">
+              成員 Email
             </label>
             <Input
-              id="member-user-id"
-              type="number"
-              min={1}
+              id="member-email"
+              type="email"
               required
-              placeholder="輸入使用者 ID"
-              value={userId}
-              onChange={(event) => setUserId(event.target.value)}
+              placeholder="user@example.com"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value)
+                setEmailError('')
+              }}
               className="w-full"
             />
           </div>
-          <Button
-            type="submit"
-            disabled={addMutation.isPending || organization.status !== 'active'}
-          >
-            {addMutation.isPending ? (
+          <Button type="submit" disabled={isAdding || organization.status !== 'active'}>
+            {isAdding ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <UserPlus className="h-4 w-4" />
@@ -302,6 +329,7 @@ function MemberPanel({ organization }: { organization: Organization }) {
             新增 owner
           </Button>
         </form>
+        {emailError && <p className="mt-2 text-sm text-destructive">{emailError}</p>}
         {organization.status !== 'active' && (
           <p className="mt-2 text-xs text-warning">停權中的組織不可新增成員。</p>
         )}
@@ -339,6 +367,9 @@ function MemberPanel({ organization }: { organization: Organization }) {
                 <TableRow key={member.id}>
                   <TableCell>
                     <p className="font-medium">{member.nickname ?? '未設定暱稱'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {member.email ?? '未設定 Email'}
+                    </p>
                     <p className="text-xs text-muted-foreground">User ID {member.userId}</p>
                   </TableCell>
                   <TableCell>
