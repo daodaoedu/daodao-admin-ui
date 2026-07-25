@@ -275,6 +275,8 @@ function MemberPanel({ organization }: { organization: Organization }) {
       }
       await addMutation.mutateAsync({ organizationId: organization.id, userId })
       setEmail('')
+    } catch {
+      // 失敗原因（已是成員、使用者不存在）由下方 mutationError 提示
     } finally {
       setIsResolvingEmail(false)
     }
