@@ -11,7 +11,10 @@ export interface ContentPerformanceItem {
   creatorEmail: string | null
   copyCount: number
   copiedFromTitle: string | null
+  /** 累計瀏覽次數（同一使用者 24h 內只計一次，非不重複人數） */
   views: number
+  /** 不重複瀏覽者人數（interaction_events 去重後的 user 數） */
+  uniqueViews: number
   depth: number
   avgTime: number
   interactionRate: number

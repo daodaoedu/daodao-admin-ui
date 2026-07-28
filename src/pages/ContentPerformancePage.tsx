@@ -42,7 +42,7 @@ import {
 import { usePersonaStats } from '@/hooks/useOnboardingAnalytics'
 import { cn } from '@/lib/utils'
 
-type SortField = 'views' | 'depth' | 'avgTime' | 'interactionRate'
+type SortField = 'views' | 'uniqueViews' | 'depth' | 'avgTime' | 'interactionRate'
 type TabKey = 'practice' | 'checkin' | 'quiz' | 'persona' | 'category' | 'collections'
 type DatePreset = '1' | '7' | '30'
 
@@ -53,7 +53,8 @@ const DATE_PRESETS: { label: string; value: DatePreset }[] = [
 ]
 
 const SORT_COLUMNS: { key: SortField; label: string; hint: string }[] = [
-  { key: 'views', label: '瀏覽數', hint: '累積不重複瀏覽' },
+  { key: 'views', label: '瀏覽數', hint: '累計瀏覽次數（同一人 24h 內只計一次）' },
+  { key: 'uniqueViews', label: '不重複瀏覽者', hint: '看過的不重複人數' },
   { key: 'depth', label: '閱讀深度', hint: '平均捲動 %（需累積）' },
   { key: 'avgTime', label: '平均停留', hint: '平均停留分鐘（需累積）' },
   { key: 'interactionRate', label: '互動率', hint: '留言 + reaction / 瀏覽' },
@@ -288,6 +289,7 @@ export function ContentPerformancePage() {
                 { key: 'copyCount', header: '被複製次數' },
                 { key: 'copiedFromTitle', header: '複製來源' },
                 { key: 'views', header: '瀏覽數' },
+                { key: 'uniqueViews', header: '不重複瀏覽者' },
                 { key: 'depth', header: '閱讀深度%' },
                 { key: 'avgTime', header: '平均停留(分)' },
                 { key: 'interactionRate', header: '互動率%' },
@@ -441,6 +443,9 @@ export function ContentPerformancePage() {
                           </TableCell>
                           <TableCell className="tabular-nums">
                             {item.views.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="tabular-nums">
+                            {item.uniqueViews.toLocaleString()}
                           </TableCell>
                           <TableCell className="tabular-nums">
                             {item.depth > 0 ? (
