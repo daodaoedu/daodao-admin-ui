@@ -47,7 +47,17 @@ export interface PersonaSummary {
   totalQuestions: number
   usersAnswered: number
   totalAnswers: number
-  questions: Array<{ id: number; prompt: string; answerCount: number }>
+  /** 期間內題目觀看次數（同一用戶對同一題 24h 去重） */
+  totalViews: number
+  /** 期間內看過任一題目的不重複用戶數 */
+  uniqueViewers: number
+  questions: Array<{
+    id: number
+    prompt: string
+    answerCount: number
+    viewCount: number
+    viewerCount: number
+  }>
 }
 
 export interface ContentPerformanceData {
