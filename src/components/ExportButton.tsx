@@ -13,9 +13,10 @@ interface ExportButtonProps {
   columns: ColumnConfig[]
   fileName: string
   disabled?: boolean
+  fetchAll?: () => Promise<Record<string, unknown>[]>
 }
 
-export function ExportButton({ data, columns, fileName, disabled }: ExportButtonProps) {
+export function ExportButton({ data, columns, fileName, disabled, fetchAll }: ExportButtonProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -34,21 +35,23 @@ export function ExportButton({ data, columns, fileName, disabled }: ExportButton
 
   const handleExport = useCallback(
     async (format: 'csv' | 'xlsx') => {
-      if (data.length === 0) {
-        alert('沒有資料可匯出')
-        return
-      }
-
       setLoading(true)
       setOpen(false)
 
       try {
+        const exportData = fetchAll ? await fetchAll() : data
+
+        if (exportData.length === 0) {
+          alert('沒有資料可匯出')
+          return
+        }
+
         const { utils, writeFile } = await import('xlsx')
         const date = new Date().toISOString().slice(0, 10)
         const name = `${fileName}_${date}`
 
         const headers = columns.map((c) => c.header)
-        const rows = data.map((row) => columns.map((c) => row[c.key] ?? ''))
+        const rows = exportData.map((row) => columns.map((c) => row[c.key] ?? ''))
 
         const ws = utils.aoa_to_sheet([headers, ...rows])
         const wb = utils.book_new()
@@ -63,7 +66,7 @@ export function ExportButton({ data, columns, fileName, disabled }: ExportButton
         setLoading(false)
       }
     },
-    [data, columns, fileName],
+    [data, columns, fileName, fetchAll],
   )
 
   return (

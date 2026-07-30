@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { SlidersHorizontal, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin-server'
 import { bulkTagUsers } from '@/api/admin-users'
@@ -441,6 +441,7 @@ export function UserManagementPage() {
         email: user.email,
         isActive: user.isActive ? '啟用' : '停用',
         userSource: user.userSource,
+        tags: Array.isArray(user.tags) ? user.tags.map((t) => t.name).join(', ') : '',
         registrationFlow: getRegistrationFlowLabel(user.registrationFlow ?? null),
         creationMethod: getCreationMethodLabel(user.creationMethod ?? null),
         personaType: user.personaType
@@ -450,10 +451,93 @@ export function UserManagementPage() {
         daysToComplete: getDaysToCompleteLabel(user.daysToComplete ?? null),
         lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-',
         lastActiveAt: user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleString('zh-TW') : '-',
+        customId: user.customId ?? '',
       })),
     [users],
   )
   const pagination = usersData?.pagination
+
+  const fetchAllUsers = useCallback(async () => {
+    const allItems: typeof users = []
+    let currentPage = 1
+    const perPage = 100
+    let hasMore = true
+
+    while (hasMore) {
+      const response = await listAdminUsers({
+        search: search || undefined,
+        page: currentPage,
+        limit: perPage,
+        isActive: statusFilter === '' ? undefined : statusFilter === 'true',
+        roleId: roleIdFilter ? Number(roleIdFilter) : undefined,
+        personaType: (personaFilter as PersonaType) || undefined,
+        badgeGranted: badgeFilter === '' ? undefined : badgeFilter === 'true',
+        userSource: (sourceFilter as 'S1' | 'S2' | 'S3') || undefined,
+        registrationFlow:
+          (registrationFlowFilter as 'landing_page' | 'quiz' | 'action_maker') || undefined,
+        creationMethod:
+          (creationMethodFilter as 'self_created' | 'copied' | 'action_generator') || undefined,
+        lastLoginFrom: lastLoginFrom || undefined,
+        lastLoginTo: lastLoginTo || undefined,
+        lastLoginPresence: lastLoginPresenceFilter === 'all' ? undefined : lastLoginPresenceFilter,
+        lastActivityFrom: lastActivityFrom || undefined,
+        lastActivityTo: lastActivityTo || undefined,
+        lastActivityPresence:
+          lastActivityPresenceFilter === 'all' ? undefined : lastActivityPresenceFilter,
+        createdFrom: createdFrom || undefined,
+        createdTo: createdTo || undefined,
+        sortBy: sortField,
+        sortOrder,
+      }).then((r) => r.data)
+
+      const items = (Array.isArray(response?.data) ? response.data : []).map((user) => ({
+        ...user,
+        roles: Array.isArray(user.roles) ? user.roles : [],
+      }))
+      allItems.push(...items)
+
+      hasMore = response?.pagination?.hasNext ?? false
+      currentPage++
+    }
+
+    return allItems.map((user) => ({
+      internalId: user.internalId,
+      name: user.name,
+      email: user.email,
+      isActive: user.isActive ? '啟用' : '停用',
+      userSource: user.userSource,
+      tags: Array.isArray(user.tags) ? user.tags.map((t) => t.name).join(', ') : '',
+      registrationFlow: getRegistrationFlowLabel(user.registrationFlow ?? null),
+      creationMethod: getCreationMethodLabel(user.creationMethod ?? null),
+      personaType: user.personaType
+        ? `${user.personaType} ${PERSONA_LABELS[user.personaType as PersonaType]}`
+        : '未測驗',
+      badgeGranted: getBadgeLabel(user),
+      daysToComplete: getDaysToCompleteLabel(user.daysToComplete ?? null),
+      lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-',
+      lastActiveAt: user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleString('zh-TW') : '-',
+      customId: user.customId ?? '',
+    })) as unknown as Record<string, unknown>[]
+  }, [
+    search,
+    statusFilter,
+    roleIdFilter,
+    personaFilter,
+    badgeFilter,
+    sourceFilter,
+    registrationFlowFilter,
+    creationMethodFilter,
+    lastLoginFrom,
+    lastLoginTo,
+    lastLoginPresenceFilter,
+    lastActivityFrom,
+    lastActivityTo,
+    lastActivityPresenceFilter,
+    createdFrom,
+    createdTo,
+    sortField,
+    sortOrder,
+  ])
 
   const { data: rolesData } = useQuery({
     queryKey: ['roles'],
@@ -723,6 +807,7 @@ export function UserManagementPage() {
         <ExportButton
           data={exportData as unknown as Record<string, unknown>[]}
           fileName="user-management"
+          fetchAll={fetchAllUsers}
           columns={[
             { key: 'name', header: '名稱' },
             { key: 'email', header: 'Email' },
