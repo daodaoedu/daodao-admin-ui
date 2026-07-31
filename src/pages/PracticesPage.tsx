@@ -17,7 +17,7 @@ import {
   X,
   Zap,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { listPractices, updatePracticeStatus } from '@/api/admin-users'
@@ -752,11 +752,65 @@ export function PracticesPage() {
     privacy: getPrivacyLabel(p.privacyStatus),
     creator: p.user.name,
     createdAt: formatDate(p.createdAt),
+    durationDays: p.durationDays != null ? `${p.durationDays} 天` : '—',
     participants: p.checkInCount,
     views: p.stats.viewCount,
     likes: p.stats.likeCount,
     comments: p.stats.commentCount,
   }))
+
+  const fetchAllPractices = useCallback(async () => {
+    const MAX_PAGES = 200
+    const allItems: PracticeEntity[] = []
+    let page = 1
+    const perPage = 100
+    let hasMore = true
+
+    while (hasMore && page <= MAX_PAGES) {
+      const response = await listPractices({
+        page,
+        limit: perPage,
+        query: search || undefined,
+        status: statusFilter,
+        privacyStatus: privacyFilter === 'all' ? undefined : privacyFilter,
+        durationDays: durationFilter !== 'all' ? Number(durationFilter) : undefined,
+        tagId: tagFilter !== 'all' ? Number(tagFilter) : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        sort,
+        order,
+      }).then((r) => r.data)
+
+      const items = response?.data ?? []
+      allItems.push(...items)
+
+      hasMore = response?.pagination?.hasNext ?? false
+      page++
+    }
+
+    return allItems.map((p) => ({
+      title: p.title,
+      status: statusConfig[p.status].label,
+      privacy: getPrivacyLabel(p.privacyStatus),
+      creator: p.user.name,
+      createdAt: formatDate(p.createdAt),
+      durationDays: p.durationDays != null ? `${p.durationDays} 天` : '—',
+      participants: p.checkInCount,
+      views: p.stats.viewCount,
+      likes: p.stats.likeCount,
+      comments: p.stats.commentCount,
+    })) as unknown as Record<string, unknown>[]
+  }, [
+    search,
+    statusFilter,
+    privacyFilter,
+    durationFilter,
+    tagFilter,
+    startDate,
+    endDate,
+    sort,
+    order,
+  ])
 
   const completionRateDisplay =
     practiceStats?.averageCompletionRate !== undefined
@@ -774,7 +828,14 @@ export function PracticesPage() {
       <PageHeader
         title="主題實踐管理"
         description="管理島島各主題下的實踐任務，設定完成條件與對應積分。"
-        actions={<ExportButton data={exportData} columns={exportColumns} fileName="practices" />}
+        actions={
+          <ExportButton
+            data={exportData}
+            columns={exportColumns}
+            fileName="practices"
+            fetchAll={fetchAllPractices}
+          />
+        }
       />
 
       {/* ── Section 1: 概覽 ── */}
