@@ -62,6 +62,9 @@ export function ExportButton({ data, columns, fileName, disabled, fetchAll }: Ex
         } else {
           writeFile(wb, `${name}.xlsx`, { bookType: 'xlsx' })
         }
+      } catch (error) {
+        console.error('Export failed:', error)
+        alert('匯出失敗，請稍後再試')
       } finally {
         setLoading(false)
       }

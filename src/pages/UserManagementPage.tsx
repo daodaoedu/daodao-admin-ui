@@ -458,12 +458,13 @@ export function UserManagementPage() {
   const pagination = usersData?.pagination
 
   const fetchAllUsers = useCallback(async () => {
+    const MAX_PAGES = 200
     const allItems: typeof users = []
     let currentPage = 1
     const perPage = 100
     let hasMore = true
 
-    while (hasMore) {
+    while (hasMore && currentPage <= MAX_PAGES) {
       const response = await listAdminUsers({
         search: search || undefined,
         page: currentPage,

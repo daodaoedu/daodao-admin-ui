@@ -760,12 +760,13 @@ export function PracticesPage() {
   }))
 
   const fetchAllPractices = useCallback(async () => {
+    const MAX_PAGES = 200
     const allItems: PracticeEntity[] = []
     let page = 1
     const perPage = 100
     let hasMore = true
 
-    while (hasMore) {
+    while (hasMore && page <= MAX_PAGES) {
       const response = await listPractices({
         page,
         limit: perPage,
