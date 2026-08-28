@@ -42,6 +42,12 @@ const OrganizationManagementPage = lazy(() =>
     default: m.OrganizationManagementPage,
   })),
 )
+const GroupChallengesPage = lazy(() =>
+  import('@/pages/GroupChallengesPage').then((m) => ({ default: m.GroupChallengesPage })),
+)
+const InspirationDecksPage = lazy(() =>
+  import('@/pages/InspirationDecksPage').then((m) => ({ default: m.InspirationDecksPage })),
+)
 
 // New pages (Phase 1+)
 const UserAnalyticsPage = lazy(() =>
@@ -500,6 +506,24 @@ export function App() {
             element={
               <LazyPage>
                 <LeaderboardsPage />
+              </LazyPage>
+            }
+          />
+
+          {/* 共同挑戰 */}
+          <Route
+            path="/group-challenges"
+            element={
+              <LazyPage>
+                <GroupChallengesPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/inspiration-decks"
+            element={
+              <LazyPage>
+                <InspirationDecksPage />
               </LazyPage>
             }
           />

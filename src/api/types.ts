@@ -1093,3 +1093,132 @@ export interface AdminPersonaTranslationUpsert {
   prompt: string
   options?: string[] | null
 }
+
+// ── Group Challenge（共同挑戰管理，daodao-server /api/v1/admin/challenges）──────
+export type ChallengeRunStatus = 'upcoming' | 'ongoing' | 'ended'
+export type ChallengeEditStatus = 'draft' | 'published' | 'archived'
+
+export interface ChallengeProgram {
+  id: number
+  organizationId: number
+  organizationName: string
+  name: string
+  description: string | null
+  cohortCount: number
+  publishedCohortCount: number
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface ChallengeProgramCreate {
+  organizationId: number
+  name: string
+  description?: string | null
+}
+
+export interface ChallengeProgramUpdate {
+  name?: string
+  description?: string | null
+}
+
+export interface ChallengeCohort {
+  id: number
+  programId: number
+  slug: string
+  displayName: string
+  startDate: string
+  endDate: string
+  joinDeadline: string | null
+  capacity: number | null
+  status: ChallengeEditStatus
+  runStatus: ChallengeRunStatus
+  participantCount: number
+  template: { id: number; title: string; durationDays: number | null } | null
+  decks: Array<{ id: number; name: string }>
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface ChallengeCohortCreate {
+  displayName: string
+  startDate: string
+  endDate?: string
+  joinDeadline?: string | null
+  capacity?: number | null
+  templateId?: number | null
+}
+
+export type ChallengeCohortUpdate = Partial<ChallengeCohortCreate>
+
+export interface ChallengeParticipant {
+  enrollmentId: number
+  userId: number
+  nickname: string | null
+  joinedAt: string | null
+  practiceId: string | null
+  checkinCount: number
+}
+
+export type PracticeTimePeriod = 'morning' | 'afternoon' | 'evening' | 'night' | 'commute'
+
+export interface ChallengeTemplate {
+  id: number
+  externalId: string
+  organizationId: number
+  title: string
+  practiceAction: string | null
+  durationDays: number | null
+  frequencyMinDays: number | null
+  frequencyMaxDays: number | null
+  sessionDurationMinutes: number | null
+  practiceTimePeriods: PracticeTimePeriod[]
+  boundCohortIds: number[]
+  bindings: Array<{ cohortId: number; startDate: string | null }>
+  resources: Array<{ id: string; name: string; url: string | null; dayNumber: number | null }>
+  generatedDraftCount: number
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export interface ChallengeTemplateCreate {
+  organizationId: number
+  title: string
+  practiceAction?: string | null
+  durationDays?: 7 | 14 | 21 | 30 | null
+  frequencyMinDays?: number | null
+  frequencyMaxDays?: number | null
+  sessionDurationMinutes?: 15 | 30 | 45 | 60 | null
+  practiceTimePeriods?: PracticeTimePeriod[]
+}
+
+export type ChallengeTemplateUpdate = Partial<Omit<ChallengeTemplateCreate, 'organizationId'>>
+
+// ── Inspiration Decks（靈感卡卡組，daodao-server /api/v1/admin/inspiration-decks）──
+export interface InspirationDeckSummary {
+  id: number
+  name: string
+  cardCount: number
+  assignments: Array<{ cohortId: number; cohortName: string }>
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface InspirationDeckCard {
+  id: number
+  content: string
+  sortOrder: number
+}
+
+export interface InspirationDeckDetail extends InspirationDeckSummary {
+  cards: InspirationDeckCard[]
+}
+
+export interface InspirationDeckCreate {
+  name: string
+  cards?: string[]
+}
+
+export interface InspirationImportResult {
+  imported: number
+  errors: Array<{ row: number; reason: string }>
+}

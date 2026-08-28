@@ -13,8 +13,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      // 本地 daodao-server 若跑在別的 port（多 worktree 並行時），用 SERVER_DEV_URL 覆寫
       '/daodao-server': {
-        target: 'http://localhost:4000',
+        target: process.env.SERVER_DEV_URL ?? 'http://localhost:4000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/daodao-server/, ''),
       },
