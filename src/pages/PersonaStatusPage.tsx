@@ -6,8 +6,10 @@ import {
   Brain,
   CheckCircle2,
   Eye,
+  MessageSquare,
   PieChart,
   Search,
+  TrendingUp,
   Users,
   X,
 } from 'lucide-react'
@@ -52,7 +54,13 @@ const QUESTION_TYPE_LABEL: Record<string, string> = {
   scenario: '情境題',
 }
 
-type PersonaQuestionRow = { id: number; prompt: string; answerCount: number }
+type PersonaQuestionRow = {
+  id: number
+  prompt: string
+  answerCount: number
+  viewCount: number
+  viewerCount: number
+}
 
 type DatePreset = '1' | '7' | '30'
 
@@ -91,6 +99,17 @@ export function PersonaStatusPage() {
   const totalAnsweredUsers = persona?.usersAnswered ?? 0
   const totalAnswers = persona?.totalAnswers ?? 0
   const unlockedUsers = personaAnalytics?.unlockedCount ?? 0
+  const totalViews = persona?.totalViews ?? 0
+  const uniqueViewers = persona?.uniqueViewers ?? 0
+  const viewToAnswerRate = totalViews > 0 ? Math.round((totalAnswers / totalViews) * 100) : 0
+  const viewedNoAnswerQuestions = useMemo(
+    () => personaQuestionRows.filter((q) => q.viewCount > 0 && q.answerCount === 0).length,
+    [personaQuestionRows],
+  )
+  const zeroViewQuestions = useMemo(
+    () => personaQuestionRows.filter((q) => q.viewCount === 0).length,
+    [personaQuestionRows],
+  )
   const unansweredQuestions = useMemo(
     () => personaQuestionRows.filter((q) => q.answerCount === 0).length,
     [personaQuestionRows],
@@ -178,7 +197,7 @@ export function PersonaStatusPage() {
                   <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                   題目管理：題目設計與題庫質量
                 </div>
-                包含題目總數、未回覆題目、熱門題、逐題回答人次。
+                包含題目總數、未回覆題目、熱門題、逐題觀看數與回答人次。
               </div>
               <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                 <div className="mb-1 flex items-center gap-1.5 text-[11px] text-foreground">
@@ -198,7 +217,7 @@ export function PersonaStatusPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                 <span className="mr-1 font-medium text-foreground">題目管理：</span>
-                以題目數量、每題回答人次與熱門題目熱度檢查題庫完整性與品質。
+                以題目數量、每題觀看數／回答人次與觀看→回答轉換率檢查題庫完整性與品質。
               </div>
               <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                 <span className="mr-1 font-medium text-foreground">填寫統計：</span>
@@ -207,14 +226,24 @@ export function PersonaStatusPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <StatCard title="題目總數" value={persona?.totalQuestions ?? 0} icon={Brain} />
+            <StatCard title="題目觀看數" value={totalViews} icon={Eye} />
+            <StatCard title="觀看用戶" value={`${uniqueViewers} 人`} icon={Users} />
+            <StatCard title="觀看→回答轉換率" value={`${viewToAnswerRate}%`} icon={TrendingUp} />
             <StatCard title="有回答用戶" value={totalAnsweredUsers} icon={Users} />
-            <StatCard title="總回答數" value={totalAnswers} icon={Eye} />
+            <StatCard title="總回答數" value={totalAnswers} icon={MessageSquare} />
             <StatCard title="有回答率" value={`${anyAnswerRate}%`} icon={PieChart} />
             <StatCard title="平均回答題數" value={avgAnswerCountText} icon={BarChart3} />
             <StatCard title="已解鎖" value={`${unlockedUsers} 人`} icon={Users} />
           </div>
+
+          {totalViews === 0 && (
+            <p className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 px-4 py-3 text-xs text-muted-foreground">
+              此期間尚無觀看紀錄。觀看數自題目瀏覽追蹤上線後開始累計，同一用戶對同一題 24
+              小時內只計一次；若剛上線請改看較短的時間區間或稍後再查。
+            </p>
+          )}
 
           <div className="grid gap-3 lg:grid-cols-2">
             <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-4 shadow-sm">
@@ -233,8 +262,16 @@ export function PersonaStatusPage() {
                   <span className="font-medium text-foreground">{topQuestionCoverage}</span> 題（
                   {topQuestionCoverageRate}%）
                 </li>
+                <li>
+                  有曝光但零回答：
+                  <span className="font-medium text-foreground">{viewedNoAnswerQuestions}</span> 題
+                </li>
+                <li>
+                  零曝光題目：
+                  <span className="font-medium text-foreground">{zeroViewQuestions}</span> 題
+                </li>
                 <li className="text-[11px] text-muted-foreground/80">
-                  判讀方式：未回覆題目比例高時，優先檢查題幹、選項可理解度、排序與曝光位置。
+                  判讀方式：有曝光但零回答代表題目本身有問題（題幹難懂、選項不合用）；零曝光代表沒被看到，要調整排序與曝光位置。
                 </li>
               </ul>
             </div>
@@ -420,7 +457,9 @@ function QuestionsTable({
         <TableRow>
           <TableHead className="py-1.5 px-2">Q#</TableHead>
           <TableHead className="py-1.5 px-2">題目</TableHead>
-          <TableHead className="py-1.5 px-2 text-right">回答人次</TableHead>
+          <TableHead className="w-20 py-1.5 px-2 text-right">觀看數</TableHead>
+          <TableHead className="w-20 py-1.5 px-2 text-right">回答人次</TableHead>
+          <TableHead className="w-16 py-1.5 px-2 text-right">轉換率</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -437,7 +476,13 @@ function QuestionsTable({
               </span>
             </TableCell>
             <TableCell className="py-1.5 px-2 text-right tabular-nums text-muted-foreground">
+              {q.viewCount}
+            </TableCell>
+            <TableCell className="py-1.5 px-2 text-right tabular-nums text-muted-foreground">
               {q.answerCount} 人
+            </TableCell>
+            <TableCell className="py-1.5 px-2 text-right tabular-nums text-muted-foreground">
+              {q.viewCount > 0 ? `${Math.round((q.answerCount / q.viewCount) * 100)}%` : '—'}
             </TableCell>
           </TableRow>
         ))}
