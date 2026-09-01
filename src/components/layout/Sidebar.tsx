@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Cpu,
   FileText,
+  Flag,
   Folder,
   HelpCircle,
   Inbox,
@@ -25,6 +26,7 @@ import {
   Monitor,
   Settings,
   Shield,
+  Sparkles,
   Target,
   TrendingUp,
   Trophy,
@@ -83,6 +85,13 @@ const navGroups: NavGroup[] = [
       { to: '/content-performance', label: '內容分析', icon: TrendingUp },
       { to: '/practices', label: '主題實踐', icon: Target },
       { to: '/feed-ranking', label: 'Feed 演算法', icon: Settings },
+    ],
+  },
+  {
+    title: '共同挑戰',
+    items: [
+      { to: '/group-challenges', label: '挑戰管理', icon: Flag },
+      { to: '/inspiration-decks', label: '靈感卡卡組', icon: Sparkles },
     ],
   },
   {
