@@ -336,6 +336,12 @@ function TemplateFormDialog({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+    const freqMin = form.frequencyMinDays ? Number(form.frequencyMinDays) : null
+    const freqMax = form.frequencyMaxDays ? Number(form.frequencyMaxDays) : null
+    if (freqMin !== null && freqMax !== null && freqMin > freqMax) {
+      setError('每週最少天數不可大於每週最多天數')
+      return
+    }
     const payload: Omit<ChallengeTemplateCreate, 'organizationId'> = {
       title: form.title.trim(),
       practiceAction: form.practiceAction.trim() || null,
@@ -345,8 +351,8 @@ function TemplateFormDialog({
       sessionDurationMinutes: form.sessionDurationMinutes
         ? (Number(form.sessionDurationMinutes) as ChallengeTemplateCreate['sessionDurationMinutes'])
         : null,
-      frequencyMinDays: form.frequencyMinDays ? Number(form.frequencyMinDays) : null,
-      frequencyMaxDays: form.frequencyMaxDays ? Number(form.frequencyMaxDays) : null,
+      frequencyMinDays: freqMin,
+      frequencyMaxDays: freqMax,
       practiceTimePeriods: form.practiceTimePeriods,
     }
     try {
@@ -914,7 +920,7 @@ function CohortPanel({
     ? (cohorts?.find((cohort) => cohort.id === deckTarget.id) ?? deckTarget)
     : null
 
-  async function run(action: Promise<unknown>, fallback: string) {
+  async function runAction(action: Promise<unknown>, fallback: string) {
     setActionError(null)
     try {
       await action
@@ -936,7 +942,7 @@ function CohortPanel({
     } else if (!window.confirm(`確定要${verb}「${cohort.displayName}」？`)) {
       return
     }
-    run(
+    runAction(
       statusMutation.mutateAsync({ programId: program.id, cohortId: cohort.id, status: next }),
       `${verb}失敗`,
     )
@@ -949,11 +955,17 @@ function CohortPanel({
       )
     )
       return
-    run(archiveMutation.mutateAsync({ programId: program.id, cohortId: cohort.id }), '封存失敗')
+    runAction(
+      archiveMutation.mutateAsync({ programId: program.id, cohortId: cohort.id }),
+      '封存失敗',
+    )
   }
 
   function duplicate(cohort: ChallengeCohort) {
-    run(duplicateMutation.mutateAsync({ programId: program.id, cohortId: cohort.id }), '複製失敗')
+    runAction(
+      duplicateMutation.mutateAsync({ programId: program.id, cohortId: cohort.id }),
+      '複製失敗',
+    )
   }
 
   return (
@@ -1360,6 +1372,7 @@ export function GroupChallengesPage() {
           <div className="flex gap-2">
             <Select
               id="challenge-organization-filter"
+              aria-label="篩選組織"
               value={organizationFilter}
               onValueChange={setOrganizationFilter}
               options={organizationOptions}

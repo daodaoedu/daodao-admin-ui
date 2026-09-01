@@ -26,7 +26,7 @@ import type {
   ChallengeTemplateUpdate,
 } from '@/api/types'
 
-const KEY = ['admin', 'group-challenges'] as const
+export const KEY = ['admin', 'group-challenges'] as const
 const programsKey = (organizationId?: number) => [...KEY, 'programs', organizationId ?? 'all']
 const cohortsKey = (programId: number | null) => [...KEY, 'cohorts', programId]
 const templatesKey = (organizationId: number | null) => [...KEY, 'templates', organizationId]

@@ -27,7 +27,7 @@ export const updateChallengeProgram = (programId: number, data: ChallengeProgram
   apiClient.patch<ApiResponse<ChallengeProgram>>(`${BASE_PATH}/programs/${programId}`, data)
 
 export const archiveChallengeProgram = (programId: number) =>
-  apiClient.delete(`${BASE_PATH}/programs/${programId}`)
+  apiClient.delete<ApiResponse<{ deleted: boolean }>>(`${BASE_PATH}/programs/${programId}`)
 
 export const duplicateChallengeProgram = (programId: number) =>
   apiClient.post<ApiResponse<ChallengeProgram>>(`${BASE_PATH}/programs/${programId}/duplicate`)
@@ -61,7 +61,9 @@ export const setChallengeCohortStatus = (
   )
 
 export const archiveChallengeCohort = (programId: number, cohortId: number) =>
-  apiClient.delete(`${BASE_PATH}/programs/${programId}/cohorts/${cohortId}`)
+  apiClient.delete<ApiResponse<{ deleted: boolean }>>(
+    `${BASE_PATH}/programs/${programId}/cohorts/${cohortId}`,
+  )
 
 export const duplicateChallengeCohort = (programId: number, cohortId: number) =>
   apiClient.post<ApiResponse<ChallengeCohort>>(
@@ -87,4 +89,4 @@ export const updateChallengeTemplate = (templateId: number, data: ChallengeTempl
   apiClient.patch<ApiResponse<ChallengeTemplate>>(`${BASE_PATH}/templates/${templateId}`, data)
 
 export const deleteChallengeTemplate = (templateId: number) =>
-  apiClient.delete(`${BASE_PATH}/templates/${templateId}`)
+  apiClient.delete<ApiResponse<{ deleted: boolean }>>(`${BASE_PATH}/templates/${templateId}`)

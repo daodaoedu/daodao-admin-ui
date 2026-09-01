@@ -14,9 +14,9 @@ import {
   updateInspirationCard,
 } from '@/api/admin-inspiration'
 import type { InspirationDeckCreate } from '@/api/types'
+import { KEY as CHALLENGE_KEY } from '@/hooks/useGroupChallenges'
 
 const KEY = ['admin', 'inspiration-decks'] as const
-const CHALLENGE_KEY = ['admin', 'group-challenges'] as const
 
 export function useInspirationDecks() {
   return useQuery({
@@ -33,13 +33,16 @@ export function useInspirationDeck(deckId: number | null) {
   })
 }
 
+function useInvalidateCards() {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: KEY })
+}
+
 function useInvalidateDecks() {
   const queryClient = useQueryClient()
-  // 回傳 promise 讓 mutateAsync 等 refetch 完成，呼叫端選取新建項目時清單已是最新
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: KEY }),
-      // 指派狀態也顯示在挑戰管理頁
       queryClient.invalidateQueries({ queryKey: [...CHALLENGE_KEY, 'cohorts'] }),
     ])
 }
@@ -53,7 +56,7 @@ export function useCreateInspirationDeck() {
 }
 
 export function useRenameInspirationDeck() {
-  const invalidate = useInvalidateDecks()
+  const invalidate = useInvalidateCards()
   return useMutation({
     mutationFn: ({ deckId, name }: { deckId: number; name: string }) =>
       renameInspirationDeck(deckId, name),
@@ -78,7 +81,7 @@ export function useDuplicateInspirationDeck() {
 }
 
 export function useAddInspirationCard() {
-  const invalidate = useInvalidateDecks()
+  const invalidate = useInvalidateCards()
   return useMutation({
     mutationFn: ({ deckId, content }: { deckId: number; content: string }) =>
       addInspirationCard(deckId, content),
@@ -87,7 +90,7 @@ export function useAddInspirationCard() {
 }
 
 export function useUpdateInspirationCard() {
-  const invalidate = useInvalidateDecks()
+  const invalidate = useInvalidateCards()
   return useMutation({
     mutationFn: ({
       deckId,
@@ -103,7 +106,7 @@ export function useUpdateInspirationCard() {
 }
 
 export function useDeleteInspirationCard() {
-  const invalidate = useInvalidateDecks()
+  const invalidate = useInvalidateCards()
   return useMutation({
     mutationFn: ({ deckId, cardId }: { deckId: number; cardId: number }) =>
       deleteInspirationCard(deckId, cardId),
@@ -112,7 +115,7 @@ export function useDeleteInspirationCard() {
 }
 
 export function useImportInspirationCards() {
-  const invalidate = useInvalidateDecks()
+  const invalidate = useInvalidateCards()
   return useMutation({
     mutationFn: ({ deckId, file }: { deckId: number; file: File }) =>
       importInspirationCards(deckId, file).then((r) => r.data.data),

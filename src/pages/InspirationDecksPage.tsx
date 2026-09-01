@@ -209,9 +209,14 @@ function CardRow({
     }
   }
 
-  function remove() {
+  async function remove() {
     if (!window.confirm(`確定刪除卡片「${card.content}」？`)) return
-    deleteMutation.mutate({ deckId, cardId: card.id })
+    setError(null)
+    try {
+      await deleteMutation.mutateAsync({ deckId, cardId: card.id })
+    } catch (err) {
+      setError(errorMessage(err, '刪除失敗'))
+    }
   }
 
   return (
@@ -223,7 +228,6 @@ function CardRow({
         {editing ? (
           <div className="flex gap-2">
             <Input
-              // biome-ignore lint/a11y/noAutofocus: 就地編輯，使用者剛點了編輯鈕
               autoFocus
               value={content}
               maxLength={CARD_MAX_LENGTH}
@@ -308,13 +312,6 @@ function DeckDetail({ deckId }: { deckId: number }) {
   const [error, setError] = useState<string | null>(null)
   const [importResult, setImportResult] = useState<InspirationImportResult | null>(null)
 
-  useEffect(() => {
-    setNewCard('')
-    setRenaming(false)
-    setError(null)
-    setImportResult(null)
-  }, [])
-
   async function addCard(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const value = newCard.trim()
@@ -353,9 +350,14 @@ function DeckDetail({ deckId }: { deckId: number }) {
     }
   }
 
-  function unassign(cohortId: number, cohortName: string) {
+  async function unassign(cohortId: number, cohortName: string) {
     if (!window.confirm(`確定解除對「${cohortName}」的指派？該挑戰卡片將不再顯示抽卡入口。`)) return
-    assignMutation.mutate({ deckId, cohortId, assign: false })
+    setError(null)
+    try {
+      await assignMutation.mutateAsync({ deckId, cohortId, assign: false })
+    } catch (err) {
+      setError(errorMessage(err, '解除指派失敗'))
+    }
   }
 
   if (isLoading) {

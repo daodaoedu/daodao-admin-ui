@@ -1,6 +1,7 @@
 import apiClient from '@/api/client'
 import type {
   ApiResponse,
+  InspirationDeckCard,
   InspirationDeckCreate,
   InspirationDeckDetail,
   InspirationDeckSummary,
@@ -21,19 +22,22 @@ export const createInspirationDeck = (data: InspirationDeckCreate) =>
 export const renameInspirationDeck = (deckId: number, name: string) =>
   apiClient.put<ApiResponse<InspirationDeckDetail>>(`${BASE_PATH}/${deckId}`, { name })
 
-export const deleteInspirationDeck = (deckId: number) => apiClient.delete(`${BASE_PATH}/${deckId}`)
+export const deleteInspirationDeck = (deckId: number) =>
+  apiClient.delete<ApiResponse<{ deleted: boolean }>>(`${BASE_PATH}/${deckId}`)
 
 export const duplicateInspirationDeck = (deckId: number) =>
   apiClient.post<ApiResponse<InspirationDeckDetail>>(`${BASE_PATH}/${deckId}/duplicate`)
 
 export const addInspirationCard = (deckId: number, content: string) =>
-  apiClient.post(`${BASE_PATH}/${deckId}/cards`, { content })
+  apiClient.post<ApiResponse<InspirationDeckCard>>(`${BASE_PATH}/${deckId}/cards`, { content })
 
 export const updateInspirationCard = (deckId: number, cardId: number, content: string) =>
-  apiClient.put(`${BASE_PATH}/${deckId}/cards/${cardId}`, { content })
+  apiClient.put<ApiResponse<InspirationDeckCard>>(`${BASE_PATH}/${deckId}/cards/${cardId}`, {
+    content,
+  })
 
 export const deleteInspirationCard = (deckId: number, cardId: number) =>
-  apiClient.delete(`${BASE_PATH}/${deckId}/cards/${cardId}`)
+  apiClient.delete<ApiResponse<{ deleted: boolean }>>(`${BASE_PATH}/${deckId}/cards/${cardId}`)
 
 export const importInspirationCards = (deckId: number, file: File) => {
   const data = new FormData()
@@ -48,7 +52,7 @@ export const importInspirationCards = (deckId: number, file: File) => {
 }
 
 export const assignInspirationDeck = (deckId: number, cohortId: number) =>
-  apiClient.post(`${BASE_PATH}/${deckId}/assign`, { cohortId })
+  apiClient.post<ApiResponse<null>>(`${BASE_PATH}/${deckId}/assign`, { cohortId })
 
 export const unassignInspirationDeck = (deckId: number, cohortId: number) =>
-  apiClient.post(`${BASE_PATH}/${deckId}/unassign`, { cohortId })
+  apiClient.post<ApiResponse<null>>(`${BASE_PATH}/${deckId}/unassign`, { cohortId })
