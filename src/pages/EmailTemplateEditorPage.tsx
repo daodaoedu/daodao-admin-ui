@@ -1,12 +1,12 @@
-import { html } from '@codemirror/lang-html'
-import { oneDark } from '@codemirror/theme-one-dark'
-import CodeMirror from '@uiw/react-codemirror'
-import { ArrowLeft, Loader2, Monitor, Save, Search, Smartphone } from 'lucide-react'
+import { ArrowLeft, Loader2, Monitor, Power, Save, Smartphone } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { listAdminUsers } from '@/api/admin'
-import type { AdminUserListItem, EmailTemplateUpdate } from '@/api/types'
-import { useEmailTemplate, useUpdateEmailTemplate } from '@/hooks/useEmailTemplates'
+import type { EmailTemplateUpdate } from '@/api/types'
+import {
+  AVAILABLE_EMAIL_VARIABLES,
+  useEmailTemplate,
+  useUpdateEmailTemplate,
+} from '@/hooks/useEmailTemplates'
 import { detectVariables, renderEmailPreview } from '@/lib/email-preview'
 
 type PreviewMode = 'desktop' | 'mobile'
@@ -23,12 +23,10 @@ export default function EmailTemplateEditorPage() {
   const [subject, setSubject] = useState('')
   const [preheader, setPreheader] = useState('')
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
-  const [variables, setVariables] = useState<Record<string, string>>({})
   const [dataSource, setDataSource] = useState<'user' | 'practice' | 'event' | 'none'>('none')
-  const [userSearch, setUserSearch] = useState('')
-  const [userResults, setUserResults] = useState<AdminUserListItem[]>([])
-  const [isSearching, setIsSearching] = useState(false)
+  const [variableSearch, setVariableSearch] = useState('')
   const [savedOk, setSavedOk] = useState(false)
+  const [isActive, setIsActive] = useState(true)
 
   // Initialise from fetched template
   useEffect(() => {
@@ -37,16 +35,22 @@ export default function EmailTemplateEditorPage() {
     setSubject(template.subject)
     setPreheader(template.preheader ?? '')
     setDataSource(template.dataSource)
+    setIsActive(template.isActive)
   }, [template])
 
   // Auto-detect variables when content changes
   const detectedVars = detectVariables(content)
+  const variableQuery = variableSearch.trim().toLowerCase()
+  const variableSearchResults = variableQuery
+    ? AVAILABLE_EMAIL_VARIABLES.filter((variable) => variable.toLowerCase().includes(variableQuery))
+    : []
 
   const isFullHtml =
     content.trimStart().startsWith('<!DOCTYPE') || content.trimStart().startsWith('<html')
   const previewHtml = isFullHtml
-    ? content.replace(/\{\{(\w+)\}\}/g, (_, key: string) => variables[key] ?? `{{${key}}}`)
-    : renderEmailPreview({ title: subject, preheader, content, variables })
+    ? content
+    : renderEmailPreview({ title: subject, preheader, content })
+  const previewSrc = `data:text/html;charset=utf-8,${encodeURIComponent(previewHtml)}`
 
   const handleSave = useCallback(() => {
     if (!templateId) return
@@ -56,6 +60,7 @@ export default function EmailTemplateEditorPage() {
       preheader: preheader || undefined,
       variables: detectedVars,
       dataSource,
+      isActive,
     }
     updateMutation.mutate(
       { id: templateId, data },
@@ -66,32 +71,22 @@ export default function EmailTemplateEditorPage() {
         },
       },
     )
-  }, [templateId, content, subject, preheader, detectedVars, dataSource, updateMutation])
+  }, [templateId, content, subject, preheader, detectedVars, dataSource, isActive, updateMutation])
 
-  async function handleUserSearch() {
-    if (!userSearch.trim()) return
-    setIsSearching(true)
-    try {
-      const res = await listAdminUsers({ search: userSearch, limit: 5 })
-      setUserResults(res.data.data ?? [])
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
-  function applyUser(user: AdminUserListItem) {
-    const displayName = user.name ?? user.email ?? ''
-    const emailVal = user.email ?? ''
-    setVariables((prev) => ({
-      ...prev,
-      name: displayName,
-      userName: displayName,
-      email: emailVal,
-      recipientName: displayName,
-    }))
-    setUserResults([])
-    setUserSearch('')
-  }
+  const handleToggleSending = useCallback(() => {
+    if (!templateId) return
+    const nextIsActive = !isActive
+    updateMutation.mutate(
+      { id: templateId, data: { isActive: nextIsActive } },
+      {
+        onSuccess: () => {
+          setIsActive(nextIsActive)
+          setSavedOk(true)
+          setTimeout(() => setSavedOk(false), 2000)
+        },
+      },
+    )
+  }, [templateId, isActive, updateMutation])
 
   if (isLoading) {
     return (
@@ -136,6 +131,20 @@ export default function EmailTemplateEditorPage() {
           )}
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleSending}
+            disabled={updateMutation.isPending}
+            className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
+              isActive
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+            }`}
+            title={isActive ? '停用後將不再發送此模板' : '重新啟用此模板的發送'}
+          >
+            <Power className="h-4 w-4" />
+            {isActive ? '停用寄送' : '啟用寄送'}
+          </button>
           {savedOk && <span className="text-sm text-green-600">已儲存</span>}
           <button
             type="button"
@@ -176,111 +185,73 @@ export default function EmailTemplateEditorPage() {
         </div>
       </div>
 
-      {/* Main split pane */}
-      <div className="flex min-h-0 flex-1">
-        {/* Left: editor */}
-        <div className="flex w-1/2 flex-col border-r border-border">
+      {/* Full-width editor followed by the live preview */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+        <div className="flex shrink-0 flex-col border-b border-border">
           <div className="flex shrink-0 items-center justify-between border-b border-border bg-muted/20 px-4 py-2">
             <span className="text-xs font-medium text-muted-foreground">HTML 內容</span>
             <span className="text-xs text-muted-foreground">
               偵測到 {detectedVars.length} 個變數
             </span>
           </div>
-          <div className="min-h-0 flex-1 overflow-auto">
-            <CodeMirror
-              value={content}
-              height="100%"
-              theme={oneDark}
-              extensions={[html()]}
-              onChange={setContent}
-              style={{ fontSize: '13px', height: '100%' }}
-            />
-          </div>
           {/* Variables panel */}
           {detectedVars.length > 0 && (
             <div className="shrink-0 border-t border-border bg-muted/10 p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">預覽變數</span>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={dataSource}
-                    onChange={(e) => setDataSource(e.target.value as typeof dataSource)}
-                    className="rounded border border-border bg-background px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="none">手動輸入</option>
-                    <option value="user">從用戶選取</option>
-                    <option value="practice">從練習選取</option>
-                    <option value="event">從活動選取</option>
-                  </select>
-                </div>
+                <input
+                  type="search"
+                  value={variableSearch}
+                  onChange={(event) => setVariableSearch(event.target.value)}
+                  placeholder="搜尋全站變數"
+                  aria-label="搜尋全站變數"
+                  className="w-36 rounded border border-border bg-background px-2 py-1 text-xs placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
               </div>
 
-              {dataSource === 'user' && (
-                <div className="mb-2 flex gap-2">
-                  <input
-                    type="text"
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleUserSearch()}
-                    placeholder="搜尋用戶（email 或暱稱）"
-                    className="flex-1 rounded border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleUserSearch}
-                    disabled={isSearching}
-                    className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
+              <p className="mb-2 text-xs text-muted-foreground">本模板使用的變數</p>
+              <div className="flex flex-wrap gap-2">
+                {detectedVars.map((variable) => (
+                  <code
+                    key={variable}
+                    className="rounded bg-primary/10 px-2 py-1 font-mono text-xs font-medium text-primary"
                   >
-                    {isSearching ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Search className="h-3 w-3" />
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {userResults.length > 0 && (
-                <div className="mb-2 rounded border border-border bg-background shadow-sm">
-                  {userResults.map((u) => (
-                    <button
-                      key={u.id}
-                      type="button"
-                      onClick={() => applyUser(u)}
-                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-muted"
-                    >
-                      <span className="font-medium">{u.name ?? '—'}</span>
-                      <span className="text-muted-foreground">{u.email}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-1.5">
-                {detectedVars.map((v) => (
-                  <div key={v} className="flex items-center gap-1.5">
-                    <span
-                      className="w-24 shrink-0 truncate text-xs text-muted-foreground"
-                      title={v}
-                    >
-                      {v}
-                    </span>
-                    <input
-                      type="text"
-                      value={variables[v] ?? ''}
-                      onChange={(e) => setVariables((prev) => ({ ...prev, [v]: e.target.value }))}
-                      placeholder={`{{${v}}}`}
-                      className="flex-1 rounded border border-border bg-background px-1.5 py-0.5 text-xs placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
+                    {`{{${variable}}}`}
+                  </code>
                 ))}
               </div>
+              {variableQuery && (
+                <div className="mt-3 rounded-md border border-border bg-background p-2">
+                  <p className="mb-2 text-xs text-muted-foreground">全站可用變數</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {variableSearchResults.map((variable) => (
+                      <code
+                        key={variable}
+                        className="rounded bg-primary/10 px-2 py-1 font-mono text-xs font-medium text-primary"
+                      >
+                        {`{{${variable}}}`}
+                      </code>
+                    ))}
+                    {variableSearchResults.length === 0 && (
+                      <span className="text-xs text-muted-foreground">找不到符合的變數</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
+          <div className="shrink-0 overflow-visible">
+            <textarea
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              aria-label="HTML 內容"
+              spellCheck={false}
+              className="block h-[22rem] min-h-[12rem] w-full resize-y bg-[#1e1e1e] p-4 font-mono text-[13px] leading-6 text-[#d4d4d4] outline-none"
+            />
+          </div>
         </div>
 
-        {/* Right: preview */}
-        <div className="flex w-1/2 flex-col">
+        <div className="flex min-h-[52rem] shrink-0 flex-col">
           <div className="flex shrink-0 items-center justify-between border-b border-border bg-muted/20 px-4 py-2">
             <span className="text-xs font-medium text-muted-foreground">預覽</span>
             <div className="flex items-center gap-1">
@@ -309,7 +280,7 @@ export default function EmailTemplateEditorPage() {
               }`}
             >
               <iframe
-                srcDoc={previewHtml}
+                src={previewSrc}
                 title="email-preview"
                 className="h-[800px] w-full border-0"
                 sandbox="allow-same-origin"

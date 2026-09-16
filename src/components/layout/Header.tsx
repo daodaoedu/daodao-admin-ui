@@ -1,4 +1,4 @@
-import { ChevronRight, Home, LayoutDashboard, LogOut, Search } from 'lucide-react'
+import { ChevronRight, Home, LayoutDashboard, LogOut, PanelLeftOpen, Search } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
@@ -51,7 +51,13 @@ const ROUTE_TITLES: Record<string, string> = {
   '/persona-questions': '人物誌題目管理',
 }
 
-export function Header() {
+export function Header({
+  sidebarHidden,
+  onShowSidebar,
+}: {
+  sidebarHidden: boolean
+  onShowSidebar: () => void
+}) {
   const { adminInfo, logout } = useAuth()
   const location = useLocation()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -69,6 +75,19 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 hidden border-b border-[var(--admin-panel-border)] bg-background/90 px-6 py-4 backdrop-blur md:flex md:h-16 md:items-center md:gap-4">
+      {sidebarHidden && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onShowSidebar}
+          className="hidden lg:inline-flex"
+          title="顯示側邊欄"
+          aria-label="顯示側邊欄"
+        >
+          <PanelLeftOpen className="h-5 w-5" />
+        </Button>
+      )}
       <div className="flex flex-1 items-center">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

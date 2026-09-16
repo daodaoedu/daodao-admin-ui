@@ -177,7 +177,15 @@ export function App() {
     <Routes>
       <Route
         path="/login"
-        element={isLoading ? null : isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+        element={
+          import.meta.env.DEV ? (
+            <Navigate to="/dashboard" replace />
+          ) : isLoading ? null : isAuthenticated ? (
+            <Navigate to="/" replace />
+          ) : (
+            <LoginPage />
+          )
+        }
       />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<ProtectedRoute />}>

@@ -1,4 +1,4 @@
-import { FileText, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { FileText, Loader2, Pencil, Plus, Power, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { EmailTemplate } from '@/api/types'
@@ -17,6 +17,7 @@ import {
   useCreateEmailTemplate,
   useDeleteEmailTemplate,
   useEmailTemplates,
+  useUpdateEmailTemplate,
 } from '@/hooks/useEmailTemplates'
 import { detectVariables } from '@/lib/email-preview'
 
@@ -348,6 +349,7 @@ export function EmailTemplatesPage() {
   const { data: templates, isLoading, isError } = useEmailTemplates()
   const createMutation = useCreateEmailTemplate()
   const deleteMutation = useDeleteEmailTemplate()
+  const updateMutation = useUpdateEmailTemplate()
 
   async function handleCreate(form: TemplateFormData) {
     await createMutation.mutateAsync({
@@ -441,6 +443,23 @@ export function EmailTemplatesPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateMutation.mutate({
+                                id: tpl.id,
+                                data: { isActive: !tpl.isActive },
+                              })
+                            }
+                            disabled={updateMutation.isPending}
+                            className={`inline-flex items-center rounded-md p-1.5 hover:bg-muted disabled:opacity-50 ${
+                              tpl.isActive ? 'text-emerald-700' : 'text-amber-700'
+                            }`}
+                            title={tpl.isActive ? '停用發送' : '啟用發送'}
+                            aria-label={`${tpl.name}${tpl.isActive ? '停用發送' : '啟用發送'}`}
+                          >
+                            <Power className="h-4 w-4" />
+                          </button>
                           <Link
                             to={`/email-templates/${tpl.id}/edit`}
                             className="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"

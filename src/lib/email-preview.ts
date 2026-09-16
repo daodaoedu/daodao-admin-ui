@@ -70,14 +70,11 @@ export function renderEmailPreview(options: PreviewEmailOptions): string {
     ? `<div style="display:none;max-height:0;overflow:hidden;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>`
     : ''
 
-  const banner = `<tr>
-  <td align="center" style="background-color:${EMAIL_COLORS.bgOuter};">
-    <img src="${EMAIL_ASSETS.banner}" alt="島島阿學" width="600" style="display:block;width:100%;max-width:600px;height:auto;">
-  </td>
-</tr>`
+  const banner = `<div style="background-color:${EMAIL_COLORS.bgOuter};">
+  <img src="${EMAIL_ASSETS.banner}" alt="島島阿學" width="600" style="display:block;width:100%;max-width:600px;height:auto;">
+</div>`
 
-  const footer = `<tr>
-  <td style="background-color:${EMAIL_COLORS.bgFooter};padding:24px 40px;border-top:1px solid ${EMAIL_COLORS.divider};">
+  const footer = `<div style="background-color:${EMAIL_COLORS.bgFooter};padding:24px 40px;border-top:1px solid ${EMAIL_COLORS.divider};">
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
       <tr><td align="center" style="padding-bottom:16px;">
         <img src="${EMAIL_ASSETS.logo}" alt="島島阿學" width="120" style="display:block;width:120px;height:auto;">
@@ -94,22 +91,19 @@ export function renderEmailPreview(options: PreviewEmailOptions): string {
         <p style="margin:0;font-size:12px;color:${EMAIL_COLORS.textSecondary};">島島阿學 &copy; ${year}</p>
       </td></tr>
     </table>
-  </td>
-</tr>`
+  </div>`
 
   const body = `<body style="margin:0;padding:0;background-color:${EMAIL_COLORS.bgOuter};font-family:'Noto Sans TC','Microsoft JhengHei',Arial,sans-serif;">
   ${preheaderHtml}
-  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:${EMAIL_COLORS.bgOuter};">
-    <tr><td align="center" style="padding:20px 0;">
-      <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background-color:${EMAIL_COLORS.bgContent};">
-        ${banner}
-        <tr><td class="main-content" style="padding:32px 40px;">
-          ${processedContent}
-        </td></tr>
-        ${footer}
-      </table>
-    </td></tr>
-  </table>
+  <div style="background-color:${EMAIL_COLORS.bgOuter};padding:20px 0;">
+    <div class="wrapper" style="width:600px;max-width:100%;margin:0 auto;background-color:${EMAIL_COLORS.bgContent};">
+      ${banner}
+      <div class="main-content" style="padding:32px 40px;">
+        <div class="email-content">${processedContent}</div>
+      </div>
+      ${footer}
+    </div>
+  </div>
 </body>
 </html>`
 
