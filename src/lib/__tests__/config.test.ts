@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { APP_BASE_URL, SURVEY_PUBLIC_BASE, getPracticePublicUrl } from '@/config'
+import { APP_BASE_URL, getPracticePublicUrl, SURVEY_PUBLIC_BASE } from '@/config'
 
 describe('config', () => {
   it('APP_BASE_URL is a valid https URL without trailing slash', () => {

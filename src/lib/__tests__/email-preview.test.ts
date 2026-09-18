@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { renderEmailPreview, detectVariables } from '../email-preview'
+import { detectVariables, renderEmailPreview } from '../email-preview'
 
 describe('renderEmailPreview', () => {
   it('produces valid HTML with doctype, charset and title', () => {
