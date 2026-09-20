@@ -427,14 +427,9 @@ export interface AdminUserListItem {
   createdAt: string
   lastLoginAt: string | null
   personaType: 'L' | 'C' | 'A' | 'D' | 'O' | null
-  badgeGranted: boolean | null
-  userSource: string | null
   tags: Array<{ id: number; name: string; color: string }>
   entityTags: Array<{ id: number; name: string }>
   lastActiveAt: string | null
-  registrationFlow: 'landing_page' | 'quiz' | 'action_maker' | null
-  creationMethod: 'self_created' | 'copied' | 'action_generator' | null
-  daysToComplete: number | null
 }
 
 // ── Admin User Detail ─────────────────────────────────────────────────
@@ -452,8 +447,6 @@ export interface AdminUserDetail {
   createdAt: string
   lastLoginAt: string | null
   personaType: 'L' | 'C' | 'A' | 'D' | 'O' | null
-  badgeGranted: boolean | null
-  userSource: string | null
   referralSource: string | null
   tags: Array<{ id: number; name: string; color: string }>
   entityTags: Array<{ id: number; name: string }>
@@ -900,66 +893,14 @@ export interface EmailTemplateUpdate {
   isActive?: boolean
 }
 
-// ── Onboarding Analytics ────────────────────────────────────────────────────
+// ── Quiz / Persona / Engagement Analytics ───────────────────────────────────
 export type LearningStyleType = 'L' | 'C' | 'A' | 'D' | 'O'
-export type RegistrationFlow = 'landing_page' | 'quiz' | 'action_maker'
-export type CreationMethod = 'self_created' | 'copied' | 'action_generator'
-export type OnboardingEmailType = 'L0' | 'A' | 'B' | 'C' | 'D' | 'E'
-
-export interface OnboardingStats {
-  totalUsers: number
-  badgeGrantedCount: number
-  badgeGrantedRate: number
-  avgDaysToComplete: number
-  byRegistrationFlow: Record<RegistrationFlow, { total: number; badgeGranted: number }>
-  byCreationMethod: Record<CreationMethod, number>
-  completionByDay: Array<{ days: number; count: number }>
-}
-
-export interface UserOnboardingDetail {
-  userId: string
-  registrationFlow: RegistrationFlow | null
-  userSource: 'S1' | 'S2' | 'S3'
-  creationMethod: CreationMethod | null
-  referralSource: string | null
-  taskStates: Record<string, 'done' | 'pending'>
-  taskCompletedAt: Record<string, string>
-  badgeGranted: boolean
-  badgeGrantedAt: string | null
-  daysToComplete: number | null
-  completedAt: string | null
-  learningStyle: {
-    resultType: LearningStyleType | null
-    completedAt: string | null
-    attemptCount: number
-  } | null
-  persona: {
-    answerCount: number
-    isUnlocked: boolean
-    lastAnsweredAt: string | null
-  } | null
-  emailSequence: Array<{
-    emailType: OnboardingEmailType
-    status: 'sent' | 'failed' | 'not_sent'
-    sentAt: string | null
-    openedAt: string | null
-    openCount: number
-  }>
-  engagement: {
-    practiceCount: number
-    activePracticeCount: number
-    maxCheckinStreak: number
-    lastActiveAt: string | null
-  }
-}
 
 export interface QuizStats {
   totalUsers: number
   quizCompletedCount: number
   quizCompletedRate: number
   byRole: Record<LearningStyleType, { count: number; rate: number }>
-  byRoleAndBadge: Record<LearningStyleType, { badgeGranted: number; total: number }>
-  byRoleAndRegistrationFlow: Record<LearningStyleType, Record<RegistrationFlow, number>>
 }
 
 export interface PersonaStats {
@@ -971,17 +912,6 @@ export interface PersonaStats {
   avgAnswerCount: number
   answerCountDistribution: Array<{ answerCount: number; userCount: number }>
   topQuestions: Array<{ questionId: number; prompt: string; answerCount: number }>
-}
-
-export interface EmailOnboardingStats {
-  byEmailType: Record<
-    OnboardingEmailType,
-    { sentCount: number; openedCount: number; openRate: number; failedCount: number }
-  >
-  byUserSource: Record<
-    'S1' | 'S2' | 'S3',
-    { sentCount: number; openedCount: number; openRate: number }
-  >
 }
 
 export interface EngagementStats {

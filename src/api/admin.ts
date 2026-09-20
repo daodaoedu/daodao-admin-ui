@@ -247,10 +247,6 @@ export const listAdminUsers = (params?: {
   isActive?: boolean
   isVerified?: boolean
   personaType?: 'L' | 'C' | 'A' | 'D' | 'O'
-  badgeGranted?: boolean
-  userSource?: 'S1' | 'S2' | 'S3'
-  registrationFlow?: 'landing_page' | 'quiz' | 'action_maker'
-  creationMethod?: 'self_created' | 'copied' | 'action_generator'
   lastLoginFrom?: string
   lastLoginTo?: string
   createdFrom?: string
@@ -259,15 +255,7 @@ export const listAdminUsers = (params?: {
   lastActivityFrom?: string
   lastActivityTo?: string
   lastActivityPresence?: 'with' | 'without'
-  sortBy?:
-    | 'createdAt'
-    | 'lastLoginAt'
-    | 'lastActiveAt'
-    | 'name'
-    | 'email'
-    | 'registrationFlow'
-    | 'creationMethod'
-    | 'daysToComplete'
+  sortBy?: 'createdAt' | 'lastLoginAt' | 'lastActiveAt' | 'name' | 'email'
   sortOrder?: 'asc' | 'desc'
 }) =>
   apiClient.get<PaginatedApiResponse<AdminUserListItem>>('/daodao-server/api/v1/admin/users', {

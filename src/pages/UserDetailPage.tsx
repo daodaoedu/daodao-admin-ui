@@ -19,14 +19,12 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getUserOnboardingDetail, getUserPersonaProfile } from '@/api/admin-community'
+import { getUserPersonaProfile } from '@/api/admin-community'
 import { listRoles, updateUserRole } from '@/api/admin-server'
 import { getUserPractices, updateAdminUserStatus, updatePracticeStatus } from '@/api/admin-users'
 import type {
   AdminActivityStats,
   AdminLoginHistoryItem,
-  LearningStyleType,
-  OnboardingEmailType,
   PracticeEntity,
   PracticeStatus,
 } from '@/api/types'
@@ -96,15 +94,7 @@ const eventTypeConfig: Record<EventType, { color: string; icon: typeof LogIn }> 
   操作: { color: 'border-info', icon: Monitor },
 }
 
-const tabs = [
-  '活動時間軸',
-  '活動統計',
-  '登入歷史',
-  '角色管理',
-  '實踐',
-  '人物誌',
-  'Onboarding',
-] as const
+const tabs = ['活動時間軸', '活動統計', '登入歷史', '角色管理', '實踐', '人物誌'] as const
 type Tab = (typeof tabs)[number]
 
 const TIMELINE_TYPE_MAP: Record<string, EventType> = {
@@ -662,42 +652,7 @@ function PersonaTab({ userUuid }: { userUuid: string }) {
   )
 }
 
-// ─── Onboarding Tab ──────────────────────────────────────────────────────────
-
-const LEARNING_STYLE_LABEL: Record<LearningStyleType, string> = {
-  D: '探究者（探探島）',
-  A: '行動者（動動島）',
-  O: '結構者（構構島）',
-  L: '流動者（跨跨島）',
-  C: '連結者（連連島）',
-}
-
-const EMAIL_TYPE_LABEL: Record<OnboardingEmailType, string> = {
-  L0: 'L0 歡迎信',
-  A: 'A 任務A',
-  B: 'B 任務B',
-  C: 'C 任務C',
-  D: 'D 任務D',
-  E: 'E 任務E',
-}
-
-const REGISTRATION_FLOW_LABEL: Record<string, string> = {
-  landing_page: 'Landing Page',
-  quiz: '測驗',
-  action_maker: 'Action Maker',
-}
-
-const CREATION_METHOD_LABEL: Record<string, string> = {
-  self_created: '自建',
-  copied: '複製',
-  action_generator: '產生器',
-}
-
-const USER_SOURCE_LABEL: Record<string, string> = {
-  S1: '直接註冊',
-  S2: '測驗導向',
-  S3: '工具導向',
-}
+// ─── Labels ──────────────────────────────────────────────────────────────────
 
 const REFERRAL_SOURCE_LABEL: Record<string, string> = {
   instagram: 'Instagram',
@@ -706,217 +661,6 @@ const REFERRAL_SOURCE_LABEL: Record<string, string> = {
   linkedin: 'LinkedIn',
   friend_referral: '朋友推薦',
   others: '其他',
-}
-
-const EMAIL_STATUS_LABEL: Record<string, string> = {
-  sent: '已寄送',
-  failed: '寄送失敗',
-  not_sent: '未寄送',
-}
-
-const EMAIL_STATUS_COLOR: Record<string, string> = {
-  sent: 'text-success',
-  failed: 'text-destructive',
-  not_sent: 'text-muted-foreground',
-}
-
-function OnboardingTab({ userId }: { userId: string }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'user-onboarding', userId],
-    queryFn: () => getUserOnboardingDetail(userId).then((r) => r.data.data),
-    enabled: !!userId,
-  })
-
-  if (isLoading) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">載入中...</p>
-  }
-
-  if (!data) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">尚無 Onboarding 資料</p>
-  }
-
-  return (
-    <div className="space-y-5">
-      {/* Onboarding Overview */}
-      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">
-          Onboarding 概況
-        </h3>
-        <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
-          <InfoRow
-            label="註冊來源"
-            value={
-              data.registrationFlow
-                ? (REGISTRATION_FLOW_LABEL[data.registrationFlow] ?? data.registrationFlow)
-                : '未知'
-            }
-          />
-          <InfoRow
-            label="用戶來源"
-            value={data.userSource ? (USER_SOURCE_LABEL[data.userSource] ?? data.userSource) : '-'}
-          />
-          <InfoRow
-            label="從哪知道島島"
-            value={
-              data.referralSource
-                ? (REFERRAL_SOURCE_LABEL[data.referralSource] ?? data.referralSource)
-                : '-'
-            }
-          />
-          <InfoRow
-            label="實踐建立方式"
-            value={
-              data.creationMethod
-                ? (CREATION_METHOD_LABEL[data.creationMethod] ?? data.creationMethod)
-                : '-'
-            }
-          />
-          <InfoRow
-            label="Badge 獲得"
-            value={
-              data.badgeGranted ? (
-                <span className="font-medium text-success">已獲得</span>
-              ) : (
-                <span className="text-muted-foreground">未獲得</span>
-              )
-            }
-          />
-          {data.daysToComplete !== null && (
-            <InfoRow label="完成天數" value={`${data.daysToComplete} 天`} />
-          )}
-          {data.completedAt && <InfoRow label="完成時間" value={data.completedAt.slice(0, 10)} />}
-        </div>
-
-        <div className="mt-4">
-          <p className="mb-2 text-sm text-muted-foreground">任務狀態</p>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(data.taskStates).map(([key, state]) => (
-              <span
-                key={key}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                  state === 'done'
-                    ? 'bg-success/15 text-success'
-                    : 'bg-muted text-muted-foreground',
-                )}
-              >
-                Task {key}：{state === 'done' ? '完成' : '未完成'}
-                {data.taskCompletedAt[key] && ` (${data.taskCompletedAt[key].slice(0, 10)})`}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Learning Style */}
-      {data.learningStyle && (
-        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-          <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">
-            學習風格測驗
-          </h3>
-          {data.learningStyle.resultType ? (
-            <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
-              <InfoRow
-                label="測驗結果"
-                value={`${data.learningStyle.resultType} ${LEARNING_STYLE_LABEL[data.learningStyle.resultType]}`}
-              />
-              <InfoRow label="測驗次數" value={`${data.learningStyle.attemptCount} 次`} />
-              {data.learningStyle.completedAt && (
-                <InfoRow label="最近測驗時間" value={data.learningStyle.completedAt.slice(0, 10)} />
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">尚未完成測驗</p>
-          )}
-        </div>
-      )}
-
-      {/* Persona */}
-      {data.persona && (
-        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-          <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">
-            學習人物誌
-          </h3>
-          <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
-            <InfoRow label="填寫題數" value={`${data.persona.answerCount} 題`} />
-            <InfoRow
-              label="解鎖狀態"
-              value={
-                data.persona.isUnlocked ? (
-                  <span className="font-medium text-success">已解鎖（≥5 題）</span>
-                ) : (
-                  <span className="text-muted-foreground">未解鎖</span>
-                )
-              }
-            />
-            {data.persona.lastAnsweredAt && (
-              <InfoRow label="最後填寫時間" value={data.persona.lastAnsweredAt.slice(0, 10)} />
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Email Sequence */}
-      {data.emailSequence.length > 0 && (
-        <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-          <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">
-            Email 序列
-          </h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>信件</TableHead>
-                <TableHead>狀態</TableHead>
-                <TableHead>寄送時間</TableHead>
-                <TableHead>開信時間</TableHead>
-                <TableHead>開信次數</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.emailSequence.map((email) => (
-                <TableRow key={email.emailType}>
-                  <TableCell className="font-medium text-foreground">
-                    {EMAIL_TYPE_LABEL[email.emailType] ?? email.emailType}
-                  </TableCell>
-                  <TableCell className={cn(EMAIL_STATUS_COLOR[email.status] ?? '')}>
-                    {EMAIL_STATUS_LABEL[email.status] ?? email.status}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {email.sentAt ? email.sentAt.slice(0, 10) : '-'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {email.openedAt ? email.openedAt.slice(0, 10) : '-'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{email.openCount}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      {/* Engagement */}
-      <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm">
-        <h3 className="mb-4 text-base font-semibold tracking-tight text-foreground">參與度</h3>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: '實踐總數', value: data.engagement.practiceCount },
-            { label: '活躍實踐數', value: data.engagement.activePracticeCount },
-            { label: '最長打卡 streak', value: `${data.engagement.maxCheckinStreak} 天` },
-            {
-              label: '最後活躍時間',
-              value: data.engagement.lastActiveAt ? data.engagement.lastActiveAt.slice(0, 10) : '-',
-            },
-          ].map(({ label, value }) => (
-            <div key={label} className="rounded-lg bg-muted/50 p-3 text-center">
-              <p className="text-xl font-bold text-foreground">{value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -1149,26 +893,6 @@ export function UserDetailPage() {
                 }
               />
               <InfoRow
-                label="Onboarding Badge"
-                value={
-                  userDetail.data?.badgeGranted == null ? (
-                    <span className="text-muted-foreground">-</span>
-                  ) : userDetail.data.badgeGranted ? (
-                    <span className="font-medium text-success">已完成</span>
-                  ) : (
-                    <span className="text-muted-foreground">未完成</span>
-                  )
-                }
-              />
-              <InfoRow
-                label="來源"
-                value={
-                  userDetail.data?.userSource
-                    ? (USER_SOURCE_LABEL[userDetail.data.userSource] ?? userDetail.data.userSource)
-                    : '—'
-                }
-              />
-              <InfoRow
                 label="從哪知道島島"
                 value={
                   userDetail.data?.referralSource
@@ -1266,7 +990,6 @@ export function UserDetailPage() {
         )}
         {activeTab === '實踐' && <PracticesTab userId={userId ?? ''} />}
         {activeTab === '人物誌' && <PersonaTab userUuid={userDetail.data?.id ?? ''} />}
-        {activeTab === 'Onboarding' && <OnboardingTab userId={userId ?? ''} />}
       </div>
     </div>
   )

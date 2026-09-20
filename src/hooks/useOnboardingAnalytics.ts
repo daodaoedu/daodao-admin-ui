@@ -1,27 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import {
-  getEmailOnboardingStats,
-  getEngagementStats,
-  getOnboardingStats,
-  getPersonaStats,
-  getQuizStats,
-  getUserOnboardingDetail,
-} from '@/api/admin-community'
-
-export function useOnboardingStats() {
-  return useQuery({
-    queryKey: ['admin', 'onboarding', 'stats'],
-    queryFn: () => getOnboardingStats().then((r) => r.data.data),
-  })
-}
-
-export function useUserOnboardingDetail(userId: string) {
-  return useQuery({
-    queryKey: ['admin', 'users', userId, 'onboarding'],
-    queryFn: () => getUserOnboardingDetail(userId).then((r) => r.data.data),
-    enabled: !!userId,
-  })
-}
+import { getEngagementStats, getPersonaStats, getQuizStats } from '@/api/admin-community'
 
 export function useQuizAnalyticsStats() {
   return useQuery({
@@ -35,13 +13,6 @@ export function usePersonaStats(days?: number) {
     queryKey: ['admin', 'persona', 'stats', days],
     queryFn: () =>
       getPersonaStats(days === undefined ? undefined : { days }).then((r) => r.data.data),
-  })
-}
-
-export function useEmailOnboardingStats() {
-  return useQuery({
-    queryKey: ['admin', 'email', 'onboarding-stats'],
-    queryFn: () => getEmailOnboardingStats().then((r) => r.data.data),
   })
 }
 

@@ -1,15 +1,12 @@
 import apiClient from './client'
 import type {
   ApiResponse,
-  EmailOnboardingStats,
   EngagementStats,
-  OnboardingStats,
   PersonaQuestionAnswers,
   PersonaStats,
   PersonaUser,
   PersonaUserProfile,
   QuizStats,
-  UserOnboardingDetail,
 } from './types'
 
 // ── Member Directory ──────────────────────────────────────
@@ -256,29 +253,13 @@ export const getOnboardingFlowAnalytics = (id: number) =>
     `/daodao-server/api/v1/admin/onboarding/flows/${id}/analytics`,
   )
 
-// ── Onboarding Analytics ──────────────────────────────────────────────────────
-
-export const getOnboardingStats = (params?: { days?: number }) =>
-  apiClient.get<ApiResponse<OnboardingStats>>('/daodao-server/api/v1/admin/onboarding/stats', {
-    params,
-  })
-
-export const getUserOnboardingDetail = (userId: string) =>
-  apiClient.get<ApiResponse<UserOnboardingDetail>>(
-    `/daodao-server/api/v1/admin/users/${userId}/onboarding`,
-  )
+// ── Quiz / Persona / Engagement Analytics ─────────────────────────────────────
 
 export const getQuizStats = (params?: { days?: number }) =>
   apiClient.get<ApiResponse<QuizStats>>('/daodao-server/api/v1/admin/quiz/stats', { params })
 
 export const getPersonaStats = (params?: { days?: number }) =>
   apiClient.get<ApiResponse<PersonaStats>>('/daodao-server/api/v1/admin/persona/stats', { params })
-
-export const getEmailOnboardingStats = (params?: { days?: number }) =>
-  apiClient.get<ApiResponse<EmailOnboardingStats>>(
-    '/daodao-server/api/v1/admin/email/onboarding-stats',
-    { params },
-  )
 
 export const getEngagementStats = (params?: { days?: number }) =>
   apiClient.get<ApiResponse<EngagementStats>>('/daodao-server/api/v1/admin/engagement/stats', {
