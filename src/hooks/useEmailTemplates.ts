@@ -114,7 +114,26 @@ export function useEmailTemplates() {
 export function useCreateEmailTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: EmailTemplateCreate) => createEmailTemplate(data),
+    mutationFn: (data: EmailTemplateCreate) => {
+      if (!USE_PREVIEW_MOCK) return createEmailTemplate(data)
+
+      const now = new Date().toISOString()
+      const created: EmailTemplate = {
+        id: Math.max(0, ...previewEmailTemplates.map((template) => template.id)) + 1,
+        name: data.name,
+        slug: data.slug ?? null,
+        subject: data.subject,
+        preheader: data.preheader ?? null,
+        body: data.body,
+        variables: data.variables ?? [],
+        dataSource: data.dataSource ?? 'none',
+        isActive: data.isActive ?? true,
+        createdAt: now,
+        updatedAt: now,
+      }
+      previewEmailTemplates = [...previewEmailTemplates, created]
+      return Promise.resolve({ data: { data: created } })
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
   })
 }
@@ -144,7 +163,12 @@ export function useUpdateEmailTemplate() {
 export function useDeleteEmailTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => deleteEmailTemplate(id),
+    mutationFn: (id: number) => {
+      if (!USE_PREVIEW_MOCK) return deleteEmailTemplate(id)
+
+      previewEmailTemplates = previewEmailTemplates.filter((template) => template.id !== id)
+      return Promise.resolve({ data: { data: { deleted: true, id } } })
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
   })
 }
