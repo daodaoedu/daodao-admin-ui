@@ -7,6 +7,7 @@ import {
   updateEmailTemplate,
 } from '@/api/admin-system'
 import type { EmailTemplate, EmailTemplateCreate, EmailTemplateUpdate } from '@/api/types'
+import { USE_PREVIEW_MOCK } from '@/config'
 
 const QUERY_KEY = ['email-templates']
 
@@ -102,9 +103,9 @@ let previewEmailTemplates: EmailTemplate[] = CURRENT_TEMPLATE_CATALOG.map(
 
 export function useEmailTemplates() {
   return useQuery({
-    queryKey: [...QUERY_KEY, import.meta.env.DEV ? 'preview' : 'api'],
+    queryKey: [...QUERY_KEY, USE_PREVIEW_MOCK ? 'preview' : 'api'],
     queryFn: () =>
-      import.meta.env.DEV
+      USE_PREVIEW_MOCK
         ? Promise.resolve(previewEmailTemplates)
         : listEmailTemplates().then((r) => r.data.data),
   })
@@ -122,7 +123,7 @@ export function useUpdateEmailTemplate() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: EmailTemplateUpdate }) => {
-      if (!import.meta.env.DEV) return updateEmailTemplate(id, data)
+      if (!USE_PREVIEW_MOCK) return updateEmailTemplate(id, data)
 
       const index = previewEmailTemplates.findIndex((template) => template.id === id)
       if (index === -1) throw new Error('Email template not found')
@@ -150,10 +151,10 @@ export function useDeleteEmailTemplate() {
 
 export function useEmailTemplate(id: number | null) {
   return useQuery({
-    queryKey: ['email-template', id, import.meta.env.DEV ? 'preview' : 'api'],
+    queryKey: ['email-template', id, USE_PREVIEW_MOCK ? 'preview' : 'api'],
     queryFn: () => {
       if (id === null) throw new Error('Email template id is required')
-      if (import.meta.env.DEV) {
+      if (USE_PREVIEW_MOCK) {
         const template = previewEmailTemplates.find((item) => item.id === id)
         if (!template) throw new Error('Email template not found')
         return Promise.resolve(template)

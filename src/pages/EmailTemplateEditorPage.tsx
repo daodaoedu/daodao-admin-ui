@@ -1,3 +1,6 @@
+import { html } from '@codemirror/lang-html'
+import { oneDark } from '@codemirror/theme-one-dark'
+import CodeMirror from '@uiw/react-codemirror'
 import { ArrowLeft, Loader2, Monitor, Power, Save, Smartphone } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -240,13 +243,16 @@ export default function EmailTemplateEditorPage() {
               )}
             </div>
           )}
-          <div className="shrink-0 overflow-visible">
-            <textarea
+          {/* 全寬、可垂直拖曳調整高度的編輯區；CodeMirror 撐滿外層容器 */}
+          <div className="h-[22rem] min-h-[12rem] w-full resize-y overflow-auto">
+            <CodeMirror
               value={content}
-              onChange={(event) => setContent(event.target.value)}
               aria-label="HTML 內容"
-              spellCheck={false}
-              className="block h-[22rem] min-h-[12rem] w-full resize-y bg-[#1e1e1e] p-4 font-mono text-[13px] leading-6 text-[#d4d4d4] outline-none"
+              height="100%"
+              theme={oneDark}
+              extensions={[html()]}
+              onChange={setContent}
+              style={{ fontSize: '13px', height: '100%' }}
             />
           </div>
         </div>

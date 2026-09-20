@@ -28,6 +28,7 @@ import type {
   ChallengeTemplateCreate,
   ChallengeTemplateUpdate,
 } from '@/api/types'
+import { USE_PREVIEW_MOCK } from '@/config'
 
 const PREVIEW_PROGRAMS: ChallengeProgram[] = [
   {
@@ -93,9 +94,9 @@ const templatesKey = (organizationId: number | null) => [...KEY, 'templates', or
 
 export function useChallengePrograms(organizationId?: number) {
   return useQuery({
-    queryKey: [...programsKey(organizationId), import.meta.env.DEV ? 'preview' : 'api'],
+    queryKey: [...programsKey(organizationId), USE_PREVIEW_MOCK ? 'preview' : 'api'],
     queryFn: () =>
-      import.meta.env.DEV
+      USE_PREVIEW_MOCK
         ? Promise.resolve(PREVIEW_PROGRAMS)
         : listChallengePrograms({ organizationId }).then((r) => r.data.data),
   })
@@ -143,9 +144,9 @@ export function useDuplicateChallengeProgram() {
 
 export function useChallengeCohorts(programId: number | null) {
   return useQuery({
-    queryKey: [...cohortsKey(programId), import.meta.env.DEV ? 'preview' : 'api'],
+    queryKey: [...cohortsKey(programId), USE_PREVIEW_MOCK ? 'preview' : 'api'],
     queryFn: () =>
-      import.meta.env.DEV
+      USE_PREVIEW_MOCK
         ? Promise.resolve(PREVIEW_COHORTS.filter((cohort) => cohort.programId === programId))
         : listChallengeCohorts(programId as number).then((r) => r.data.data),
     enabled: programId !== null,
@@ -234,9 +235,9 @@ export function useChallengeParticipants(programId: number | null, cohortId: num
 
 export function useChallengeTemplates(organizationId: number | null) {
   return useQuery({
-    queryKey: [...templatesKey(organizationId), import.meta.env.DEV ? 'preview' : 'api'],
+    queryKey: [...templatesKey(organizationId), USE_PREVIEW_MOCK ? 'preview' : 'api'],
     queryFn: () =>
-      import.meta.env.DEV
+      USE_PREVIEW_MOCK
         ? Promise.resolve(
             PREVIEW_TEMPLATES.filter((template) => template.organizationId === organizationId),
           )

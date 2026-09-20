@@ -56,5 +56,10 @@
     "typescript": "^5.2.2",
     "vite": "^5.0.8",
     "vitest": "^3.2.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "@codemirror/state": "6.7.1"
+    }
   }
 }

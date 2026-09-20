@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getDashboardStats } from '@/api/admin-ai'
 import type { DashboardStats } from '@/api/types'
+import { USE_PREVIEW_MOCK } from '@/config'
 
 const PREVIEW_DASHBOARD_STATS: DashboardStats = {
   total_cost_usd: '42.68',
@@ -18,7 +19,7 @@ export function useDashboardStats(dateFrom?: string, dateTo?: string) {
   return useQuery({
     queryKey: ['admin', 'dashboard', dateFrom, dateTo],
     queryFn: () =>
-      import.meta.env.DEV
+      USE_PREVIEW_MOCK
         ? Promise.resolve(PREVIEW_DASHBOARD_STATS)
         : getDashboardStats(dateFrom, dateTo).then((r) => r.data.data),
     refetchInterval: 60_000,
