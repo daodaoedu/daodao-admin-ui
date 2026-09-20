@@ -53,7 +53,6 @@ export default function EmailTemplateEditorPage() {
   const previewHtml = isFullHtml
     ? content
     : renderEmailPreview({ title: subject, preheader, content })
-  const previewSrc = `data:text/html;charset=utf-8,${encodeURIComponent(previewHtml)}`
 
   const handleSave = useCallback(() => {
     if (!templateId) return
@@ -285,8 +284,9 @@ export default function EmailTemplateEditorPage() {
                 previewMode === 'mobile' ? 'w-[375px]' : 'w-full max-w-[600px]'
               }`}
             >
+              {/* 用 srcDoc 而非 data: URL：正式環境 CSP default-src 'self' https: 會擋 data: iframe */}
               <iframe
-                src={previewSrc}
+                srcDoc={previewHtml}
                 title="email-preview"
                 className="h-[800px] w-full border-0"
                 sandbox="allow-same-origin"
