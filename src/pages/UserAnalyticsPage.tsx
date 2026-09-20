@@ -1,7 +1,6 @@
 import { format, parseISO, subDays } from 'date-fns'
 import {
   Activity,
-  Award,
   BookOpen,
   CalendarDays,
   Flame,
@@ -40,11 +39,7 @@ import {
   useMetricDrillDown,
   useUserCohortRetention,
 } from '@/hooks/useActiveUsersTrend'
-import {
-  useEngagementStats,
-  useOnboardingStats,
-  useQuizAnalyticsStats,
-} from '@/hooks/useOnboardingAnalytics'
+import { useEngagementStats, useQuizAnalyticsStats } from '@/hooks/useOnboardingAnalytics'
 import { cn } from '@/lib/utils'
 
 const COHORT_COLUMNS = ['Day 1', 'Day 7', 'Day 14', 'Day 30', 'Day 60', 'Day 90']
@@ -116,7 +111,6 @@ export function UserAnalyticsPage() {
     isError: isCohortError,
   } = useUserCohortRetention(trendQuery)
 
-  const { data: onboardingStats } = useOnboardingStats()
   const { data: quizStats } = useQuizAnalyticsStats()
   const { data: engagementStats } = useEngagementStats()
 
@@ -264,21 +258,8 @@ export function UserAnalyticsPage() {
         />
       </div>
 
-      {/* Section 2: Onboarding & engagement KPIs */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard
-          title="Badge 完成率"
-          description="已獲得至少一個徽章的用戶佔總用戶比例，反映任務完成度"
-          value={`${onboardingStats?.badgeGrantedRate ?? 0}%`}
-          icon={Award}
-          onClick={() =>
-            setDrillDown({
-              type: 'metric',
-              title: '已完成 Badge 的用戶',
-              metric: 'badge_completed',
-            })
-          }
-        />
+      {/* Section 2: Quiz & engagement KPIs */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard
           title="測驗完成率"
           description="完成島嶼人格測驗（學習風格）的用戶比例，越高代表用戶越願意參與引導流程"

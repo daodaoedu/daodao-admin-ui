@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { listAdminUsers, listRoles, updateUserRole, updateUserStatus } from '@/api/admin-server'
 import { bulkTagUsers } from '@/api/admin-users'
-import type { AdminUserListItem, CreationMethod, RegistrationFlow } from '@/api/types'
+import type { AdminUserListItem } from '@/api/types'
 import { ExportButton } from '@/components/ExportButton'
 import { UserLink } from '@/components/UserLink'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useUserTags } from '@/hooks/useUserTags'
+import { normalizeSortValue } from '@/lib/sort-query'
 
 type PersonaType = 'L' | 'C' | 'A' | 'D' | 'O'
 
@@ -30,32 +31,6 @@ const PERSONA_LABELS: Record<PersonaType, string> = {
   L: '跨跨島',
   C: '連連島',
 }
-
-const REGISTRATION_FLOW_LABEL: Record<RegistrationFlow, string> = {
-  landing_page: 'Landing Page',
-  quiz: '測驗',
-  action_maker: 'Action Maker',
-}
-
-const CREATION_METHOD_LABEL: Record<CreationMethod, string> = {
-  self_created: '自建',
-  copied: '複製',
-  action_generator: '產生器',
-}
-
-const REGISTRATION_FLOW_OPTIONS = [
-  { value: '', label: '全部註冊來源' },
-  { value: 'landing_page', label: 'Landing Page' },
-  { value: 'quiz', label: '測驗' },
-  { value: 'action_maker', label: 'Action Maker' },
-]
-
-const CREATION_METHOD_OPTIONS = [
-  { value: '', label: '全部實踐建立方式' },
-  { value: 'self_created', label: '自建' },
-  { value: 'copied', label: '複製' },
-  { value: 'action_generator', label: '產生器' },
-]
 
 const PERSONA_OPTIONS = [
   { value: '', label: '全部學習風格' },
@@ -72,19 +47,6 @@ const STATUS_OPTIONS = [
   { value: 'false', label: '停用' },
 ]
 
-const BADGE_OPTIONS = [
-  { value: '', label: '全部 Onboarding' },
-  { value: 'true', label: '已完成 Badge' },
-  { value: 'false', label: '未完成 Badge' },
-]
-
-const SOURCE_OPTIONS = [
-  { value: '', label: '全部來源' },
-  { value: 'S1', label: 'S1' },
-  { value: 'S2', label: 'S2' },
-  { value: 'S3', label: 'S3' },
-]
-
 const DATE_PRESET_OPTIONS = [
   { value: '', label: '全部' },
   { value: 'today', label: '今天' },
@@ -99,12 +61,6 @@ const SORT_OPTIONS = [
   { value: 'createdAt_asc', label: '最早註冊' },
   { value: 'lastLoginAt_desc', label: '最近登入' },
   { value: 'name_asc', label: '名稱 A-Z' },
-  { value: 'registrationFlow_asc', label: '註冊來源 A-Z' },
-  { value: 'registrationFlow_desc', label: '註冊來源 Z-A' },
-  { value: 'creationMethod_asc', label: '實踐建立方式 A-Z' },
-  { value: 'creationMethod_desc', label: '實踐建立方式 Z-A' },
-  { value: 'daysToComplete_desc', label: '完成天數高到低' },
-  { value: 'daysToComplete_asc', label: '完成天數低到高' },
 ]
 
 const SELECT_CLASS =
@@ -114,31 +70,14 @@ type DatePreset = (typeof DATE_PRESET_OPTIONS)[number]['value']
 type RecordPresenceFilter = 'all' | 'with' | 'without'
 
 const LIMIT = 20
-const TABLE_COLS = 16
+const TABLE_COLS = 12
 const USER_MANAGEMENT_SORT_FIELDS: UserManagementSortBy[] = [
   'createdAt',
   'lastLoginAt',
   'lastActiveAt',
   'name',
   'email',
-  'registrationFlow',
-  'creationMethod',
-  'daysToComplete',
 ]
-
-function getRegistrationFlowLabel(flow: RegistrationFlow | null | undefined) {
-  if (!flow) return '-'
-  return REGISTRATION_FLOW_LABEL[flow] ?? '-'
-}
-
-function getCreationMethodLabel(method: CreationMethod | null | undefined) {
-  if (!method) return '-'
-  return CREATION_METHOD_LABEL[method] ?? '-'
-}
-
-function getDaysToCompleteLabel(daysToComplete: number | null) {
-  return daysToComplete == null ? '-' : `${daysToComplete} 天`
-}
 
 function toInputDateValue(date: Date) {
   const yyyy = date.getFullYear()
@@ -166,19 +105,7 @@ function getPresetDateRange(preset: DatePreset) {
   return { from: toInputDateValue(fromDate), to: toInputDateValue(new Date()) }
 }
 
-function getBadgeLabel(user: AdminUserListItem) {
-  return user.badgeGranted == null ? '-' : user.badgeGranted ? '已完成' : '未完成'
-}
-
-type UserManagementSortBy =
-  | 'createdAt'
-  | 'lastLoginAt'
-  | 'lastActiveAt'
-  | 'name'
-  | 'email'
-  | 'registrationFlow'
-  | 'creationMethod'
-  | 'daysToComplete'
+type UserManagementSortBy = 'createdAt' | 'lastLoginAt' | 'lastActiveAt' | 'name' | 'email'
 
 const TABLE_HEADERS = [
   '名稱',
@@ -189,10 +116,6 @@ const TABLE_HEADERS = [
   '角色',
   '標籤',
   '學習風格',
-  'Onboarding',
-  '註冊來源',
-  '實踐建立方式',
-  '完成天數',
   'ID',
   'Custom ID',
   '操作',
@@ -224,14 +147,6 @@ export function UserManagementPage() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') ?? '')
   const [roleIdFilter, setRoleIdFilter] = useState(searchParams.get('roleId') ?? '')
   const [personaFilter, setPersonaFilter] = useState(searchParams.get('persona') ?? '')
-  const [badgeFilter, setBadgeFilter] = useState(searchParams.get('badge') ?? '')
-  const [sourceFilter, setSourceFilter] = useState(searchParams.get('source') ?? '')
-  const [registrationFlowFilter, setRegistrationFlowFilter] = useState(
-    searchParams.get('registrationFlow') ?? '',
-  )
-  const [creationMethodFilter, setCreationMethodFilter] = useState(
-    searchParams.get('creationMethod') ?? '',
-  )
   const [lastLoginFrom, setLastLoginFrom] = useState(searchParams.get('lastLoginFrom') ?? '')
   const [lastLoginTo, setLastLoginTo] = useState(searchParams.get('lastLoginTo') ?? '')
   const [lastLoginPresenceFilter, setLastLoginPresenceFilter] = useState<RecordPresenceFilter>(
@@ -256,7 +171,11 @@ export function UserManagementPage() {
   const [createdFrom, setCreatedFrom] = useState(initCreatedRange.from)
   const [createdTo, setCreatedTo] = useState(initCreatedRange.to)
 
-  const [sortValue, setSortValue] = useState(searchParams.get('sort') ?? 'lastActiveAt_desc')
+  // #218 拿掉 registrationFlow／creationMethod／daysToComplete 排序後，舊書籤的 ?sort= 值要退回預設，
+  // 否則 select 找不到對應選項會空白、查詢卻用別的欄位排序
+  const [sortValue, setSortValue] = useState(() =>
+    normalizeSortValue(searchParams.get('sort'), SORT_OPTIONS, 'lastActiveAt_desc'),
+  )
 
   const [filterPanelOpen, setFilterPanelOpen] = useState(
     !!(searchParams.get('datePreset') || searchParams.get('createdFrom')),
@@ -286,10 +205,6 @@ export function UserManagementPage() {
     if (statusFilter) params.status = statusFilter
     if (roleIdFilter) params.roleId = roleIdFilter
     if (personaFilter) params.persona = personaFilter
-    if (badgeFilter) params.badge = badgeFilter
-    if (sourceFilter) params.source = sourceFilter
-    if (registrationFlowFilter) params.registrationFlow = registrationFlowFilter
-    if (creationMethodFilter) params.creationMethod = creationMethodFilter
     if (lastLoginFrom) params.lastLoginFrom = lastLoginFrom
     if (lastLoginTo) params.lastLoginTo = lastLoginTo
     if (lastLoginPresenceFilter !== 'all') params.lastLoginPresence = lastLoginPresenceFilter
@@ -307,10 +222,6 @@ export function UserManagementPage() {
     statusFilter,
     roleIdFilter,
     personaFilter,
-    badgeFilter,
-    sourceFilter,
-    registrationFlowFilter,
-    creationMethodFilter,
     lastLoginFrom,
     lastLoginTo,
     lastLoginPresenceFilter,
@@ -385,10 +296,6 @@ export function UserManagementPage() {
       statusFilter,
       roleIdFilter,
       personaFilter,
-      badgeFilter,
-      sourceFilter,
-      registrationFlowFilter,
-      creationMethodFilter,
       lastLoginFrom,
       lastLoginTo,
       lastLoginPresenceFilter,
@@ -408,12 +315,6 @@ export function UserManagementPage() {
         isActive: statusFilter === '' ? undefined : statusFilter === 'true',
         roleId: roleIdFilter ? Number(roleIdFilter) : undefined,
         personaType: (personaFilter as PersonaType) || undefined,
-        badgeGranted: badgeFilter === '' ? undefined : badgeFilter === 'true',
-        userSource: (sourceFilter as 'S1' | 'S2' | 'S3') || undefined,
-        registrationFlow:
-          (registrationFlowFilter as 'landing_page' | 'quiz' | 'action_maker') || undefined,
-        creationMethod:
-          (creationMethodFilter as 'self_created' | 'copied' | 'action_generator') || undefined,
         lastLoginFrom: lastLoginFrom || undefined,
         lastLoginTo: lastLoginTo || undefined,
         lastLoginPresence: lastLoginPresenceFilter === 'all' ? undefined : lastLoginPresenceFilter,
@@ -440,15 +341,10 @@ export function UserManagementPage() {
         name: user.name,
         email: user.email,
         isActive: user.isActive ? '啟用' : '停用',
-        userSource: user.userSource,
         tags: Array.isArray(user.tags) ? user.tags.map((t) => t.name).join(', ') : '',
-        registrationFlow: getRegistrationFlowLabel(user.registrationFlow ?? null),
-        creationMethod: getCreationMethodLabel(user.creationMethod ?? null),
         personaType: user.personaType
           ? `${user.personaType} ${PERSONA_LABELS[user.personaType as PersonaType]}`
           : '未測驗',
-        badgeGranted: getBadgeLabel(user),
-        daysToComplete: getDaysToCompleteLabel(user.daysToComplete ?? null),
         lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-',
         lastActiveAt: user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleString('zh-TW') : '-',
         customId: user.customId ?? '',
@@ -472,12 +368,6 @@ export function UserManagementPage() {
         isActive: statusFilter === '' ? undefined : statusFilter === 'true',
         roleId: roleIdFilter ? Number(roleIdFilter) : undefined,
         personaType: (personaFilter as PersonaType) || undefined,
-        badgeGranted: badgeFilter === '' ? undefined : badgeFilter === 'true',
-        userSource: (sourceFilter as 'S1' | 'S2' | 'S3') || undefined,
-        registrationFlow:
-          (registrationFlowFilter as 'landing_page' | 'quiz' | 'action_maker') || undefined,
-        creationMethod:
-          (creationMethodFilter as 'self_created' | 'copied' | 'action_generator') || undefined,
         lastLoginFrom: lastLoginFrom || undefined,
         lastLoginTo: lastLoginTo || undefined,
         lastLoginPresence: lastLoginPresenceFilter === 'all' ? undefined : lastLoginPresenceFilter,
@@ -506,15 +396,10 @@ export function UserManagementPage() {
       name: user.name,
       email: user.email,
       isActive: user.isActive ? '啟用' : '停用',
-      userSource: user.userSource,
       tags: Array.isArray(user.tags) ? user.tags.map((t) => t.name).join(', ') : '',
-      registrationFlow: getRegistrationFlowLabel(user.registrationFlow ?? null),
-      creationMethod: getCreationMethodLabel(user.creationMethod ?? null),
       personaType: user.personaType
         ? `${user.personaType} ${PERSONA_LABELS[user.personaType as PersonaType]}`
         : '未測驗',
-      badgeGranted: getBadgeLabel(user),
-      daysToComplete: getDaysToCompleteLabel(user.daysToComplete ?? null),
       lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-TW') : '-',
       lastActiveAt: user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleString('zh-TW') : '-',
       customId: user.customId ?? '',
@@ -524,10 +409,6 @@ export function UserManagementPage() {
     statusFilter,
     roleIdFilter,
     personaFilter,
-    badgeFilter,
-    sourceFilter,
-    registrationFlowFilter,
-    creationMethodFilter,
     lastLoginFrom,
     lastLoginTo,
     lastLoginPresenceFilter,
@@ -558,10 +439,6 @@ export function UserManagementPage() {
     statusFilter,
     roleIdFilter,
     personaFilter,
-    badgeFilter,
-    sourceFilter,
-    registrationFlowFilter,
-    creationMethodFilter,
     lastLoginFrom,
     lastLoginTo,
     lastLoginPresenceFilter !== 'all',
@@ -575,10 +452,6 @@ export function UserManagementPage() {
     setStatusFilter('')
     setRoleIdFilter('')
     setPersonaFilter('')
-    setBadgeFilter('')
-    setSourceFilter('')
-    setRegistrationFlowFilter('')
-    setCreationMethodFilter('')
     setLastLoginFrom('')
     setLastLoginTo('')
     setLastLoginPresenceFilter('all')
@@ -590,14 +463,9 @@ export function UserManagementPage() {
     setPage(1)
   }
 
-  const togglePreset = (preset: 'incomplete-onboarding' | 'disabled') => {
-    if (preset === 'incomplete-onboarding') {
-      setBadgeFilter((v) => (v === 'false' ? '' : 'false'))
-      setPage(1)
-    } else {
-      setStatusFilter((v) => (v === 'false' ? '' : 'false'))
-      setPage(1)
-    }
+  const togglePreset = (_preset: 'disabled') => {
+    setStatusFilter((v) => (v === 'false' ? '' : 'false'))
+    setPage(1)
   }
 
   const updateStatusMut = useMutation({
@@ -696,47 +564,6 @@ export function UserManagementPage() {
       },
     })
   }
-  if (badgeFilter) {
-    const opt = BADGE_OPTIONS.find((o) => o.value === badgeFilter)
-    activeChips.push({
-      label: `Onboarding: ${opt?.label}`,
-      onRemove: () => {
-        setBadgeFilter('')
-        setPage(1)
-      },
-    })
-  }
-  if (sourceFilter) {
-    activeChips.push({
-      label: `來源: ${sourceFilter}`,
-      onRemove: () => {
-        setSourceFilter('')
-        setPage(1)
-      },
-    })
-  }
-  if (registrationFlowFilter) {
-    const opt = REGISTRATION_FLOW_OPTIONS.find((o) => o.value === registrationFlowFilter)
-    const label = opt?.label ?? `未識別來源：${registrationFlowFilter}`
-    activeChips.push({
-      label: `註冊來源: ${label}`,
-      onRemove: () => {
-        setRegistrationFlowFilter('')
-        setPage(1)
-      },
-    })
-  }
-  if (creationMethodFilter) {
-    const opt = CREATION_METHOD_OPTIONS.find((o) => o.value === creationMethodFilter)
-    const label = opt?.label ?? `未識別建立方式：${creationMethodFilter}`
-    activeChips.push({
-      label: `實踐建立方式: ${label}`,
-      onRemove: () => {
-        setCreationMethodFilter('')
-        setPage(1)
-      },
-    })
-  }
   if (createdFrom || createdTo) {
     const parts = [createdFrom || '...', createdTo || '...']
     activeChips.push({
@@ -815,13 +642,8 @@ export function UserManagementPage() {
             { key: 'isActive', header: '狀態' },
             { key: 'lastLoginAt', header: '最後登入' },
             { key: 'lastActiveAt', header: '最後操作' },
-            { key: 'userSource', header: '來源' },
             { key: 'tags', header: '標籤' },
-            { key: 'registrationFlow', header: '註冊來源' },
-            { key: 'creationMethod', header: '實踐建立方式' },
             { key: 'personaType', header: '學習風格' },
-            { key: 'badgeGranted', header: 'Badge' },
-            { key: 'daysToComplete', header: '完成天數' },
             { key: 'internalId', header: 'ID' },
             { key: 'customId', header: 'Custom ID' },
           ]}
@@ -868,14 +690,6 @@ export function UserManagementPage() {
           </Button>
 
           {/* Quick presets */}
-          <Button
-            type="button"
-            variant={badgeFilter === 'false' ? 'primary' : 'secondary'}
-            size="xs"
-            onClick={() => togglePreset('incomplete-onboarding')}
-          >
-            未完成 Onboarding
-          </Button>
           <Button
             type="button"
             variant={statusFilter === 'false' ? 'primary' : 'secondary'}
@@ -1113,42 +927,6 @@ export function UserManagementPage() {
                 options={PERSONA_OPTIONS}
                 triggerClassName={`${SELECT_CLASS} w-full`}
               />
-              <Select
-                value={badgeFilter}
-                onValueChange={(v) => {
-                  setBadgeFilter(v)
-                  setPage(1)
-                }}
-                options={BADGE_OPTIONS}
-                triggerClassName={`${SELECT_CLASS} w-full`}
-              />
-              <Select
-                value={sourceFilter}
-                onValueChange={(v) => {
-                  setSourceFilter(v)
-                  setPage(1)
-                }}
-                options={SOURCE_OPTIONS}
-                triggerClassName={`${SELECT_CLASS} w-full`}
-              />
-              <Select
-                value={registrationFlowFilter}
-                onValueChange={(v) => {
-                  setRegistrationFlowFilter(v)
-                  setPage(1)
-                }}
-                options={REGISTRATION_FLOW_OPTIONS}
-                triggerClassName={`${SELECT_CLASS} w-full`}
-              />
-              <Select
-                value={creationMethodFilter}
-                onValueChange={(v) => {
-                  setCreationMethodFilter(v)
-                  setPage(1)
-                }}
-                options={CREATION_METHOD_OPTIONS}
-                triggerClassName={`${SELECT_CLASS} w-full`}
-              />
             </div>
           </div>
         )}
@@ -1232,7 +1010,6 @@ export function UserManagementPage() {
               </TableRow>
             ) : (
               users.map((user) => {
-                const badgeLabel = getBadgeLabel(user)
                 const isSelected = selectedIds.has(user.internalId)
                 return (
                   <TableRow key={user.id} className={isSelected ? 'bg-primary/5' : undefined}>
@@ -1330,28 +1107,6 @@ export function UserManagementPage() {
                       ) : (
                         <span className="text-xs text-muted-foreground">未測驗</span>
                       )}
-                    </TableCell>
-                    {/* Onboarding */}
-                    <TableCell>
-                      {badgeLabel === '-' ? (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      ) : badgeLabel === '已完成' ? (
-                        <Badge variant="success">已完成</Badge>
-                      ) : (
-                        <Badge variant="default">未完成</Badge>
-                      )}
-                    </TableCell>
-                    {/* 註冊來源 */}
-                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {getRegistrationFlowLabel(user.registrationFlow ?? null)}
-                    </TableCell>
-                    {/* 實踐建立方式 */}
-                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {getCreationMethodLabel(user.creationMethod ?? null)}
-                    </TableCell>
-                    {/* 完成天數 */}
-                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {getDaysToCompleteLabel(user.daysToComplete ?? null)}
                     </TableCell>
                     {/* ID */}
                     <TableCell className="font-mono text-xs text-muted-foreground">

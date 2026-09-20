@@ -2,26 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import { CheckCircle, Clock, ListChecks, Plus, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import {
-  getEmailOnboardingStats,
-  getEngagementStats,
-  getOnboardingStats,
-  getPersonaStats,
-  getQuizStats,
-} from '@/api/admin-community'
-import type { LearningStyleType, OnboardingEmailType } from '@/api/types'
+import { getEngagementStats, getPersonaStats, getQuizStats } from '@/api/admin-community'
+import type { LearningStyleType } from '@/api/types'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { useOnboardingFlowAnalytics, useOnboardingFlows } from '@/hooks/useOnboardingFlows'
 import { cn } from '@/lib/utils'
 
@@ -39,18 +25,6 @@ const QUESTION_TYPE_LABEL: Record<string, string> = {
   text: '文字',
 }
 
-const REGISTRATION_FLOW_LABEL: Record<string, string> = {
-  landing_page: 'Landing Page',
-  quiz: '測驗',
-  action_maker: 'Action Maker',
-}
-
-const CREATION_METHOD_LABEL: Record<string, string> = {
-  self_created: '自建',
-  copied: '複製',
-  action_generator: '產生器',
-}
-
 const LEARNING_STYLE_LABEL: Record<LearningStyleType, { name: string; island: string }> = {
   D: { name: '探究者', island: '探探島' },
   A: { name: '行動者', island: '動動島' },
@@ -59,17 +33,7 @@ const LEARNING_STYLE_LABEL: Record<LearningStyleType, { name: string; island: st
   C: { name: '連結者', island: '連連島' },
 }
 
-const EMAIL_TYPE_LABEL: Record<OnboardingEmailType, string> = {
-  L0: 'L0 歡迎信',
-  A: 'A 任務A',
-  B: 'B 任務B',
-  C: 'C 任務C',
-  D: 'D 任務D',
-  E: 'E 任務E',
-}
-
 const ROLE_ORDER: LearningStyleType[] = ['D', 'A', 'O', 'L', 'C']
-const EMAIL_ORDER: OnboardingEmailType[] = ['L0', 'A', 'B', 'C', 'D', 'E']
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -84,36 +48,6 @@ function SectionCard({ title, children }: { title: string; children: React.React
   )
 }
 
-function HBarRow({
-  label,
-  value,
-  total,
-  colorClass = 'bg-primary',
-}: {
-  label: string
-  value: number
-  total: number
-  colorClass?: string
-}) {
-  const pct = total > 0 ? Math.round((value / total) * 100) : 0
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-foreground">{label}</span>
-        <span className="text-muted-foreground">
-          {pct}%（{value.toLocaleString()} 人）
-        </span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className={cn('h-full rounded-full transition-all', colorClass)}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  )
-}
-
 function MiniStat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-lg bg-muted/50 p-3 text-center">
@@ -123,120 +57,9 @@ function MiniStat({ label, value }: { label: string; value: string | number }) {
   )
 }
 
-// ─── Section A + B + C + D (Onboarding Stats) ────────────────────────────────
-
-function OnboardingStatsSection({ days }: { days?: number }) {
-  const { data } = useQuery({
-    queryKey: ['admin', 'onboarding-stats', days],
-    queryFn: () => getOnboardingStats(days ? { days } : undefined).then((r) => r.data.data),
-  })
-
-  if (!data) return null
-
-  const regTotal = data.totalUsers
-  const regRows = [
-    { key: 'landing_page', value: data.byRegistrationFlow?.landing_page?.total ?? 0 },
-    { key: 'quiz', value: data.byRegistrationFlow?.quiz?.total ?? 0 },
-    { key: 'action_maker', value: data.byRegistrationFlow?.action_maker?.total ?? 0 },
-  ]
-
-  const creationTotal = Object.values(data.byCreationMethod ?? {}).reduce((s, v) => s + v, 0)
-  const creationRows = [
-    { key: 'self_created', value: data.byCreationMethod?.self_created ?? 0 },
-    { key: 'copied', value: data.byCreationMethod?.copied ?? 0 },
-    { key: 'action_generator', value: data.byCreationMethod?.action_generator ?? 0 },
-  ]
-
-  return (
-    <>
-      {/* A: 註冊來源分布 */}
-      <SectionCard title="A. 註冊來源分布">
-        <div className="space-y-3">
-          {regRows.map(({ key, value }) => (
-            <HBarRow
-              key={key}
-              label={REGISTRATION_FLOW_LABEL[key] ?? key}
-              value={value}
-              total={regTotal}
-            />
-          ))}
-        </div>
-      </SectionCard>
-
-      {/* B: 實踐建立方式 */}
-      <SectionCard title="B. 實踐建立方式">
-        <div className="space-y-3">
-          {creationRows.map(({ key, value }) => (
-            <HBarRow
-              key={key}
-              label={CREATION_METHOD_LABEL[key] ?? key}
-              value={value}
-              total={creationTotal}
-              colorClass="bg-blue-500"
-            />
-          ))}
-        </div>
-      </SectionCard>
-
-      {/* C: Badge 完成率 */}
-      <SectionCard title="C. Onboarding Badge 完成率">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <MiniStat label="Badge 完成率" value={`${data.badgeGrantedRate?.toFixed(1) ?? 0}%`} />
-            <MiniStat label="已獲得 Badge" value={data.badgeGrantedCount?.toLocaleString() ?? 0} />
-            <MiniStat
-              label="平均完成天數"
-              value={`${data.avgDaysToComplete?.toFixed(1) ?? 0} 天`}
-            />
-            <MiniStat label="總用戶數" value={data.totalUsers?.toLocaleString() ?? 0} />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground">已完成 Badge</span>
-              <span className="text-muted-foreground">
-                {data.badgeGrantedRate?.toFixed(1) ?? 0}%（{data.badgeGrantedCount} /{' '}
-                {data.totalUsers} 人）
-              </span>
-            </div>
-            <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-success transition-all"
-                style={{ width: `${data.badgeGrantedRate ?? 0}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </SectionCard>
-
-      {/* D: 完成天數分布 */}
-      {(data.completionByDay?.length ?? 0) > 0 && (
-        <SectionCard title="D. 任務完成天數分布（Histogram）">
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={data.completionByDay} margin={{ bottom: 16 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="days"
-                tick={{ fontSize: 11 }}
-                label={{ value: '天數', position: 'insideBottom', offset: -8, fontSize: 12 }}
-              />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip
-                formatter={(val) => [`${val} 人`, '人數']}
-                labelFormatter={(v) => `第 ${v} 天`}
-              />
-              <Bar dataKey="count" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </SectionCard>
-      )}
-    </>
-  )
-}
-
-// ─── Section E: 學習風格測驗分布 ──────────────────────────────────────────────
+// ─── Section A: 學習風格測驗分布 ──────────────────────────────────────────────
 
 function QuizStatsSection({ days }: { days?: number }) {
-  const [crossTab, setCrossTab] = useState<'badge' | 'source'>('badge')
   const { data } = useQuery({
     queryKey: ['admin', 'quiz-stats', days],
     queryFn: () => getQuizStats(days ? { days } : undefined).then((r) => r.data.data),
@@ -245,7 +68,7 @@ function QuizStatsSection({ days }: { days?: number }) {
   if (!data) return null
 
   return (
-    <SectionCard title="E. 學習風格測驗分布">
+    <SectionCard title="A. 學習風格測驗分布">
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <MiniStat label="測驗完成率" value={`${data.quizCompletedRate?.toFixed(1) ?? 0}%`} />
@@ -277,99 +100,12 @@ function QuizStatsSection({ days }: { days?: number }) {
             )
           })}
         </div>
-
-        {/* Cross analysis */}
-        <div>
-          <div className="mb-3 flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setCrossTab('badge')}
-              className={cn(
-                crossTab === 'badge' ? 'border-primary bg-primary text-primary-foreground' : '',
-              )}
-            >
-              角色 × Badge 完成率
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setCrossTab('source')}
-              className={cn(
-                crossTab === 'source' ? 'border-primary bg-primary text-primary-foreground' : '',
-              )}
-            >
-              角色 × 註冊來源
-            </Button>
-          </div>
-
-          {crossTab === 'badge' && (
-            <div className="space-y-2">
-              {ROLE_ORDER.map((role) => {
-                const info = data.byRoleAndBadge?.[role]
-                const rate =
-                  info?.total > 0 ? Math.round((info.badgeGranted / info.total) * 100) : 0
-                return (
-                  <div key={role} className="flex items-center gap-3 text-sm">
-                    <span className="w-28 shrink-0 text-muted-foreground">
-                      {role} {LEARNING_STYLE_LABEL[role].name}
-                    </span>
-                    <div
-                      className="flex-1 overflow-hidden rounded-full bg-muted"
-                      style={{ height: 8 }}
-                    >
-                      <div
-                        className="h-full rounded-full bg-success"
-                        style={{ width: `${rate}%` }}
-                      />
-                    </div>
-                    <span className="w-10 text-right text-muted-foreground">{rate}%</span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {crossTab === 'source' && (
-            <Table>
-              <TableHeader>
-                <TableRow className="text-left text-xs">
-                  <TableHead className="pr-4">角色</TableHead>
-                  <TableHead className="pr-4">Landing Page</TableHead>
-                  <TableHead className="pr-4">測驗</TableHead>
-                  <TableHead>Action Maker</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ROLE_ORDER.map((role) => {
-                  const info = data.byRoleAndRegistrationFlow?.[role] ?? {}
-                  return (
-                    <TableRow key={role}>
-                      <TableCell className="pr-4 text-foreground">
-                        {role} {LEARNING_STYLE_LABEL[role].name}
-                      </TableCell>
-                      <TableCell className="pr-4 text-muted-foreground">
-                        {info.landing_page ?? 0}
-                      </TableCell>
-                      <TableCell className="pr-4 text-muted-foreground">{info.quiz ?? 0}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {info.action_maker ?? 0}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </div>
       </div>
     </SectionCard>
   )
 }
 
-// ─── Section F: 人物誌填寫狀況 ────────────────────────────────────────────────
+// ─── Section B: 人物誌填寫狀況 ────────────────────────────────────────────────
 
 function PersonaStatsSection({ days }: { days?: number }) {
   const { data } = useQuery({
@@ -380,7 +116,7 @@ function PersonaStatsSection({ days }: { days?: number }) {
   if (!data) return null
 
   return (
-    <SectionCard title="F. 人物誌填寫狀況">
+    <SectionCard title="B. 人物誌填寫狀況">
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MiniStat label="至少填 1 題" value={`${data.anyAnswerRate?.toFixed(1) ?? 0}%`} />
@@ -444,46 +180,7 @@ function PersonaStatsSection({ days }: { days?: number }) {
   )
 }
 
-// ─── Section G: Email 序列開信率 ──────────────────────────────────────────────
-
-function EmailStatsSection({ days }: { days?: number }) {
-  const { data } = useQuery({
-    queryKey: ['admin', 'email-onboarding-stats', days],
-    queryFn: () => getEmailOnboardingStats(days ? { days } : undefined).then((r) => r.data.data),
-  })
-
-  if (!data) return null
-
-  return (
-    <SectionCard title="G. Email 序列開信率">
-      <div className="space-y-3">
-        {EMAIL_ORDER.map((type) => {
-          const info = data.byEmailType?.[type]
-          if (!info) return null
-          return (
-            <div key={type} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-foreground">{EMAIL_TYPE_LABEL[type]}</span>
-                <span className="text-muted-foreground">
-                  {info.openRate?.toFixed(1) ?? 0}% 開信率（已寄{' '}
-                  {info.sentCount?.toLocaleString() ?? 0} 封）
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-blue-500 transition-all"
-                  style={{ width: `${info.openRate ?? 0}%` }}
-                />
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </SectionCard>
-  )
-}
-
-// ─── Section H: 參與度指標 ────────────────────────────────────────────────────
+// ─── Section C: 參與度指標 ────────────────────────────────────────────────────
 
 function EngagementSection({ days }: { days?: number }) {
   const { data } = useQuery({
@@ -494,7 +191,7 @@ function EngagementSection({ days }: { days?: number }) {
   if (!data) return null
 
   return (
-    <SectionCard title="H. 參與度指標">
+    <SectionCard title="C. 參與度指標">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <MiniStat
           label="平均建立實踐數"
@@ -672,17 +369,15 @@ export function OnboardingFlowsPage() {
         </div>
       )}
 
-      {/* ─── Analytics Sections A–H ─────────────────────────────────────── */}
+      {/* ─── Analytics Sections ─────────────────────────────────────────── */}
       <div className="border-t border-border pt-2">
         <h2 className="text-xl leading-none font-semibold tracking-tight text-foreground">
-          Onboarding 追蹤分析
+          註冊後追蹤分析
         </h2>
       </div>
 
-      <OnboardingStatsSection days={days} />
       <QuizStatsSection days={days} />
       <PersonaStatsSection days={days} />
-      <EmailStatsSection days={days} />
       <EngagementSection days={days} />
     </div>
   )

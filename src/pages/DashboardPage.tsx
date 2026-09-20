@@ -32,7 +32,7 @@ import {
   YAxis,
 } from 'recharts'
 import { getActivityTimeline } from '@/api/admin-users'
-import type { ActivityTimelineEvent, AdminUserListItem, RegistrationFlow } from '@/api/types'
+import type { ActivityTimelineEvent, AdminUserListItem } from '@/api/types'
 import { DrillDownDrawer } from '@/components/DrillDownDrawer'
 import { ExportButton } from '@/components/ExportButton'
 import { PageHeader } from '@/components/PageHeader'
@@ -49,11 +49,7 @@ import { useCommunityInteractionStats } from '@/hooks/useCommunityMap'
 import { useContentPerformance } from '@/hooks/useContentPerformance'
 import { useDashboardStats } from '@/hooks/useDashboardStats'
 import { useEmailHealth } from '@/hooks/useEmailManagement'
-import {
-  useEngagementStats,
-  useOnboardingStats,
-  usePersonaStats,
-} from '@/hooks/useOnboardingAnalytics'
+import { useEngagementStats, usePersonaStats } from '@/hooks/useOnboardingAnalytics'
 import { useDbInfo, useRedisInfo } from '@/hooks/useSystemMonitor'
 import { useTodayRegistrations } from '@/hooks/useTodayRegistrations'
 import { cn } from '@/lib/utils'
@@ -123,12 +119,6 @@ function DashboardSkeleton() {
 }
 
 // ── Registration helpers ──────────────────────────────────
-const REG_FLOW_LABEL: Record<RegistrationFlow, string> = {
-  landing_page: 'Landing Page',
-  quiz: '測驗',
-  action_maker: 'Action Maker',
-}
-
 const TIMELINE_ICON: Partial<Record<ActivityTimelineEvent['type'], typeof LogIn>> = {
   login: LogIn,
   checkin: CheckCircle,
@@ -177,8 +167,6 @@ function DrawerUserRow({ user }: { user: AdminUserListItem }) {
           <div className="flex flex-col items-end gap-0.5">
             {user.email && <span className="text-xs text-muted-foreground">{user.email}</span>}
             <span className="text-[10px] text-muted-foreground/70">
-              {user.registrationFlow ? REG_FLOW_LABEL[user.registrationFlow] : '—'}
-              {' · '}
               {relativeTime(user.lastActiveAt)}
             </span>
           </div>
@@ -302,7 +290,6 @@ export function DashboardPage() {
   const { data: userTrend } = useActiveUsersTrend({ days })
   const { data: content } = useContentPerformance()
   const { data: interaction } = useCommunityInteractionStats(interactionPeriod)
-  const { data: onboarding } = useOnboardingStats()
   const { data: engagement } = useEngagementStats()
   const { data: personaStats } = usePersonaStats()
   const { data: emailHealth } = useEmailHealth()
@@ -565,21 +552,7 @@ export function DashboardPage() {
       {/* ── 4. Activation — 活化 ─────────────────────────── */}
       <div className="space-y-2">
         <SectionLabel>Activation</SectionLabel>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard
-            title="Onboarding 完成率"
-            value={pct(onboarding?.badgeGrantedRate)}
-            icon={CheckCircle}
-            description="完成所有 Onboarding 任務並獲得徽章的用戶比例"
-            periodLabel="全期間"
-            onClick={() =>
-              setDrillDown({
-                type: 'metric',
-                title: '已完成 Badge 的用戶',
-                metric: 'badge_completed',
-              })
-            }
-          />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           <StatCard
             title="測驗完成率"
             value={pct(content?.quizSummary?.completionRate)}
