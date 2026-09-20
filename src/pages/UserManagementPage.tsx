@@ -20,6 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useUserTags } from '@/hooks/useUserTags'
+import { normalizeSortValue } from '@/lib/sort-query'
 
 type PersonaType = 'L' | 'C' | 'A' | 'D' | 'O'
 
@@ -170,7 +171,11 @@ export function UserManagementPage() {
   const [createdFrom, setCreatedFrom] = useState(initCreatedRange.from)
   const [createdTo, setCreatedTo] = useState(initCreatedRange.to)
 
-  const [sortValue, setSortValue] = useState(searchParams.get('sort') ?? 'lastActiveAt_desc')
+  // #218 拿掉 registrationFlow／creationMethod／daysToComplete 排序後，舊書籤的 ?sort= 值要退回預設，
+  // 否則 select 找不到對應選項會空白、查詢卻用別的欄位排序
+  const [sortValue, setSortValue] = useState(() =>
+    normalizeSortValue(searchParams.get('sort'), SORT_OPTIONS, 'lastActiveAt_desc'),
+  )
 
   const [filterPanelOpen, setFilterPanelOpen] = useState(
     !!(searchParams.get('datePreset') || searchParams.get('createdFrom')),
