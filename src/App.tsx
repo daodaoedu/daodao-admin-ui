@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { ProtectedRoute } from '@/auth/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
+import { USE_PREVIEW_MOCK } from '@/config'
 
 // Existing pages (eager load)
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
@@ -177,7 +178,15 @@ export function App() {
     <Routes>
       <Route
         path="/login"
-        element={isLoading ? null : isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+        element={
+          USE_PREVIEW_MOCK ? (
+            <Navigate to="/dashboard" replace />
+          ) : isLoading ? null : isAuthenticated ? (
+            <Navigate to="/" replace />
+          ) : (
+            <LoginPage />
+          )
+        }
       />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route element={<ProtectedRoute />}>

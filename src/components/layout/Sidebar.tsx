@@ -256,7 +256,13 @@ function SidebarGroup({
   )
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  onNavigate,
+  onClose,
+}: {
+  onNavigate?: () => void
+  onClose?: () => void
+}) {
   const { adminInfo, logout } = useAuth()
   const [collapsed, setCollapsed] = useState(getInitialCollapsed)
 
@@ -281,6 +287,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <span className="text-sm font-bold text-foreground">DaoDao Admin</span>
           <span className="text-[10px] text-muted-foreground">管理後台</span>
         </div>
+        {onClose && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="ml-auto rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            title="隱藏側邊欄"
+            aria-label="隱藏側邊欄"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Nav */}
@@ -324,10 +343,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose: () => void }) {
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-sidebar/90 lg:backdrop-blur xl:w-80 h-screen sticky top-0 border-r border-sidebar-border/80">
-      <SidebarContent />
+      <SidebarContent onClose={onClose} />
     </aside>
   )
 }

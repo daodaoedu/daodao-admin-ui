@@ -10,6 +10,7 @@ import {
 import { authLogout, getAuthMe } from '@/api/admin'
 import { TOKEN_KEY } from '@/api/client'
 import type { AuthMeUser } from '@/api/types'
+import { USE_PREVIEW_MOCK } from '@/config'
 
 const ADMIN_ROLES = ['admin', 'superadmin', 'Admin', 'SuperAdmin']
 
@@ -54,6 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
 
   useEffect(() => {
+    // 預覽模式不打 /auth/me：後端可達時會回 401，且預覽本來就不需要登入狀態
+    if (USE_PREVIEW_MOCK) {
+      setIsLoading(false)
+      return
+    }
     getAuthMe()
       .then((res) => {
         const { user, isTemporary } = res.data.data
