@@ -171,7 +171,11 @@ export default function EmailTemplateEditorPage() {
             <Power className="h-4 w-4" />
             {isActive ? '停用寄送' : '啟用寄送'}
           </button>
-          {savedOk && <span className="text-sm text-green-600">已儲存，最多 5 分鐘後生效</span>}
+          {savedOk && (
+            <span className="text-sm text-green-600">
+              {template.slug ? '已儲存，最多 5 分鐘後生效' : '已儲存'}
+            </span>
+          )}
           <button
             type="button"
             onClick={handleSave}
@@ -197,13 +201,17 @@ export default function EmailTemplateEditorPage() {
         </p>
       )}
 
-      {/* 寄信端讀模板有 5 分鐘快取（server template-resolver TEMPLATE_CACHE_TTL_MS，daodao#236 AC-06） */}
+      {/* 寄信端依 slug 讀模板且有 5 分鐘快取（server template-resolver TEMPLATE_CACHE_TTL_MS，daodao#236 AC-06）；沒有 slug 的模板不會被寄信流程使用 */}
       <p
         role="note"
         className="flex shrink-0 items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200"
       >
         <Clock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        <span>儲存或切換啟用／停用寄送後，最多 5 分鐘才會套用到實際寄出的信件。</span>
+        <span>
+          {template.slug
+            ? '儲存或切換啟用／停用寄送後，最多 5 分鐘才會套用到實際寄出的信件。'
+            : '這個模板沒有 slug，尚未接上任何寄信流程：修改或停用不會影響實際寄出的信件。'}
+        </span>
       </p>
 
       {/* Subject / Preheader bar */}
