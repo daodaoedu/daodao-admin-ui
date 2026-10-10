@@ -1,78 +1,64 @@
-import { ChevronDown, Inbox, MessageSquare, TrendingUp } from 'lucide-react'
+import { ChevronDown, Inbox, Loader2, MessageSquare, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
+import type { FeedbackCategory, FeedbackStatus } from '@/api/admin-support'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { useFeedback } from '@/hooks/useFeedback'
+import {
+  CATEGORY_LABEL,
+  feedbackListState,
+  STATUS_LABEL,
+  toFeedbackQuery,
+  toFeedbackView,
+} from '@/lib/feedback'
 import { cn } from '@/lib/utils'
 
-type FeedbackStatus = '待處理' | '已回覆' | '已關閉'
-type FeedbackCategory = 'Bug' | '功能建議' | '問題' | '其他'
-
-interface FeedbackItem {
-  id: number
-  userName: string
-  avatarColor: string
-  date: string
-  category: FeedbackCategory
-  status: FeedbackStatus
-  content: string
-}
-
 const categoryBadgeClass: Record<FeedbackCategory, string> = {
-  Bug: 'bg-destructive/15 text-destructive',
-  功能建議: 'bg-info/15 text-info',
-  問題: 'bg-warning/15 text-warning',
-  其他: 'bg-muted text-muted-foreground',
+  bug: 'bg-destructive/15 text-destructive',
+  feature: 'bg-info/15 text-info',
+  question: 'bg-warning/15 text-warning',
+  other: 'bg-muted text-muted-foreground',
 }
 
 const statusBadgeClass: Record<FeedbackStatus, string> = {
-  待處理: 'bg-warning/15 text-warning',
-  已回覆: 'bg-success/15 text-success',
-  已關閉: 'bg-muted text-muted-foreground',
+  pending: 'bg-warning/15 text-warning',
+  replied: 'bg-success/15 text-success',
+  closed: 'bg-muted text-muted-foreground',
 }
 
-const statusOptions: ('全部' | FeedbackStatus)[] = ['全部', '待處理', '已回覆', '已關閉']
-const categoryOptions: ('全部' | FeedbackCategory)[] = ['全部', 'Bug', '功能建議', '問題', '其他']
-const STATUS_SELECT_OPTIONS = statusOptions.map((status) => ({
-  value: status,
-  label: status === '全部' ? '全部狀態' : status,
-}))
-const CATEGORY_SELECT_OPTIONS = categoryOptions.map((category) => ({
-  value: category,
-  label: category === '全部' ? '全部分類' : category,
-}))
+const STATUS_VALUES = Object.keys(STATUS_LABEL) as FeedbackStatus[]
+const CATEGORY_VALUES = Object.keys(CATEGORY_LABEL) as FeedbackCategory[]
+const STATUS_SELECT_OPTIONS = [
+  { value: 'all', label: '全部狀態' },
+  ...STATUS_VALUES.map((status) => ({ value: status, label: STATUS_LABEL[status] })),
+]
+const CATEGORY_SELECT_OPTIONS = [
+  { value: 'all', label: '全部分類' },
+  ...CATEGORY_VALUES.map((category) => ({ value: category, label: CATEGORY_LABEL[category] })),
+]
 
 export function FeedbackPage() {
-  const [statusFilter, setStatusFilter] = useState<'全部' | FeedbackStatus>('全部')
-  const [categoryFilter, setCategoryFilter] = useState<'全部' | FeedbackCategory>('全部')
+  const [statusFilter, setStatusFilter] = useState<'all' | FeedbackStatus>('all')
+  const [categoryFilter, setCategoryFilter] = useState<'all' | FeedbackCategory>('all')
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [replyTexts, setReplyTexts] = useState<Record<number, string>>({})
   const [statusChanges, setStatusChanges] = useState<Record<number, FeedbackStatus>>({})
 
-  const { data: apiData } = useFeedback({
-    status: statusFilter !== '全部' ? statusFilter : undefined,
-    category: categoryFilter !== '全部' ? categoryFilter : undefined,
-  })
+  const {
+    data: apiData,
+    isLoading,
+    isError,
+    refetch,
+  } = useFeedback(toFeedbackQuery(statusFilter, categoryFilter))
 
-  const feedbackItems: FeedbackItem[] =
-    (apiData?.items as unknown as FeedbackItem[] | undefined) ?? []
-  const feedbackStats = apiData?.stats ?? {
-    total: 0,
-    pending: 0,
-    thisMonth: 0,
-    totalChange: 0,
-    pendingChange: 0,
-    thisMonthChange: 0,
-  }
-
-  const filtered = feedbackItems.filter((f) => {
-    if (statusFilter !== '全部' && f.status !== statusFilter) return false
-    if (categoryFilter !== '全部' && f.category !== categoryFilter) return false
-    return true
-  })
+  const items = (apiData?.items ?? []).map(toFeedbackView)
+  const listState = feedbackListState({ isLoading, isError, itemCount: items.length })
+  const filtered = listState === 'list' ? items : []
+  // 失敗或載入中不顯示 0，避免看起來像「沒有回饋」
+  const statValue = (value: number | undefined) => (apiData ? (value ?? 0) : '—')
 
   return (
     <div className="space-y-6">
@@ -83,13 +69,13 @@ export function FeedbackPage() {
           <div className="flex gap-2">
             <Select
               value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as '全部' | FeedbackStatus)}
+              onValueChange={(value) => setStatusFilter(value as 'all' | FeedbackStatus)}
               options={STATUS_SELECT_OPTIONS}
               triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             />
             <Select
               value={categoryFilter}
-              onValueChange={(value) => setCategoryFilter(value as '全部' | FeedbackCategory)}
+              onValueChange={(value) => setCategoryFilter(value as 'all' | FeedbackCategory)}
               options={CATEGORY_SELECT_OPTIONS}
               triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             />
@@ -99,31 +85,32 @@ export function FeedbackPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          title="總回饋"
-          value={feedbackStats.total}
-          icon={MessageSquare}
-          change={feedbackStats.totalChange}
-          changeLabel="較上月"
-        />
-        <StatCard
-          title="待處理"
-          value={feedbackStats.pending}
-          icon={Inbox}
-          change={feedbackStats.pendingChange}
-          changeLabel="較上月"
-        />
-        <StatCard
-          title="本月新增"
-          value={feedbackStats.thisMonth}
-          icon={TrendingUp}
-          change={feedbackStats.thisMonthChange}
-          changeLabel="較上月"
-        />
+        <StatCard title="總回饋" value={statValue(apiData?.stats?.total)} icon={MessageSquare} />
+        <StatCard title="待處理" value={statValue(apiData?.stats?.pending)} icon={Inbox} />
+        <StatCard title="本月新增" value={statValue(apiData?.stats?.thisMonth)} icon={TrendingUp} />
       </div>
 
       {/* Feedback List */}
       <div className="space-y-3">
+        {listState === 'loading' && (
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-border py-20 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            載入意見回饋中
+          </div>
+        )}
+
+        {listState === 'error' && (
+          <div
+            role="alert"
+            className="rounded-xl border border-destructive/30 bg-destructive/5 px-5 py-12 text-center"
+          >
+            <p className="text-sm text-destructive">無法載入意見回饋，請稍後再試。</p>
+            <Button type="button" variant="outline" className="mt-4" onClick={() => refetch()}>
+              再試一次
+            </Button>
+          </div>
+        )}
+
         {filtered.map((item) => {
           const isExpanded = expandedId === item.id
           return (
@@ -139,13 +126,8 @@ export function FeedbackPage() {
                 onClick={() => setExpandedId(isExpanded ? null : item.id)}
               >
                 {/* Avatar */}
-                <div
-                  className={cn(
-                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground',
-                    item.avatarColor,
-                  )}
-                >
-                  {item.userName[0]}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                  {item.initial}
                 </div>
 
                 {/* Content */}
@@ -159,7 +141,7 @@ export function FeedbackPage() {
                         categoryBadgeClass[item.category],
                       )}
                     >
-                      {item.category}
+                      {item.categoryLabel}
                     </span>
                     <span
                       className={cn(
@@ -167,7 +149,7 @@ export function FeedbackPage() {
                         statusBadgeClass[item.status],
                       )}
                     >
-                      {item.status}
+                      {item.statusLabel}
                     </span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.content}</p>
@@ -217,9 +199,10 @@ export function FeedbackPage() {
                               [item.id]: value as FeedbackStatus,
                             }))
                           }
-                          options={statusOptions
-                            .filter((s) => s !== '全部')
-                            .map((status) => ({ value: status, label: status }))}
+                          options={STATUS_VALUES.map((status) => ({
+                            value: status,
+                            label: STATUS_LABEL[status],
+                          }))}
                           triggerClassName="rounded-md border border-input bg-card px-3 py-1.5 text-sm text-foreground transition-colors duration-150 h-9 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                           className="min-w-32"
                         />
@@ -227,7 +210,9 @@ export function FeedbackPage() {
                           type="button"
                           variant="secondary"
                           onClick={() =>
-                            alert(`狀態已變更為：${statusChanges[item.id] ?? item.status}`)
+                            alert(
+                              `狀態已變更為：${STATUS_LABEL[statusChanges[item.id] ?? item.status]}`,
+                            )
                           }
                         >
                           確認
@@ -241,7 +226,7 @@ export function FeedbackPage() {
           )
         })}
 
-        {filtered.length === 0 && (
+        {listState === 'empty' && (
           <div className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm p-10 text-center shadow-sm">
             <p className="text-muted-foreground">沒有符合條件的回饋</p>
           </div>
