@@ -1,16 +1,20 @@
 import { html } from '@codemirror/lang-html'
 import { oneDark } from '@codemirror/theme-one-dark'
 import CodeMirror from '@uiw/react-codemirror'
-import { ArrowLeft, Loader2, Monitor, Power, Save, Smartphone } from 'lucide-react'
+import { ArrowLeft, Clock, Loader2, Monitor, Power, Save, Smartphone } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import type { EmailTemplateUpdate } from '@/api/types'
 import {
   AVAILABLE_EMAIL_VARIABLES,
   useEmailTemplate,
   useUpdateEmailTemplate,
 } from '@/hooks/useEmailTemplates'
 import { detectVariables, renderEmailPreview } from '@/lib/email-preview'
+import {
+  buildEmailTemplateUpdate,
+  mergeTemplateVariables,
+  templateSaveErrorMessage,
+} from '@/lib/email-template-save'
 
 type PreviewMode = 'desktop' | 'mobile'
 
@@ -30,6 +34,8 @@ export default function EmailTemplateEditorPage() {
   const [variableSearch, setVariableSearch] = useState('')
   const [savedOk, setSavedOk] = useState(false)
   const [isActive, setIsActive] = useState(true)
+  // 模板登記的變數清單；存檔只增不減（daodao#292 AC-01）
+  const [registeredVariables, setRegisteredVariables] = useState<string[]>([])
 
   // Initialise from fetched template
   useEffect(() => {
@@ -39,10 +45,16 @@ export default function EmailTemplateEditorPage() {
     setPreheader(template.preheader ?? '')
     setDataSource(template.dataSource)
     setIsActive(template.isActive)
+    setRegisteredVariables(template.variables ?? [])
   }, [template])
 
   // Auto-detect variables when content changes
   const detectedVars = detectVariables(content)
+  const templateVariables = mergeTemplateVariables(registeredVariables, [
+    subject,
+    preheader,
+    content,
+  ])
   const variableQuery = variableSearch.trim().toLowerCase()
   const variableSearchResults = variableQuery
     ? AVAILABLE_EMAIL_VARIABLES.filter((variable) => variable.toLowerCase().includes(variableQuery))
@@ -56,27 +68,39 @@ export default function EmailTemplateEditorPage() {
 
   const handleSave = useCallback(() => {
     if (!templateId) return
-    const data: EmailTemplateUpdate = {
+    setSavedOk(false)
+    const data = buildEmailTemplateUpdate({
+      registeredVariables,
       body: content,
       subject,
-      preheader: preheader || undefined,
-      variables: detectedVars,
+      preheader,
       dataSource,
       isActive,
-    }
+    })
     updateMutation.mutate(
       { id: templateId, data },
       {
         onSuccess: () => {
+          setRegisteredVariables(data.variables ?? [])
           setSavedOk(true)
           setTimeout(() => setSavedOk(false), 2000)
         },
       },
     )
-  }, [templateId, content, subject, preheader, detectedVars, dataSource, isActive, updateMutation])
+  }, [
+    templateId,
+    registeredVariables,
+    content,
+    subject,
+    preheader,
+    dataSource,
+    isActive,
+    updateMutation,
+  ])
 
   const handleToggleSending = useCallback(() => {
     if (!templateId) return
+    setSavedOk(false)
     const nextIsActive = !isActive
     updateMutation.mutate(
       { id: templateId, data: { isActive: nextIsActive } },
@@ -147,7 +171,11 @@ export default function EmailTemplateEditorPage() {
             <Power className="h-4 w-4" />
             {isActive ? '停用寄送' : '啟用寄送'}
           </button>
-          {savedOk && <span className="text-sm text-green-600">已儲存</span>}
+          {savedOk && (
+            <span className="text-sm text-green-600">
+              {template.slug ? '已儲存，最多 5 分鐘後生效' : '已儲存'}
+            </span>
+          )}
           <button
             type="button"
             onClick={handleSave}
@@ -163,6 +191,28 @@ export default function EmailTemplateEditorPage() {
           </button>
         </div>
       </div>
+
+      {updateMutation.isError && (
+        <p
+          role="alert"
+          className="shrink-0 border-b border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300"
+        >
+          {templateSaveErrorMessage(updateMutation.error)}
+        </p>
+      )}
+
+      {/* 寄信端依 slug 讀模板且有 5 分鐘快取（server template-resolver TEMPLATE_CACHE_TTL_MS，daodao#236 AC-06）；沒有 slug 的模板不會被寄信流程使用 */}
+      <p
+        role="note"
+        className="flex shrink-0 items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200"
+      >
+        <Clock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span>
+          {template.slug
+            ? '儲存或切換啟用／停用寄送後，最多 5 分鐘才會套用到實際寄出的信件。'
+            : '這個模板沒有 slug，尚未接上任何寄信流程：修改或停用不會影響實際寄出的信件。'}
+        </span>
+      </p>
 
       {/* Subject / Preheader bar */}
       <div className="flex shrink-0 gap-3 border-b border-border bg-muted/30 px-4 py-2">
@@ -197,7 +247,7 @@ export default function EmailTemplateEditorPage() {
             </span>
           </div>
           {/* Variables panel */}
-          {detectedVars.length > 0 && (
+          {templateVariables.length > 0 && (
             <div className="shrink-0 border-t border-border bg-muted/10 p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">預覽變數</span>
@@ -213,7 +263,7 @@ export default function EmailTemplateEditorPage() {
 
               <p className="mb-2 text-xs text-muted-foreground">本模板使用的變數</p>
               <div className="flex flex-wrap gap-2">
-                {detectedVars.map((variable) => (
+                {templateVariables.map((variable) => (
                   <code
                     key={variable}
                     className="rounded bg-primary/10 px-2 py-1 font-mono text-xs font-medium text-primary"
