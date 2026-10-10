@@ -3,31 +3,36 @@ import type { ApiResponse } from './types'
 
 // ── Feedback, FAQ ────────────────────────────────────────
 
+// 對應 daodao-server src/types/admin-feedback.types.ts（FeedbackItem／FeedbackListResult）
+export type FeedbackStatus = 'pending' | 'replied' | 'closed'
+export type FeedbackCategory = 'bug' | 'feature' | 'question' | 'other'
+
 export interface FeedbackItem {
   id: number
-  userName: string
-  avatarColor: string
-  date: string
-  category: string
-  status: string
+  userId: number | null
+  userName: string | null
   content: string
+  category: FeedbackCategory
+  status: FeedbackStatus
+  createdAt: string
+  repliedAt: string | null
 }
 
 export interface FeedbackListResponse {
   items: FeedbackItem[]
+  /** 符合篩選條件的筆數 */
+  total: number
+  /** 全部回饋的統計（不受篩選影響） */
   stats: {
     total: number
     pending: number
     thisMonth: number
-    totalChange: number
-    pendingChange: number
-    thisMonthChange: number
   }
 }
 
 export const listFeedback = (params?: {
-  status?: string
-  category?: string
+  status?: FeedbackStatus
+  category?: FeedbackCategory
   limit?: number
   offset?: number
 }) =>

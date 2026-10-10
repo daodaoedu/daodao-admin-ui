@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { listFeedback } from '@/api/admin-support'
+import { type FeedbackCategory, type FeedbackStatus, listFeedback } from '@/api/admin-support'
 
 export function useFeedback(params?: {
-  status?: string
-  category?: string
+  status?: FeedbackStatus
+  category?: FeedbackCategory
   limit?: number
   offset?: number
 }) {
