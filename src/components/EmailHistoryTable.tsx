@@ -3,25 +3,11 @@ import { ChevronLeft, ChevronRight, Loader2, RefreshCcw, Search } from 'lucide-r
 import { useState } from 'react'
 import type { EmailHistoryParams } from '@/api/admin-system'
 import { getEmailHistoryFiltered, retrySingleEmail } from '@/api/admin-system'
-
-const STATUS_OPTIONS = [
-  { value: '', label: '全部狀態' },
-  { value: 'sent', label: '已發送' },
-  { value: 'failed', label: '失敗' },
-  { value: 'pending', label: '待發送' },
-]
-
-const STATUS_BADGE: Record<string, string> = {
-  sent: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-  failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-  pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  sent: '已發送',
-  failed: '失敗',
-  pending: '待發送',
-}
+import {
+  EMAIL_HISTORY_STATUS_OPTIONS,
+  emailHistoryStatusBadge,
+  emailHistoryStatusLabel,
+} from '@/lib/email-history-status'
 
 const PAGE_SIZE = 20
 
@@ -118,7 +104,7 @@ export function EmailHistoryTable() {
             }
             className="rounded-md border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
           >
-            {STATUS_OPTIONS.map((opt) => (
+            {EMAIL_HISTORY_STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -212,9 +198,9 @@ export function EmailHistoryTable() {
                   <td className="px-5 py-3 text-xs">{item.type}</td>
                   <td className="px-5 py-3">
                     <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[item.status] ?? 'bg-gray-100 text-gray-700'}`}
+                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${emailHistoryStatusBadge(item.status)}`}
                     >
-                      {STATUS_LABEL[item.status] ?? item.status}
+                      {emailHistoryStatusLabel(item.status)}
                     </span>
                   </td>
                   <td className="px-5 py-3 text-xs text-muted-foreground">

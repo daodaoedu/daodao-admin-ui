@@ -1,3 +1,4 @@
+import type { EmailHistoryStatus } from '@/lib/email-history-status'
 import apiClient from './client'
 import type {
   ApiResponse,
@@ -165,7 +166,7 @@ interface EmailHistoryBackendRecord {
   recipientName: string | null
   emailType: string
   subject: string | null
-  status: 'sent' | 'failed' | 'pending'
+  status: EmailHistoryStatus
   sentAt: string | null
 }
 
