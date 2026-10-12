@@ -86,19 +86,20 @@ const PREVIEW_COHORTS: ChallengeCohort[] = [
 ]
 
 export const KEY = ['admin', 'group-challenges'] as const
-const programsKey = (organizationId?: number) => [...KEY, 'programs', organizationId ?? 'all']
+const programsKey = [...KEY, 'programs'] as const
 const cohortsKey = (programId: number | null) => [...KEY, 'cohorts', programId]
-const templatesKey = (organizationId: number | null) => [...KEY, 'templates', organizationId]
+const templatesKey = [...KEY, 'templates'] as const
 
 // ── 主題 ──────────────────────────────────────────────────────
+// 共同挑戰只屬於島島阿學：主題與模板都由 server 決定所屬組織，前端不帶組織參數
 
-export function useChallengePrograms(organizationId?: number) {
+export function useChallengePrograms() {
   return useQuery({
-    queryKey: [...programsKey(organizationId), USE_PREVIEW_MOCK ? 'preview' : 'api'],
+    queryKey: [...programsKey, USE_PREVIEW_MOCK ? 'preview' : 'api'],
     queryFn: () =>
       USE_PREVIEW_MOCK
         ? Promise.resolve(PREVIEW_PROGRAMS)
-        : listChallengePrograms({ organizationId }).then((r) => r.data.data),
+        : listChallengePrograms().then((r) => r.data.data),
   })
 }
 
@@ -233,16 +234,13 @@ export function useChallengeParticipants(programId: number | null, cohortId: num
 
 // ── 模板 ──────────────────────────────────────────────────────
 
-export function useChallengeTemplates(organizationId: number | null) {
+export function useChallengeTemplates() {
   return useQuery({
-    queryKey: [...templatesKey(organizationId), USE_PREVIEW_MOCK ? 'preview' : 'api'],
+    queryKey: [...templatesKey, USE_PREVIEW_MOCK ? 'preview' : 'api'],
     queryFn: () =>
       USE_PREVIEW_MOCK
-        ? Promise.resolve(
-            PREVIEW_TEMPLATES.filter((template) => template.organizationId === organizationId),
-          )
-        : listChallengeTemplates(organizationId as number).then((r) => r.data.data),
-    enabled: organizationId !== null,
+        ? Promise.resolve(PREVIEW_TEMPLATES)
+        : listChallengeTemplates().then((r) => r.data.data),
   })
 }
 

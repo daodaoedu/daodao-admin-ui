@@ -58,7 +58,6 @@ import {
   useUpdateChallengeTemplate,
 } from '@/hooks/useGroupChallenges'
 import { useAssignInspirationDeck, useInspirationDecks } from '@/hooks/useInspirationDecks'
-import { useOrganizations } from '@/hooks/useOrganizations'
 import { cn } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -163,12 +162,10 @@ function FormError({ message }: { message: string | null }) {
 
 function ProgramFormDialog({
   program,
-  organizationId,
   open,
   onOpenChange,
 }: {
   program: ChallengeProgram | null
-  organizationId: number | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -195,11 +192,7 @@ function ProgramFormDialog({
       if (program) {
         await updateMutation.mutateAsync({ programId: program.id, data })
       } else {
-        if (organizationId === null) {
-          setError('請先選擇所屬組織')
-          return
-        }
-        await createMutation.mutateAsync({ ...data, organizationId })
+        await createMutation.mutateAsync(data)
       }
       onOpenChange(false)
     } catch (err) {
@@ -283,13 +276,11 @@ const EMPTY_TEMPLATE: TemplateFormState = {
 
 function TemplateFormDialog({
   template,
-  organizationId,
   open,
   onOpenChange,
   onCreated,
 }: {
   template: ChallengeTemplate | null
-  organizationId: number
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreated?: (template: ChallengeTemplate) => void
@@ -342,7 +333,7 @@ function TemplateFormDialog({
       setError('每週最少天數不可大於每週最多天數')
       return
     }
-    const payload: Omit<ChallengeTemplateCreate, 'organizationId'> = {
+    const payload: ChallengeTemplateCreate = {
       title: form.title.trim(),
       practiceAction: form.practiceAction.trim() || null,
       durationDays: form.durationDays
@@ -359,7 +350,7 @@ function TemplateFormDialog({
       if (template) {
         await updateMutation.mutateAsync({ templateId: template.id, data: payload })
       } else {
-        const res = await createMutation.mutateAsync({ ...payload, organizationId })
+        const res = await createMutation.mutateAsync(payload)
         onCreated?.(res.data.data)
       }
       onOpenChange(false)
@@ -1196,13 +1187,11 @@ function CohortPanel({
 // ─── Template panel ───────────────────────────────────────────────────────────
 
 function TemplatePanel({
-  organizationId,
   templates,
   isLoading,
   onCreate,
   onEdit,
 }: {
-  organizationId: number
   templates: ChallengeTemplate[]
   isLoading: boolean
   onCreate: () => void
@@ -1230,9 +1219,7 @@ function TemplatePanel({
             <h2 className="font-semibold">實踐模板</h2>
             <Badge variant="primary">{templates.length}</Badge>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            組織 ID {organizationId} 的模板，可重複用於不同期
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">共同挑戰的模板，可重複用於不同期</p>
         </div>
         <Button type="button" size="sm" variant="outline" onClick={onCreate}>
           <Plus className="h-4 w-4" />
@@ -1299,16 +1286,7 @@ function TemplatePanel({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function GroupChallengesPage() {
-  const { data: organizations } = useOrganizations()
-  const [organizationFilter, setOrganizationFilter] = useState('')
-  const organizationId = organizationFilter ? Number(organizationFilter) : undefined
-  const {
-    data: programs,
-    isLoading,
-    isError,
-    refetch,
-    isFetching,
-  } = useChallengePrograms(organizationId)
+  const { data: programs, isLoading, isError, refetch, isFetching } = useChallengePrograms()
   const archiveMutation = useArchiveChallengeProgram()
   const duplicateMutation = useDuplicateChallengeProgram()
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -1326,23 +1304,7 @@ export function GroupChallengesPage() {
   }, [programs, selectedId])
 
   const selectedProgram = programs?.find((program) => program.id === selectedId) ?? null
-  const templateOrganizationId = selectedProgram?.organizationId ?? organizationId ?? null
-  const { data: templates, isLoading: templatesLoading } =
-    useChallengeTemplates(templateOrganizationId)
-
-  const organizationOptions = [
-    { value: '', label: '全部組織' },
-    ...(organizations ?? []).map((organization) => ({
-      value: String(organization.id),
-      label: organization.name,
-    })),
-  ]
-  // 建立主題時：有篩選就用篩選的組織；否則沿用目前選取主題的組織；再不然用第一個啟用組織
-  const createOrganizationId =
-    organizationId ??
-    selectedProgram?.organizationId ??
-    organizations?.find((organization) => organization.status === 'active')?.id ??
-    null
+  const { data: templates, isLoading: templatesLoading } = useChallengeTemplates()
 
   async function archiveProgram(program: ChallengeProgram) {
     if (!window.confirm(`確定封存主題「${program.name}」？底下需先封存所有挑戰。`)) return
@@ -1370,14 +1332,6 @@ export function GroupChallengesPage() {
         description="以 lighthouse 模式管理共同挑戰：建立主題、在主題底下開期、指定模板與開始日後發佈至探索共同挑戰頁。"
         actions={
           <div className="flex gap-2">
-            <Select
-              id="challenge-organization-filter"
-              aria-label="篩選組織"
-              value={organizationFilter}
-              onValueChange={setOrganizationFilter}
-              options={organizationOptions}
-              className="w-44"
-            />
             <Button
               type="button"
               variant="outline"
@@ -1526,21 +1480,18 @@ export function GroupChallengesPage() {
               </Table>
             </section>
 
-            {templateOrganizationId !== null && (
-              <TemplatePanel
-                organizationId={templateOrganizationId}
-                templates={templates ?? []}
-                isLoading={templatesLoading}
-                onCreate={() => {
-                  setEditingTemplate(null)
-                  setTemplateDialogOpen(true)
-                }}
-                onEdit={(template) => {
-                  setEditingTemplate(template)
-                  setTemplateDialogOpen(true)
-                }}
-              />
-            )}
+            <TemplatePanel
+              templates={templates ?? []}
+              isLoading={templatesLoading}
+              onCreate={() => {
+                setEditingTemplate(null)
+                setTemplateDialogOpen(true)
+              }}
+              onEdit={(template) => {
+                setEditingTemplate(template)
+                setTemplateDialogOpen(true)
+              }}
+            />
           </div>
 
           {selectedProgram && (
@@ -1558,18 +1509,14 @@ export function GroupChallengesPage() {
 
       <ProgramFormDialog
         program={editingProgram}
-        organizationId={createOrganizationId}
         open={programDialogOpen}
         onOpenChange={setProgramDialogOpen}
       />
-      {templateOrganizationId !== null && (
-        <TemplateFormDialog
-          template={editingTemplate}
-          organizationId={templateOrganizationId}
-          open={templateDialogOpen}
-          onOpenChange={setTemplateDialogOpen}
-        />
-      )}
+      <TemplateFormDialog
+        template={editingTemplate}
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+      />
     </div>
   )
 }
