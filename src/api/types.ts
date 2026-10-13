@@ -1040,8 +1040,8 @@ export interface ChallengeProgram {
   updatedAt: string | null
 }
 
+/** 共同挑戰只屬於島島阿學，所屬組織由 server 決定，不由前端指定 */
 export interface ChallengeProgramCreate {
-  organizationId: number
   name: string
   description?: string | null
 }
@@ -1111,7 +1111,6 @@ export interface ChallengeTemplate {
 }
 
 export interface ChallengeTemplateCreate {
-  organizationId: number
   title: string
   practiceAction?: string | null
   durationDays?: 7 | 14 | 21 | 30 | null
@@ -1121,7 +1120,7 @@ export interface ChallengeTemplateCreate {
   practiceTimePeriods?: PracticeTimePeriod[]
 }
 
-export type ChallengeTemplateUpdate = Partial<Omit<ChallengeTemplateCreate, 'organizationId'>>
+export type ChallengeTemplateUpdate = Partial<ChallengeTemplateCreate>
 
 // ── Inspiration Decks（靈感卡卡組，daodao-server /api/v1/admin/inspiration-decks）──
 export interface InspirationDeckSummary {

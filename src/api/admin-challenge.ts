@@ -17,8 +17,8 @@ const BASE_PATH = '/daodao-server/api/v1/admin/challenges'
 
 // ── 主題（program）──────────────────────────────────────────────
 
-export const listChallengePrograms = (params?: { organizationId?: number }) =>
-  apiClient.get<ApiResponse<ChallengeProgram[]>>(`${BASE_PATH}/programs`, { params })
+export const listChallengePrograms = () =>
+  apiClient.get<ApiResponse<ChallengeProgram[]>>(`${BASE_PATH}/programs`)
 
 export const createChallengeProgram = (data: ChallengeProgramCreate) =>
   apiClient.post<ApiResponse<ChallengeProgram>>(`${BASE_PATH}/programs`, data)
@@ -77,10 +77,8 @@ export const listChallengeParticipants = (programId: number, cohortId: number) =
 
 // ── 模板（template）────────────────────────────────────────────
 
-export const listChallengeTemplates = (organizationId: number) =>
-  apiClient.get<ApiResponse<ChallengeTemplate[]>>(`${BASE_PATH}/templates`, {
-    params: { organizationId },
-  })
+export const listChallengeTemplates = () =>
+  apiClient.get<ApiResponse<ChallengeTemplate[]>>(`${BASE_PATH}/templates`)
 
 export const createChallengeTemplate = (data: ChallengeTemplateCreate) =>
   apiClient.post<ApiResponse<ChallengeTemplate>>(`${BASE_PATH}/templates`, data)
