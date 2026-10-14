@@ -53,6 +53,7 @@ export interface FeedbackView {
   status: FeedbackStatus
   statusLabel: string
   content: string
+  screenshots: string[]
 }
 
 const dateFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -76,5 +77,7 @@ export function toFeedbackView(item: FeedbackItem): FeedbackView {
     status: item.status,
     statusLabel: STATUS_LABEL[item.status] ?? item.status,
     content: item.content,
+    // 舊版 server 回應沒有這個欄位
+    screenshots: item.screenshots ?? [],
   }
 }

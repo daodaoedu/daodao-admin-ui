@@ -169,6 +169,27 @@ export function FeedbackPage() {
                 <div className="border-t border-border px-5 pb-5 pt-4">
                   <p className="text-sm leading-relaxed">{item.content}</p>
 
+                  {item.screenshots.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {item.screenshots.map((url, index) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block size-24 overflow-hidden rounded-md border border-border"
+                        >
+                          <img
+                            src={url}
+                            alt={`截圖 ${index + 1}`}
+                            loading="lazy"
+                            className="size-full object-cover"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="mt-4 space-y-3">
                     <Textarea
                       placeholder="輸入回覆內容..."

@@ -16,6 +16,8 @@ export interface FeedbackItem {
   status: FeedbackStatus
   createdAt: string
   repliedAt: string | null
+  /** 錯誤回報附的截圖網址（http(s)）；沒有截圖為空陣列 */
+  screenshots: string[]
 }
 
 export interface FeedbackListResponse {
