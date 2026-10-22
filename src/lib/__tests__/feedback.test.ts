@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { FeedbackItem } from '@/api/admin-support'
 import {
   CATEGORY_LABEL,
+  feedbackActionErrorMessage,
   feedbackListState,
   STATUS_LABEL,
   toFeedbackQuery,
   toFeedbackView,
+  toReplyPayload,
+  toStatusPayload,
 } from '../feedback'
 
 const apiItem = (overrides: Partial<FeedbackItem> = {}): FeedbackItem => ({
@@ -18,6 +21,7 @@ const apiItem = (overrides: Partial<FeedbackItem> = {}): FeedbackItem => ({
   createdAt: '2026-10-09T17:30:00.000Z',
   repliedAt: null,
   screenshots: [],
+  replies: [],
   ...overrides,
 })
 
@@ -82,5 +86,71 @@ describe('toFeedbackView', () => {
   it('標籤涵蓋 server 允許的全部值', () => {
     expect(Object.keys(STATUS_LABEL).sort()).toEqual(['closed', 'pending', 'replied'])
     expect(Object.keys(CATEGORY_LABEL).sort()).toEqual(['bug', 'feature', 'other', 'question'])
+  })
+
+  it('帶出已送出的回覆，時間以台灣時間顯示（daodao#313 AC-01）', () => {
+    const view = toFeedbackView(
+      apiItem({
+        status: 'replied',
+        replies: [{ id: 3, content: '在右上角頭像選單', createdAt: '2026-10-21T05:00:00.000Z' }],
+      }),
+    )
+    expect(view.replies).toEqual([{ id: 3, content: '在右上角頭像選單', time: '2026-10-21 13:00' }])
+  })
+
+  it('舊版 server 回應沒有 replies 時給空陣列', () => {
+    const { replies: _omit, ...legacy } = apiItem()
+    expect(toFeedbackView(legacy as FeedbackItem).replies).toEqual([])
+  })
+})
+
+describe('toReplyPayload（daodao#313）', () => {
+  it('送出的回覆內容去頭尾空白', () => {
+    expect(toReplyPayload('  已修正，謝謝回報 \n')).toEqual({ content: '已修正，謝謝回報' })
+  })
+
+  it('空白或只有空白不送出', () => {
+    expect(toReplyPayload('')).toBeNull()
+    expect(toReplyPayload('  \n ')).toBeNull()
+  })
+})
+
+describe('toStatusPayload（daodao#313）', () => {
+  it('選的狀態和目前不同才送出', () => {
+    expect(toStatusPayload('pending', 'closed')).toEqual({ status: 'closed' })
+    expect(toStatusPayload('closed', 'closed')).toBeNull()
+  })
+})
+
+describe('feedbackActionErrorMessage（daodao#313 AC-03）', () => {
+  const apiError = (error: unknown) => ({ response: { data: { success: false, error } } })
+
+  it('顯示 server 回的訊息', () => {
+    expect(
+      feedbackActionErrorMessage(
+        apiError({ code: 'APP_ERROR', message: '找不到這則意見回饋' }),
+        '回覆失敗',
+      ),
+    ).toBe('找不到這則意見回饋')
+  })
+
+  it('驗證錯誤附上欄位訊息', () => {
+    expect(
+      feedbackActionErrorMessage(
+        apiError({
+          code: 'VALIDATION_ERROR',
+          message: '請求資料格式錯誤',
+          details: { content: '回覆內容不可空白' },
+        }),
+        '回覆失敗',
+      ),
+    ).toBe('請求資料格式錯誤（回覆內容不可空白）')
+  })
+
+  it('斷線等非 API 錯誤用預設訊息', () => {
+    expect(feedbackActionErrorMessage(new Error('Network Error'), '回覆失敗，請稍後再試')).toBe(
+      '回覆失敗，請稍後再試',
+    )
+    expect(feedbackActionErrorMessage(apiError(undefined), '回覆失敗')).toBe('回覆失敗')
   })
 })

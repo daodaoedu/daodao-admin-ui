@@ -54,6 +54,63 @@ export interface FeedbackView {
   statusLabel: string
   content: string
   screenshots: string[]
+  replies: FeedbackReplyView[]
+}
+
+export interface FeedbackReplyView {
+  id: number
+  content: string
+  /** 台灣時間 YYYY-MM-DD HH:mm */
+  time: string
+}
+
+const timeFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Taipei',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+const formatTaipeiTime = (iso: string): string => {
+  const parts = Object.fromEntries(
+    timeFormatter.formatToParts(new Date(iso)).map((part) => [part.type, part.value]),
+  )
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`
+}
+
+/** 回覆輸入 → API body；空白不送出 */
+export function toReplyPayload(text: string): { content: string } | null {
+  const content = text.trim()
+  return content ? { content } : null
+}
+
+/** 狀態選單 → API body；沒變就不送出 */
+export function toStatusPayload(
+  current: FeedbackStatus,
+  selected: FeedbackStatus,
+): { status: FeedbackStatus } | null {
+  return current === selected ? null : { status: selected }
+}
+
+/**
+ * 回覆／變更狀態失敗時顯示的訊息：server 的 message，驗證錯誤附上欄位訊息。
+ * 不是 API 錯誤（斷線等）時回 fallback。
+ */
+export function feedbackActionErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error !== 'object' || error === null || !('response' in error)) return fallback
+  const apiError = (
+    error as {
+      response?: { data?: { error?: { message?: string; details?: Record<string, unknown> } } }
+    }
+  ).response?.data?.error
+  if (!apiError?.message) return fallback
+  const details = Object.values(apiError.details ?? {}).filter(
+    (detail): detail is string => typeof detail === 'string',
+  )
+  return details.length > 0 ? `${apiError.message}（${details.join('；')}）` : apiError.message
 }
 
 const dateFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -79,5 +136,11 @@ export function toFeedbackView(item: FeedbackItem): FeedbackView {
     content: item.content,
     // 舊版 server 回應沒有這個欄位
     screenshots: item.screenshots ?? [],
+    // 舊版 server 回應沒有這個欄位
+    replies: (item.replies ?? []).map((reply) => ({
+      id: reply.id,
+      content: reply.content,
+      time: formatTaipeiTime(reply.createdAt),
+    })),
   }
 }
