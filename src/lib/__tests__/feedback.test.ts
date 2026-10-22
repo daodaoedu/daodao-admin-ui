@@ -17,6 +17,7 @@ const apiItem = (overrides: Partial<FeedbackItem> = {}): FeedbackItem => ({
   status: 'pending',
   createdAt: '2026-10-09T17:30:00.000Z',
   repliedAt: null,
+  screenshots: [],
   ...overrides,
 })
 
@@ -40,6 +41,16 @@ describe('toFeedbackQuery', () => {
 })
 
 describe('toFeedbackView', () => {
+  it('帶出錯誤回報的截圖網址，後台展開時才能顯示圖片（daodao#166）', () => {
+    const url = 'https://storage-dev.daodao.so/bug-reports/1791698535059-fd8570e1.png'
+    expect(toFeedbackView(apiItem({ screenshots: [url] })).screenshots).toEqual([url])
+  })
+
+  it('舊版 server 回應沒有 screenshots 時給空陣列', () => {
+    const { screenshots: _omit, ...legacy } = apiItem()
+    expect(toFeedbackView(legacy as FeedbackItem).screenshots).toEqual([])
+  })
+
   it('把 server 的英文分類／狀態轉成中文標籤，日期以台灣時間顯示', () => {
     const view = toFeedbackView(apiItem())
     expect(view.categoryLabel).toBe('Bug')
