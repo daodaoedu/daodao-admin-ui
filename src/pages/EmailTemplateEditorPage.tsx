@@ -1,7 +1,16 @@
 import { html } from '@codemirror/lang-html'
 import { oneDark } from '@codemirror/theme-one-dark'
 import CodeMirror from '@uiw/react-codemirror'
-import { ArrowLeft, Clock, Loader2, Monitor, Power, Save, Smartphone } from 'lucide-react'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Monitor,
+  Power,
+  Save,
+  Smartphone,
+} from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
@@ -48,6 +57,12 @@ export default function EmailTemplateEditorPage() {
     setRegisteredVariables(template.variables ?? [])
   }, [template])
 
+  // 「已儲存」一直留到下一次編輯，不自動消失（daodao#236：2 秒就收掉，PM 看不到）
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 只在編輯內容變動時收起提示
+  useEffect(() => {
+    setSavedOk(false)
+  }, [content, subject, preheader, dataSource])
+
   // Auto-detect variables when content changes
   const detectedVars = detectVariables(content)
   const templateVariables = mergeTemplateVariables(registeredVariables, [
@@ -83,7 +98,6 @@ export default function EmailTemplateEditorPage() {
         onSuccess: () => {
           setRegisteredVariables(data.variables ?? [])
           setSavedOk(true)
-          setTimeout(() => setSavedOk(false), 2000)
         },
       },
     )
@@ -108,7 +122,6 @@ export default function EmailTemplateEditorPage() {
         onSuccess: () => {
           setIsActive(nextIsActive)
           setSavedOk(true)
-          setTimeout(() => setSavedOk(false), 2000)
         },
       },
     )
@@ -172,7 +185,11 @@ export default function EmailTemplateEditorPage() {
             {isActive ? '停用寄送' : '啟用寄送'}
           </button>
           {savedOk && (
-            <span className="text-sm text-green-600">
+            <span
+              role="status"
+              className="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2 py-1 text-sm font-medium text-green-700 dark:bg-green-900/20 dark:text-green-300"
+            >
+              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
               {template.slug ? '已儲存，最多 5 分鐘後生效' : '已儲存'}
             </span>
           )}
