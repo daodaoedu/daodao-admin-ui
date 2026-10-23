@@ -7,6 +7,7 @@ import {
   Loader2,
   Mail,
   MailCheck,
+  MailMinus,
   MailWarning,
   RefreshCcw,
   Send,
@@ -226,7 +227,7 @@ export function EmailManagementPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           title="總發送"
           value={statsLoading ? '—' : (stats?.totalSent.toLocaleString() ?? '—')}
@@ -247,6 +248,11 @@ export function EmailManagementPage() {
           icon={MailWarning}
           change={stats?.bounceRateChange}
           changeLabel="較上月"
+        />
+        <StatCard
+          title="略過"
+          value={statsLoading ? '—' : (stats?.skippedCount.toLocaleString() ?? '—')}
+          icon={MailMinus}
         />
         <StatCard
           title="佇列待發"

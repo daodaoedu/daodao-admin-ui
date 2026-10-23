@@ -626,6 +626,8 @@ export interface EmailHistoryResponse {
     totalSent: number
     successCount: number
     failedCount: number
+    /** 略過：後台停用模板、沒有真的寄出（daodao#294） */
+    skippedCount: number
     successRate: number
   }
   pagination: OffsetPagination
