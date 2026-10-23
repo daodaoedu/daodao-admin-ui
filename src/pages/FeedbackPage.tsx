@@ -6,13 +6,16 @@ import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { useFeedback } from '@/hooks/useFeedback'
+import { useFeedback, useReplyToFeedback, useUpdateFeedbackStatus } from '@/hooks/useFeedback'
 import {
   CATEGORY_LABEL,
+  feedbackActionErrorMessage,
   feedbackListState,
   STATUS_LABEL,
   toFeedbackQuery,
   toFeedbackView,
+  toReplyPayload,
+  toStatusPayload,
 } from '@/lib/feedback'
 import { cn } from '@/lib/utils'
 
@@ -46,6 +49,75 @@ export function FeedbackPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [replyTexts, setReplyTexts] = useState<Record<number, string>>({})
   const [statusChanges, setStatusChanges] = useState<Record<number, FeedbackStatus>>({})
+  const [notices, setNotices] = useState<
+    Record<number, { type: 'success' | 'error'; message: string }>
+  >({})
+
+  // 各則回饋各自的送出中狀態（多則可同時送出）
+  const [pendingReplies, setPendingReplies] = useState<Record<number, boolean>>({})
+  const [pendingStatuses, setPendingStatuses] = useState<Record<number, boolean>>({})
+
+  const setNotice = (id: number, notice?: { type: 'success' | 'error'; message: string }) =>
+    setNotices((prev) => {
+      const next = { ...prev }
+      if (notice) next[id] = notice
+      else delete next[id]
+      return next
+    })
+
+  const replyMutation = useReplyToFeedback({
+    onSuccess: ({ id }) => {
+      setPendingReplies((prev) => ({ ...prev, [id]: false }))
+      setReplyTexts((prev) => ({ ...prev, [id]: '' }))
+      setNotice(id, { type: 'success', message: '已送出回覆' })
+    },
+    // 失敗時保留已輸入的內容
+    onError: (error, { id }) => {
+      setPendingReplies((prev) => ({ ...prev, [id]: false }))
+      setNotice(id, {
+        type: 'error',
+        message: feedbackActionErrorMessage(error, '回覆失敗，請稍後再試'),
+      })
+    },
+  })
+
+  const statusMutation = useUpdateFeedbackStatus({
+    onSuccess: ({ id, status }) => {
+      setPendingStatuses((prev) => ({ ...prev, [id]: false }))
+      setStatusChanges((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+      setNotice(id, { type: 'success', message: `狀態已變更為「${STATUS_LABEL[status]}」` })
+    },
+    onError: (error, { id }) => {
+      setPendingStatuses((prev) => ({ ...prev, [id]: false }))
+      setNotice(id, {
+        type: 'error',
+        message: feedbackActionErrorMessage(error, '變更狀態失敗，請稍後再試'),
+      })
+    },
+  })
+
+  const submitReply = (id: number) => {
+    const payload = toReplyPayload(replyTexts[id] ?? '')
+    if (!payload) {
+      setNotice(id, { type: 'error', message: '請先輸入回覆內容' })
+      return
+    }
+    setNotice(id)
+    setPendingReplies((prev) => ({ ...prev, [id]: true }))
+    replyMutation.mutate({ id, ...payload })
+  }
+
+  const submitStatus = (id: number, current: FeedbackStatus) => {
+    const payload = toStatusPayload(current, statusChanges[id] ?? current)
+    if (!payload) return
+    setNotice(id)
+    setPendingStatuses((prev) => ({ ...prev, [id]: true }))
+    statusMutation.mutate({ id, ...payload })
+  }
 
   const {
     data: apiData,
@@ -113,6 +185,10 @@ export function FeedbackPage() {
 
         {filtered.map((item) => {
           const isExpanded = expandedId === item.id
+          const isReplying = pendingReplies[item.id] === true
+          const isUpdatingStatus = pendingStatuses[item.id] === true
+          const selectedStatus = statusChanges[item.id] ?? item.status
+          const notice = notices[item.id]
           return (
             <div
               key={item.id}
@@ -190,30 +266,48 @@ export function FeedbackPage() {
                     </div>
                   )}
 
+                  {item.replies.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">已送出的回覆</p>
+                      {item.replies.map((reply) => (
+                        <div key={reply.id} className="rounded-md bg-muted/60 px-3 py-2">
+                          <p className="whitespace-pre-wrap text-sm">{reply.content}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{reply.time}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="mt-4 space-y-3">
                     <Textarea
                       placeholder="輸入回覆內容..."
+                      aria-label="回覆內容"
                       rows={3}
+                      className="w-full"
                       value={replyTexts[item.id] ?? ''}
                       onChange={(e) =>
                         setReplyTexts((prev) => ({ ...prev, [item.id]: e.target.value }))
                       }
                     />
+                    <p className="text-xs text-muted-foreground">
+                      回覆只會記錄在後台，不會寄信或通知使用者。
+                    </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button
                         type="button"
-                        onClick={() => {
-                          alert(`已送出回覆：${replyTexts[item.id] ?? '(空白)'}`)
-                          setReplyTexts((prev) => ({ ...prev, [item.id]: '' }))
-                        }}
+                        disabled={isReplying}
+                        onClick={() => submitReply(item.id)}
                       >
+                        {isReplying && <Loader2 className="h-4 w-4 animate-spin" />}
                         送出回覆
                       </Button>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">變更狀態：</span>
+                        <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                          變更狀態：
+                        </span>
                         <Select
-                          value={statusChanges[item.id] ?? item.status}
+                          value={selectedStatus}
                           onValueChange={(value) =>
                             setStatusChanges((prev) => ({
                               ...prev,
@@ -230,16 +324,26 @@ export function FeedbackPage() {
                         <Button
                           type="button"
                           variant="secondary"
-                          onClick={() =>
-                            alert(
-                              `狀態已變更為：${STATUS_LABEL[statusChanges[item.id] ?? item.status]}`,
-                            )
-                          }
+                          className="shrink-0 whitespace-nowrap"
+                          disabled={isUpdatingStatus || selectedStatus === item.status}
+                          onClick={() => submitStatus(item.id, item.status)}
                         >
+                          {isUpdatingStatus && <Loader2 className="h-4 w-4 animate-spin" />}
                           確認
                         </Button>
                       </div>
                     </div>
+                    {notice && (
+                      <p
+                        role={notice.type === 'error' ? 'alert' : 'status'}
+                        className={cn(
+                          'text-sm',
+                          notice.type === 'error' ? 'text-destructive' : 'text-success',
+                        )}
+                      >
+                        {notice.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

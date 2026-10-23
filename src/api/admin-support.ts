@@ -18,6 +18,14 @@ export interface FeedbackItem {
   repliedAt: string | null
   /** 錯誤回報附的截圖網址（http(s)）；沒有截圖為空陣列 */
   screenshots: string[]
+  /** 後台送出的回覆，依時間由舊到新；沒有回覆為空陣列 */
+  replies: FeedbackReply[]
+}
+
+export interface FeedbackReply {
+  id: number
+  content: string
+  createdAt: string
 }
 
 export interface FeedbackListResponse {
@@ -42,14 +50,15 @@ export const listFeedback = (params?: {
     params,
   })
 
-export const updateFeedbackStatus = (id: number, data: { status: string }) =>
-  apiClient.patch<ApiResponse<{ success: boolean }>>(
+export const updateFeedbackStatus = (id: number, data: { status: FeedbackStatus }) =>
+  apiClient.patch<ApiResponse<{ updated: boolean }>>(
     `/daodao-server/api/v1/admin/feedback/${id}`,
     data,
   )
 
+/** 只寫入後台紀錄，server 不寄信、不通知使用者 */
 export const replyToFeedback = (id: number, data: { content: string }) =>
-  apiClient.post<ApiResponse<{ success: boolean }>>(
+  apiClient.post<ApiResponse<{ sent: boolean }>>(
     `/daodao-server/api/v1/admin/feedback/${id}/reply`,
     data,
   )
