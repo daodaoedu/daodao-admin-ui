@@ -127,7 +127,11 @@ export const getRedisInfo = () =>
 
 // ── Email ────────────────────────────────────────────────
 export interface EmailStats {
+  /** 已發送（不含略過） */
   totalSent: number
+  /** 略過：後台停用模板、沒有真的寄出（daodao#294） */
+  skippedCount: number
+  /** 成功率＝ sent ÷ (sent + failed) */
   successRate: number
   bounceRate: number
   queuePending: number
@@ -144,6 +148,8 @@ export interface EmailHealth {
 
 interface EmailStatsBackendData {
   totalSent: number
+  /** 舊版 server 沒有這個欄位 */
+  skippedCount?: number
   successRate: number
   bounceRate: number
   queueSize: number
@@ -184,13 +190,16 @@ interface EmailHistoryBackendResponse {
     totalRecords: number
     sentCount: number
     failedCount: number
+    /** 舊版 server 沒有這個欄位 */
+    skippedCount?: number
     successRate: number
   }
 }
 
-function mapEmailStats(data: EmailStatsBackendData): EmailStats {
+export function mapEmailStats(data: EmailStatsBackendData): EmailStats {
   return {
     totalSent: data.totalSent,
+    skippedCount: data.skippedCount ?? 0,
     successRate: data.successRate,
     bounceRate: data.bounceRate,
     queuePending: data.queueSize,
@@ -208,7 +217,7 @@ function mapEmailHealth(data: EmailHealthBackendData): EmailHealth {
   }
 }
 
-function mapEmailHistory(data: EmailHistoryBackendResponse): EmailHistoryResponse {
+export function mapEmailHistory(data: EmailHistoryBackendResponse): EmailHistoryResponse {
   return {
     items: data.records.map((record) => ({
       id: record.id,
@@ -223,6 +232,7 @@ function mapEmailHistory(data: EmailHistoryBackendResponse): EmailHistoryRespons
       totalSent: data.stats.totalRecords,
       successCount: data.stats.sentCount,
       failedCount: data.stats.failedCount,
+      skippedCount: data.stats.skippedCount ?? 0,
       successRate: data.stats.successRate,
     },
     pagination: {
