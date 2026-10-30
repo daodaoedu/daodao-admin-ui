@@ -23,6 +23,7 @@ jobs:
   # ===== Build & Push image 到 Docker Hub =====
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [continuous_integration]
     if: ${{ always() && (needs.continuous_integration.result == 'success' || inputs.force_deploy || needs.continuous_integration.result == 'skipped') }}
     outputs:

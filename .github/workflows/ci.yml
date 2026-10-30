@@ -17,6 +17,7 @@ jobs:
   ci:
     name: Continuous Integration
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       # 1️⃣ 取得原始碼
       - name: Checkout code
