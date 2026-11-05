@@ -11,9 +11,9 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import { Dialog as DialogPrimitive } from 'radix-ui'
 import { useEffect, useState } from 'react'
-import { listAdminUsers } from '@/api/admin'
-import type { Organization, OrganizationCreate, OrganizationUpdate } from '@/api/types'
+import type { Organization } from '@/api/types'
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -28,13 +28,21 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  useAddOrganizationMember,
+  useApproveOrganizationInvitation,
   useCreateOrganization,
+  useInviteOrganizationOwner,
+  useOrganizationInvitations,
   useOrganizationMembers,
   useOrganizations,
   useRemoveOrganizationMember,
+  useResendOrganizationInvitation,
+  useRevokeOrganizationInvitation,
   useUpdateOrganization,
 } from '@/hooks/useOrganizations'
+import {
+  canApproveOrganizationInvitation,
+  organizationOperationError,
+} from '@/lib/organization-invitation'
 import { cn } from '@/lib/utils'
 
 interface OrganizationFormState {
@@ -51,17 +59,6 @@ const EMPTY_FORM: OrganizationFormState = {
   ownerEmail: '',
 }
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const INVALID_EMAIL_MESSAGE = '請輸入有效的 Email 格式。'
-const UNKNOWN_EMAIL_MESSAGE = '找不到此 Email 對應的使用者。'
-
-/** 後端成員 API 只吃 user id，這裡先用 admin 使用者查詢把 email 換成 internalId */
-async function resolveUserIdByEmail(email: string): Promise<number | null> {
-  const res = await listAdminUsers({ search: email, limit: 10 })
-  const match = res.data.data?.find((user) => user.email?.toLowerCase() === email)
-  return match?.internalId ?? null
-}
-
 function formatDate(value: string | null): string {
   if (!value) return '—'
   return new Intl.DateTimeFormat('zh-TW', {
@@ -74,19 +71,19 @@ function OrganizationFormDialog({
   organization,
   open,
   onOpenChange,
+  onCreated,
 }: {
   organization: Organization | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onCreated: (organizationId: number) => void
 }) {
   const createMutation = useCreateOrganization()
   const updateMutation = useUpdateOrganization()
   const [form, setForm] = useState<OrganizationFormState>(EMPTY_FORM)
-  const [emailError, setEmailError] = useState('')
-  const [isResolvingEmail, setIsResolvingEmail] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const isEditing = organization !== null
-  const mutationError = createMutation.isError || updateMutation.isError
-  const isSaving = createMutation.isPending || updateMutation.isPending || isResolvingEmail
+  const isSaving = createMutation.isPending || updateMutation.isPending
 
   useEffect(() => {
     if (!open) return
@@ -97,16 +94,16 @@ function OrganizationFormDialog({
         externalLink: organization.externalLink ?? '',
         ownerEmail: '',
       })
-      setEmailError('')
+      setSubmitError('')
       return
     }
     setForm(EMPTY_FORM)
-    setEmailError('')
+    setSubmitError('')
   }, [open, organization])
 
   function setField(field: keyof OrganizationFormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
-    if (field === 'ownerEmail') setEmailError('')
+    if (field === 'ownerEmail') setSubmitError('')
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -117,28 +114,20 @@ function OrganizationFormDialog({
       externalLink: form.externalLink.trim() || null,
     }
 
-    if (organization) {
-      const data: OrganizationUpdate = shared
-      await updateMutation.mutateAsync({ organizationId: organization.id, data })
-    } else {
-      const email = form.ownerEmail.trim().toLowerCase()
-      if (!EMAIL_PATTERN.test(email)) {
-        setEmailError(INVALID_EMAIL_MESSAGE)
-        return
+    setSubmitError('')
+    try {
+      if (organization) {
+        await updateMutation.mutateAsync({ organizationId: organization.id, data: shared })
+      } else {
+        const response = await createMutation.mutateAsync({
+          ...shared,
+          ownerEmail: form.ownerEmail.trim().toLowerCase(),
+        })
+        onCreated(response.data.data.id)
       }
-      setIsResolvingEmail(true)
-      setEmailError('')
-      try {
-        const ownerUserId = await resolveUserIdByEmail(email)
-        if (ownerUserId === null) {
-          setEmailError(UNKNOWN_EMAIL_MESSAGE)
-          return
-        }
-        const data: OrganizationCreate = { ...shared, ownerUserId }
-        await createMutation.mutateAsync(data)
-      } finally {
-        setIsResolvingEmail(false)
-      }
+    } catch (error) {
+      setSubmitError(organizationOperationError(error, '儲存失敗，請確認組織資料後再試一次。'))
+      return
     }
     onOpenChange(false)
   }
@@ -148,10 +137,14 @@ function OrganizationFormDialog({
       <DialogContent className="h-auto max-h-[85vh] max-w-xl overflow-y-auto p-0">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
-            <h2 className="text-base font-semibold">{isEditing ? '編輯組織' : '建立組織'}</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {isEditing ? '更新公開資訊與組織設定。' : '建立後會立即啟用，並加入首位 owner。'}
-            </p>
+            <DialogPrimitive.Title className="text-base font-semibold">
+              {isEditing ? '編輯組織' : '建立組織'}
+            </DialogPrimitive.Title>
+            <DialogPrimitive.Description className="mt-1 text-xs text-muted-foreground">
+              {isEditing
+                ? '更新公開資訊與組織設定。'
+                : '已註冊帳號會直接加入；尚未註冊的 Email 會收到 7 天有效的邀請。'}
+            </DialogPrimitive.Description>
           </div>
           <DialogClose asChild>
             <button
@@ -164,7 +157,11 @@ function OrganizationFormDialog({
           </DialogClose>
         </div>
 
-        <form className="space-y-4 px-6 py-5" onSubmit={handleSubmit}>
+        <form
+          className="space-y-4 px-6 py-5"
+          onSubmit={handleSubmit}
+          aria-describedby={submitError ? 'organization-submit-error' : undefined}
+        >
           <div>
             <label htmlFor="organization-name" className="mb-1.5 block text-sm font-medium">
               組織名稱
@@ -221,13 +218,16 @@ function OrganizationFormDialog({
                 onChange={(event) => setField('ownerEmail', event.target.value)}
                 className="w-full"
               />
-              {emailError && <p className="mt-1.5 text-sm text-destructive">{emailError}</p>}
             </div>
           )}
 
-          {mutationError && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              儲存失敗，請確認組織資料後再試一次。
+          {submitError && (
+            <p
+              id="organization-submit-error"
+              role="alert"
+              className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {submitError}
             </p>
           )}
 
@@ -250,42 +250,45 @@ function OrganizationFormDialog({
 
 function MemberPanel({ organization }: { organization: Organization }) {
   const { data: members, isLoading, isError } = useOrganizationMembers(organization.id)
-  const addMutation = useAddOrganizationMember()
+  const addMutation = useInviteOrganizationOwner()
   const removeMutation = useRemoveOrganizationMember()
   const [email, setEmail] = useState('')
   const [emailError, setEmailError] = useState('')
-  const [isResolvingEmail, setIsResolvingEmail] = useState(false)
-  const mutationError = addMutation.isError || removeMutation.isError
-  const isAdding = addMutation.isPending || isResolvingEmail
+  const [addMessage, setAddMessage] = useState('')
+  const isAdding = addMutation.isPending
 
   async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const value = email.trim().toLowerCase()
-    if (!EMAIL_PATTERN.test(value)) {
-      setEmailError(INVALID_EMAIL_MESSAGE)
-      return
-    }
-    setIsResolvingEmail(true)
     setEmailError('')
+    setAddMessage('')
     try {
-      const userId = await resolveUserIdByEmail(value)
-      if (userId === null) {
-        setEmailError(UNKNOWN_EMAIL_MESSAGE)
-        return
-      }
-      await addMutation.mutateAsync({ organizationId: organization.id, userId })
+      const response = await addMutation.mutateAsync({
+        organizationId: organization.id,
+        email: email.trim().toLowerCase(),
+      })
       setEmail('')
-    } catch {
-      // 失敗原因（已是成員、使用者不存在）由下方 mutationError 提示
-    } finally {
-      setIsResolvingEmail(false)
+      setAddMessage(
+        response.data.data.status === 'accepted'
+          ? '已加入 owner。'
+          : '已建立邀請，請在下方確認寄送狀態。',
+      )
+    } catch (error) {
+      setEmailError(organizationOperationError(error, '邀請失敗，請稍後再試。'))
     }
   }
 
   function handleRemove(memberUserId: number, nickname: string | null) {
     const memberLabel = nickname ? `${nickname}（ID ${memberUserId}）` : `使用者 ID ${memberUserId}`
     if (!window.confirm(`確定要從「${organization.name}」移除 ${memberLabel}？`)) return
-    removeMutation.mutate({ organizationId: organization.id, userId: memberUserId })
+    setEmailError('')
+    setAddMessage('')
+    removeMutation.mutate(
+      { organizationId: organization.id, userId: memberUserId },
+      {
+        onError: (error) =>
+          setEmailError(organizationOperationError(error, '移除失敗，請稍後再試。')),
+      },
+    )
   }
 
   return (
@@ -302,7 +305,14 @@ function MemberPanel({ organization }: { organization: Organization }) {
           <Badge variant="primary">{members?.length ?? 0} 位</Badge>
         </div>
 
-        <form className="mt-4 flex gap-2" onSubmit={handleAdd}>
+        <p className="mt-3 text-xs text-muted-foreground">
+          尚未註冊也可邀請；新 owner 加入後，才能移除最後一位舊 owner。
+        </p>
+        <form
+          className="mt-4 flex flex-wrap gap-2"
+          onSubmit={handleAdd}
+          aria-describedby={emailError ? 'organization-member-error' : undefined}
+        >
           <div className="min-w-0 flex-1">
             <label htmlFor="member-email" className="sr-only">
               成員 Email
@@ -316,6 +326,7 @@ function MemberPanel({ organization }: { organization: Organization }) {
               onChange={(event) => {
                 setEmail(event.target.value)
                 setEmailError('')
+                setAddMessage('')
               }}
               className="w-full"
             />
@@ -329,13 +340,17 @@ function MemberPanel({ organization }: { organization: Organization }) {
             新增 owner
           </Button>
         </form>
-        {emailError && <p className="mt-2 text-sm text-destructive">{emailError}</p>}
+        {emailError && (
+          <p id="organization-member-error" role="alert" className="mt-2 text-sm text-destructive">
+            {emailError}
+          </p>
+        )}
         {organization.status !== 'active' && (
           <p className="mt-2 text-xs text-warning">停權中的組織不可新增成員。</p>
         )}
-        {mutationError && (
-          <p className="mt-2 text-sm text-destructive">
-            成員操作失敗；請確認使用者存在、尚未加入，且不會移除最後一位 owner。
+        {addMessage && (
+          <p role="status" className="mt-2 text-sm text-success">
+            {addMessage}
           </p>
         )}
       </div>
@@ -393,7 +408,204 @@ function MemberPanel({ organization }: { organization: Organization }) {
           </Table>
         )}
       </div>
+      <InvitationPanel organization={organization} />
     </section>
+  )
+}
+
+const INVITATION_STATUS_LABEL = {
+  pending: '待加入',
+  accepted: '已加入',
+  expired: '已過期',
+  revoked: '已撤銷',
+} as const
+
+const DELIVERY_STATUS_LABEL = {
+  pending: '待寄送',
+  sent: '已寄出',
+  failed: '寄送失敗，請重寄',
+} as const
+
+function InvitationPanel({ organization }: { organization: Organization }) {
+  const {
+    data: invitations,
+    isLoading,
+    isError,
+    refetch,
+  } = useOrganizationInvitations(organization.id)
+  const resendMutation = useResendOrganizationInvitation()
+  const revokeMutation = useRevokeOrganizationInvitation()
+  const approveMutation = useApproveOrganizationInvitation()
+  const [actionError, setActionError] = useState('')
+  const isWorking =
+    resendMutation.isPending || revokeMutation.isPending || approveMutation.isPending
+
+  function handleResend(invitationId: number) {
+    if (!window.confirm('重寄後，舊邀請連結會立即失效，新連結有效 7 天。確定重寄？')) return
+    setActionError('')
+    resendMutation.mutate(
+      { organizationId: organization.id, invitationId },
+      {
+        onError: (error) =>
+          setActionError(organizationOperationError(error, '重寄失敗，請稍後再試。')),
+      },
+    )
+  }
+
+  function handleRevoke(invitationId: number) {
+    if (!window.confirm('確定撤銷邀請？對方將無法再使用這個連結加入組織。')) return
+    setActionError('')
+    revokeMutation.mutate(
+      { organizationId: organization.id, invitationId },
+      {
+        onError: (error) =>
+          setActionError(organizationOperationError(error, '撤銷失敗，請稍後再試。')),
+      },
+    )
+  }
+
+  function handleApprove(
+    invitationId: number,
+    requestId: number,
+    invitedEmail: string,
+    applicant: string,
+  ) {
+    if (
+      !window.confirm(
+        `受邀 Email：${invitedEmail}\n申請帳號：${applicant}\n\n請先確認為同一位受邀者。核准後，這個申請帳號會成為「${organization.name}」的 owner。確定核准？`,
+      )
+    )
+      return
+    setActionError('')
+    approveMutation.mutate(
+      { organizationId: organization.id, invitationId, requestId },
+      {
+        onError: (error) =>
+          setActionError(organizationOperationError(error, '核准失敗，請重新整理邀請狀態後再試。')),
+      },
+    )
+  }
+
+  return (
+    <div className="border-t border-border px-5 py-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-semibold">Owner 邀請</h3>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => void refetch()}
+          aria-label="重新整理邀請"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        邀請有效 7 天。Email 不符時，請確認申請帳號後再核准。
+      </p>
+      {isLoading && <p className="mt-4 text-sm text-muted-foreground">載入邀請中…</p>}
+      {isError && (
+        <p role="alert" className="mt-4 text-sm text-destructive">
+          無法載入邀請，請重新整理。
+        </p>
+      )}
+      {actionError && (
+        <p role="alert" className="mt-3 text-sm text-destructive">
+          {actionError}
+        </p>
+      )}
+      {!isLoading && !isError && invitations?.length === 0 && (
+        <p className="mt-4 text-sm text-muted-foreground">目前沒有邀請紀錄。</p>
+      )}
+      <div className="mt-3 max-h-[520px] space-y-3 overflow-y-auto">
+        {invitations?.map((invitation) => {
+          const canApprove = canApproveOrganizationInvitation(invitation)
+          const status =
+            invitation.status === 'pending' && !canApprove ? 'expired' : invitation.status
+          const isActive = organization.status === 'active'
+          return (
+            <div key={invitation.id} className="rounded-lg border border-border p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="min-w-0 break-all text-sm font-medium">{invitation.email}</p>
+                <Badge variant={status === 'accepted' ? 'success' : 'warning'}>
+                  {INVITATION_STATUS_LABEL[status]}
+                </Badge>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                有效至 {formatDate(invitation.expiresAt)}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                寄送狀態：{DELIVERY_STATUS_LABEL[invitation.deliveryStatus]}
+              </p>
+              {status !== 'accepted' && (
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isWorking || !isActive}
+                    onClick={() => handleResend(invitation.id)}
+                  >
+                    重寄邀請
+                  </Button>
+                  {canApprove && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={isWorking}
+                      onClick={() => handleRevoke(invitation.id)}
+                    >
+                      撤銷邀請
+                    </Button>
+                  )}
+                </div>
+              )}
+              {invitation.requests.length > 0 && (
+                <div className="mt-3 space-y-2 border-t border-border pt-3">
+                  <p className="text-xs font-medium">
+                    {status === 'accepted' ? '申請紀錄（已處理）' : 'Email 不符，需由島島確認'}
+                  </p>
+                  {invitation.requests.map((request) => (
+                    <div key={request.id} className="rounded-md bg-muted/50 p-2">
+                      <p className="break-all text-sm">
+                        {request.nickname ?? '未設定暱稱'} · {request.email ?? '未提供 Email'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        帳號 ID {request.userId} · {formatDate(request.createdAt)}
+                      </p>
+                      {canApprove && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="mt-2"
+                          disabled={isWorking || !isActive}
+                          onClick={() =>
+                            handleApprove(
+                              invitation.id,
+                              request.id,
+                              invitation.email,
+                              `${request.nickname ?? '未設定暱稱'}（${request.email ?? '未提供 Email'}，ID ${request.userId}）`,
+                            )
+                          }
+                        >
+                          確認此帳號並加入 owner
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  {!canApprove && (
+                    <p className="text-xs text-muted-foreground">
+                      此邀請已失效或已使用，無法核准申請。
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
@@ -431,7 +643,7 @@ export function OrganizationManagementPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 [&>div:first-child]:flex-col sm:[&>div:first-child]:flex-row">
       <PageHeader
         title="組織設定"
         description="建立、編輯、啟用或停權 Lighthouse 組織，並管理組織 owner。"
@@ -479,14 +691,14 @@ export function OrganizationManagementPage() {
 
       {!isLoading && organizations && organizations.length > 0 && (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(360px,1fr)]">
-          <section className="overflow-hidden rounded-xl border border-[var(--admin-card-border)] bg-card/95 shadow-sm">
-            <Table>
+          <section className="max-h-[60vh] overflow-y-auto rounded-xl border border-[var(--admin-card-border)] bg-card/95 shadow-sm xl:max-h-none">
+            <Table className="min-w-[600px] table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead>組織</TableHead>
-                  <TableHead>狀態</TableHead>
-                  <TableHead>核准資訊</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
+                  <TableHead className="w-[32%]">組織</TableHead>
+                  <TableHead className="w-[16%]">狀態</TableHead>
+                  <TableHead className="w-[24%]">核准資訊</TableHead>
+                  <TableHead className="w-[28%] text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -505,7 +717,17 @@ export function OrganizationManagementPage() {
                           <Building2 className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-foreground">{organization.name}</p>
+                          <button
+                            type="button"
+                            aria-pressed={selectedId === organization.id}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setSelectedId(organization.id)
+                            }}
+                            className="break-words rounded-sm text-left font-medium text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          >
+                            {organization.name}
+                          </button>
                           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
                             {organization.bio || '尚未填寫組織介紹'}
                           </p>
@@ -525,7 +747,10 @@ export function OrganizationManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={organization.status === 'active' ? 'success' : 'warning'}>
+                      <Badge
+                        className="whitespace-nowrap"
+                        variant={organization.status === 'active' ? 'success' : 'warning'}
+                      >
                         {organization.status === 'active' ? '啟用中' : '已停權'}
                       </Badge>
                     </TableCell>
@@ -539,7 +764,7 @@ export function OrganizationManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-1 whitespace-nowrap">
                         <Button
                           type="button"
                           size="sm"
@@ -577,7 +802,9 @@ export function OrganizationManagementPage() {
             )}
           </section>
 
-          {selectedOrganization && <MemberPanel organization={selectedOrganization} />}
+          {selectedOrganization && (
+            <MemberPanel key={selectedOrganization.id} organization={selectedOrganization} />
+          )}
         </div>
       )}
 
@@ -585,6 +812,7 @@ export function OrganizationManagementPage() {
         organization={editingOrganization}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onCreated={setSelectedId}
       />
     </div>
   )

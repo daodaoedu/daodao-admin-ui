@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   Organization,
   OrganizationCreate,
+  OrganizationInvitation,
   OrganizationMember,
   OrganizationUpdate,
 } from './types'
@@ -34,3 +35,33 @@ export const addOrganizationMember = (organizationId: number, userId: number) =>
 
 export const removeOrganizationMember = (organizationId: number, userId: number) =>
   apiClient.delete(`${BASE_PATH}/admin/organizations/${organizationId}/members/${userId}`)
+
+export const listOrganizationInvitations = (organizationId: number) =>
+  apiClient.get<ApiResponse<OrganizationInvitation[]>>(
+    `${BASE_PATH}/admin/organizations/${organizationId}/invitations`,
+  )
+
+export const inviteOrganizationOwner = (organizationId: number, email: string) =>
+  apiClient.post<ApiResponse<OrganizationInvitation>>(
+    `${BASE_PATH}/admin/organizations/${organizationId}/invitations`,
+    { email },
+  )
+
+export const resendOrganizationInvitation = (organizationId: number, invitationId: number) =>
+  apiClient.post<ApiResponse<OrganizationInvitation>>(
+    `${BASE_PATH}/admin/organizations/${organizationId}/invitations/${invitationId}/resend`,
+  )
+
+export const revokeOrganizationInvitation = (organizationId: number, invitationId: number) =>
+  apiClient.post<ApiResponse<OrganizationInvitation>>(
+    `${BASE_PATH}/admin/organizations/${organizationId}/invitations/${invitationId}/revoke`,
+  )
+
+export const approveOrganizationInvitation = (
+  organizationId: number,
+  invitationId: number,
+  requestId: number,
+) =>
+  apiClient.post<ApiResponse<OrganizationInvitation>>(
+    `${BASE_PATH}/admin/organizations/${organizationId}/invitations/${invitationId}/requests/${requestId}/approve`,
+  )

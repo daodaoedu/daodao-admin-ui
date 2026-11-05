@@ -1,10 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   addOrganizationMember,
+  approveOrganizationInvitation,
   createOrganization,
+  inviteOrganizationOwner,
+  listOrganizationInvitations,
   listOrganizationMembers,
   listOrganizations,
   removeOrganizationMember,
+  resendOrganizationInvitation,
+  revokeOrganizationInvitation,
   updateOrganization,
 } from '@/api/admin-organization'
 import type { OrganizationCreate, OrganizationUpdate } from '@/api/types'
@@ -65,5 +70,67 @@ export function useRemoveOrganizationMember() {
       queryClient.invalidateQueries({
         queryKey: [...ORGANIZATION_QUERY_KEY, variables.organizationId, 'members'],
       }),
+  })
+}
+
+export function useOrganizationInvitations(organizationId: number) {
+  return useQuery({
+    queryKey: [...ORGANIZATION_QUERY_KEY, organizationId, 'invitations'],
+    refetchInterval: 30000,
+    queryFn: () =>
+      listOrganizationInvitations(organizationId).then((response) => response.data.data),
+  })
+}
+
+export function useInviteOrganizationOwner() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ organizationId, email }: { organizationId: number; email: string }) =>
+      inviteOrganizationOwner(organizationId, email),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORGANIZATION_QUERY_KEY }),
+  })
+}
+
+export function useResendOrganizationInvitation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      organizationId,
+      invitationId,
+    }: {
+      organizationId: number
+      invitationId: number
+    }) => resendOrganizationInvitation(organizationId, invitationId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORGANIZATION_QUERY_KEY }),
+  })
+}
+
+export function useRevokeOrganizationInvitation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      organizationId,
+      invitationId,
+    }: {
+      organizationId: number
+      invitationId: number
+    }) => revokeOrganizationInvitation(organizationId, invitationId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORGANIZATION_QUERY_KEY }),
+  })
+}
+
+export function useApproveOrganizationInvitation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      organizationId,
+      invitationId,
+      requestId,
+    }: {
+      organizationId: number
+      invitationId: number
+      requestId: number
+    }) => approveOrganizationInvitation(organizationId, invitationId, requestId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORGANIZATION_QUERY_KEY }),
   })
 }
