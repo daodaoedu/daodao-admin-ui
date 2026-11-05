@@ -36,7 +36,26 @@ export interface OrganizationCreate {
   name: string
   bio?: string | null
   externalLink?: string | null
-  ownerUserId: number
+  ownerEmail: string
+}
+
+export interface OrganizationInvitationRequest {
+  id: number
+  userId: number
+  email: string | null
+  nickname: string | null
+  createdAt: string
+}
+
+export interface OrganizationInvitation {
+  id: number
+  organizationId: number
+  email: string
+  status: 'pending' | 'accepted' | 'expired' | 'revoked'
+  expiresAt: string
+  createdAt: string
+  deliveryStatus: 'pending' | 'sent' | 'failed'
+  requests: OrganizationInvitationRequest[]
 }
 
 export interface OrganizationUpdate {
