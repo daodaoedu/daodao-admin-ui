@@ -569,7 +569,8 @@ function InvitationPanel({ organization }: { organization: Organization }) {
                   {invitation.requests.map((request) => (
                     <div key={request.id} className="rounded-md bg-muted/50 p-2">
                       <p className="break-all text-sm">
-                        {request.nickname ?? '未設定暱稱'} · {request.email ?? '未提供 Email'}
+                        {request.nickname ?? '未設定暱稱'} · 已驗證登入 Email：
+                        {request.email ?? '尚無已驗證登入 Email'}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         帳號 ID {request.userId} · {formatDate(request.createdAt)}
@@ -585,7 +586,7 @@ function InvitationPanel({ organization }: { organization: Organization }) {
                               invitation.id,
                               request.id,
                               invitation.email,
-                              `${request.nickname ?? '未設定暱稱'}（${request.email ?? '未提供 Email'}，ID ${request.userId}）`,
+                              `${request.nickname ?? '未設定暱稱'}（${request.email ?? '尚無已驗證登入 Email'}，ID ${request.userId}）`,
                             )
                           }
                         >
