@@ -12,7 +12,7 @@ import {
   X,
 } from 'lucide-react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Organization } from '@/api/types'
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
@@ -436,6 +436,15 @@ function InvitationPanel({ organization }: { organization: Organization }) {
   const resendMutation = useResendOrganizationInvitation()
   const revokeMutation = useRevokeOrganizationInvitation()
   const approveMutation = useApproveOrganizationInvitation()
+  const [approval, setApproval] = useState<{
+    invitationId: number
+    requestId: number
+    invitedEmail: string
+    applicant: string
+  } | null>(null)
+  const [approvalError, setApprovalError] = useState('')
+  const approvalInFlight = useRef(false)
+  const approvalTrigger = useRef<HTMLButtonElement | null>(null)
   const [actionError, setActionError] = useState('')
   const isWorking =
     resendMutation.isPending || revokeMutation.isPending || approveMutation.isPending
@@ -464,26 +473,32 @@ function InvitationPanel({ organization }: { organization: Organization }) {
     )
   }
 
-  function handleApprove(
-    invitationId: number,
-    requestId: number,
-    invitedEmail: string,
-    applicant: string,
-  ) {
+  async function handleConfirmApproval() {
+    if (!approval || approvalInFlight.current || isWorking) return
+    const invitation = invitations?.find((item) => item.id === approval.invitationId)
     if (
-      !window.confirm(
-        `受邀 Email：${invitedEmail}\n申請帳號：${applicant}\n\n請先確認為同一位受邀者。核准後，這個申請帳號會成為「${organization.name}」的 owner。確定核准？`,
-      )
-    )
+      organization.status !== 'active' ||
+      !invitation ||
+      !canApproveOrganizationInvitation(invitation) ||
+      !invitation.requests.some((request) => request.id === approval.requestId)
+    ) {
+      setApprovalError('邀請狀態已變更，請取消並重新整理邀請。')
       return
-    setActionError('')
-    approveMutation.mutate(
-      { organizationId: organization.id, invitationId, requestId },
-      {
-        onError: (error) =>
-          setActionError(organizationOperationError(error, '核准失敗，請重新整理邀請狀態後再試。')),
-      },
-    )
+    }
+    approvalInFlight.current = true
+    setApprovalError('')
+    try {
+      await approveMutation.mutateAsync({
+        organizationId: organization.id,
+        invitationId: approval.invitationId,
+        requestId: approval.requestId,
+      })
+      setApproval(null)
+    } catch (error) {
+      setApprovalError(organizationOperationError(error, '核准失敗，請重新整理邀請狀態後再試。'))
+    } finally {
+      approvalInFlight.current = false
+    }
   }
 
   return (
@@ -581,14 +596,16 @@ function InvitationPanel({ organization }: { organization: Organization }) {
                           size="sm"
                           className="mt-2"
                           disabled={isWorking || !isActive}
-                          onClick={() =>
-                            handleApprove(
-                              invitation.id,
-                              request.id,
-                              invitation.email,
-                              `${request.nickname ?? '未設定暱稱'}（${request.email ?? '尚無已驗證登入 Email'}，ID ${request.userId}）`,
-                            )
-                          }
+                          onClick={(event) => {
+                            approvalTrigger.current = event.currentTarget
+                            setApprovalError('')
+                            setApproval({
+                              invitationId: invitation.id,
+                              requestId: request.id,
+                              invitedEmail: invitation.email,
+                              applicant: `${request.nickname ?? '未設定暱稱'}（${request.email ?? '尚無已驗證登入 Email'}，ID ${request.userId}）`,
+                            })
+                          }}
                         >
                           確認此帳號並加入 owner
                         </Button>
@@ -606,6 +623,59 @@ function InvitationPanel({ organization }: { organization: Organization }) {
           )
         })}
       </div>
+      <Dialog
+        open={approval !== null}
+        onOpenChange={(open) => {
+          if (!open && !approvalInFlight.current) setApproval(null)
+        }}
+      >
+        <DialogContent
+          className="h-auto max-h-[85dvh] max-w-lg gap-4 overflow-y-auto"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            if (approvalTrigger.current?.isConnected) approvalTrigger.current.focus()
+          }}
+        >
+          <DialogPrimitive.Title className="text-base font-semibold">
+            確認加入組織 owner
+          </DialogPrimitive.Title>
+          <DialogPrimitive.Description className="text-sm text-muted-foreground">
+            請先確認為同一位受邀者。核准後，申請帳號即可管理此組織。
+          </DialogPrimitive.Description>
+          <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="text-muted-foreground">組織</dt>
+              <dd className="break-words font-medium">{organization.name}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">受邀 Email</dt>
+              <dd className="break-all font-medium">{approval?.invitedEmail}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">申請帳號</dt>
+              <dd className="break-all font-medium">{approval?.applicant}</dd>
+            </div>
+          </dl>
+          {approvalError && (
+            <p role="alert" className="text-sm text-destructive">
+              {approvalError}
+            </p>
+          )}
+          <div className="flex flex-wrap justify-end gap-2" aria-busy={approveMutation.isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={approveMutation.isPending}
+              onClick={() => setApproval(null)}
+            >
+              取消
+            </Button>
+            <Button type="button" disabled={isWorking} onClick={() => void handleConfirmApproval()}>
+              {approveMutation.isPending ? '核准中…' : '確認核准並加入 owner'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
