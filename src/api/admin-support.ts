@@ -45,10 +45,13 @@ export interface FeedbackReply {
   emailStatus?: FeedbackReplyEmailStatus | null
 }
 
-/** 回覆後 server 回傳的寄信結果：no_recipient＝回報者已刪除或沒有聯絡信箱 */
+/**
+ * 回覆後 server 回傳的寄信結果：no_recipient＝回報者已刪除或沒有聯絡信箱；
+ * not_applicable＝不是錯誤回報表單來的回饋，回覆只記在後台
+ */
 export interface FeedbackReplyResult {
   replyId: number
-  emailStatus: 'sent' | 'failed' | 'no_recipient'
+  emailStatus: 'sent' | 'failed' | 'no_recipient' | 'not_applicable'
 }
 
 export interface FeedbackListResponse {
@@ -64,6 +67,8 @@ export interface FeedbackListResponse {
 }
 
 export const listFeedback = (params?: {
+  /** 只取這一則（通知信的後台連結 ?id=） */
+  id?: number
   status?: FeedbackStatus
   category?: FeedbackCategory
   limit?: number

@@ -11,6 +11,7 @@ import {
 const FEEDBACK_KEY = ['admin', 'feedback'] as const
 
 export function useFeedback(params?: {
+  id?: number
   status?: FeedbackStatus
   category?: FeedbackCategory
   limit?: number

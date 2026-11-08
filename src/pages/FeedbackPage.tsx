@@ -50,10 +50,23 @@ export function FeedbackPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | FeedbackStatus>('all')
   const [categoryFilter, setCategoryFilter] = useState<'all' | FeedbackCategory>('all')
   // 通知信的後台連結帶 ?id=<回饋 id>，進頁面直接展開那一則（daodao#451 AC-04）
-  const [searchParams] = useSearchParams()
+  // 帶 ?id= 時只查那一則，不受列表只有最新 20 筆的限制；「顯示全部」移除 ?id=
+  const [searchParams, setSearchParams] = useSearchParams()
   const linkedId = feedbackIdFromSearch(searchParams.get('id'))
   const [expandedId, setExpandedId] = useState<number | null>(linkedId)
-  const scrolledToLinked = useRef(false)
+  const scrolledToLinked = useRef<number | null>(null)
+  useEffect(() => {
+    if (linkedId !== null) setExpandedId(linkedId)
+  }, [linkedId])
+  const showAllFeedback = () =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('id')
+        return next
+      },
+      { replace: true },
+    )
   const [replyTexts, setReplyTexts] = useState<Record<number, string>>({})
   const [statusChanges, setStatusChanges] = useState<Record<number, FeedbackStatus>>({})
   const [notices, setNotices] = useState<
@@ -132,7 +145,9 @@ export function FeedbackPage() {
     isLoading,
     isError,
     refetch,
-  } = useFeedback(toFeedbackQuery(statusFilter, categoryFilter))
+  } = useFeedback(
+    linkedId !== null ? { id: linkedId } : toFeedbackQuery(statusFilter, categoryFilter),
+  )
 
   const items = (apiData?.items ?? []).map(toFeedbackView)
   const listState = feedbackListState({ isLoading, isError, itemCount: items.length })
@@ -142,8 +157,8 @@ export function FeedbackPage() {
 
   const linkedVisible = linkedId !== null && filtered.some((item) => item.id === linkedId)
   useEffect(() => {
-    if (!linkedVisible || scrolledToLinked.current) return
-    scrolledToLinked.current = true
+    if (!linkedVisible || scrolledToLinked.current === linkedId) return
+    scrolledToLinked.current = linkedId
     document.getElementById(`feedback-${linkedId}`)?.scrollIntoView({ block: 'start' })
   }, [linkedVisible, linkedId])
 
@@ -179,6 +194,16 @@ export function FeedbackPage() {
 
       {/* Feedback List */}
       <div className="space-y-3">
+        {linkedId !== null && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
+            <span className="text-muted-foreground">
+              只顯示通知連結的回饋 #{linkedId}，篩選暫不套用
+            </span>
+            <Button type="button" variant="outline" size="sm" onClick={showAllFeedback}>
+              顯示全部回饋
+            </Button>
+          </div>
+        )}
         {listState === 'loading' && (
           <div className="flex items-center justify-center gap-2 rounded-xl border border-border py-20 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -352,7 +377,9 @@ export function FeedbackPage() {
                       }
                     />
                     <p className="text-xs text-muted-foreground">
-                      送出後會寄信到回報者的帳號信箱，並在站內通知回報者；回報者可在「我的回報」查看。
+                      {item.isBugReport
+                        ? '送出後會寄信到回報者的帳號信箱，並在站內通知回報者；回報者可在「我的回報」查看。'
+                        : '這則不是錯誤回報表單送出的回饋，回覆只會記錄在後台，不會寄信或通知使用者。'}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button

@@ -64,6 +64,8 @@ export interface FeedbackView {
   screenshots: string[]
   /** 錯誤回報的處理資訊（只列有值的欄位）；不是錯誤回報表單來的為空陣列（daodao#451 AC-03） */
   bugReportFields: BugReportField[]
+  /** 錯誤回報表單送出的回報；只有這種回覆會寄信並通知回報者 */
+  isBugReport: boolean
   replies: FeedbackReplyView[]
 }
 
@@ -130,6 +132,11 @@ export function replyNotice(result: FeedbackReplyResult | undefined): {
       }
     case 'failed':
       return { type: 'error', message: '回覆已保存，但寄信失敗，回報者沒有收到信' }
+    case 'not_applicable':
+      return {
+        type: 'success',
+        message: '已保存回覆。這則不是錯誤回報表單送出的回饋，不會寄信或通知使用者',
+      }
     default:
       return { type: 'error', message: '回覆已保存，但無法確認是否已寄信給回報者' }
   }
@@ -239,6 +246,7 @@ export function toFeedbackView(item: FeedbackItem): FeedbackView {
     // 舊版 server 回應沒有這個欄位
     screenshots: item.screenshots ?? [],
     bugReportFields: toBugReportFields(item.bugReport ?? null),
+    isBugReport: item.bugReport != null,
     // 舊版 server 回應沒有這個欄位
     replies: (item.replies ?? []).map((reply) => ({
       id: reply.id,

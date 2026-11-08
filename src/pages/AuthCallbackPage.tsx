@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAuthMe } from '@/api/admin'
 import { TOKEN_KEY } from '@/api/client'
+import { peekPostLoginPath } from '@/lib/post-login-redirect'
 
 export function AuthCallbackPage() {
   const navigate = useNavigate()
@@ -19,7 +20,7 @@ export function AuthCallbackPage() {
           localStorage.removeItem(TOKEN_KEY)
           return
         }
-        navigate('/dashboard', { replace: true })
+        navigate(peekPostLoginPath(), { replace: true })
         window.location.reload()
       })
       .catch(() => {

@@ -205,6 +205,7 @@ describe('錯誤回報處理資訊（daodao#451 AC-03）', () => {
     const view = toFeedbackView(apiItem())
     expect(view.bugReportFields).toEqual([])
     expect(view.userEmail).toBeNull()
+    expect(view.isBugReport).toBe(false)
   })
 })
 
@@ -234,6 +235,8 @@ describe('回覆寄信狀態（daodao#451 AC-02）', () => {
       message: '回覆已保存，但寄信失敗，回報者沒有收到信',
     })
     expect(replyNotice({ replyId: 1, emailStatus: 'no_recipient' }).type).toBe('error')
+    // 非錯誤回報表單的回饋：回覆只記在後台，提示要講清楚沒有寄信
+    expect(replyNotice({ replyId: 1, emailStatus: 'not_applicable' }).message).toMatch(/不會寄信/)
     // 舊版 server 回 { sent: true }，沒有 emailStatus：不能宣稱已寄出
     expect(replyNotice(undefined).type).toBe('error')
   })
