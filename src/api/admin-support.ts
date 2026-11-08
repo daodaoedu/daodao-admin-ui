@@ -11,6 +11,8 @@ export interface FeedbackItem {
   id: number
   userId: number | null
   userName: string | null
+  /** 回報者帳號 email；沒有或使用者已刪除為 null（daodao#451；舊版 server 沒有此欄位） */
+  userEmail?: string | null
   content: string
   category: FeedbackCategory
   status: FeedbackStatus
@@ -18,14 +20,38 @@ export interface FeedbackItem {
   repliedAt: string | null
   /** 錯誤回報附的截圖網址（http(s)）；沒有截圖為空陣列 */
   screenshots: string[]
+  /** 錯誤回報表單的處理資訊；不是錯誤回報表單來的為 null（daodao#451；舊版 server 沒有此欄位） */
+  bugReport?: FeedbackBugReport | null
   /** 後台送出的回覆，依時間由舊到新；沒有回覆為空陣列 */
   replies: FeedbackReply[]
 }
+
+export interface FeedbackBugReport {
+  area: string | null
+  link: string | null
+  /** 送出回報時所在頁面 */
+  referrer: string | null
+  userAgent: string | null
+}
+
+/** 回覆信寄送結果；本功能上線前的回覆沒有紀錄為 null */
+export type FeedbackReplyEmailStatus = 'pending' | 'sent' | 'failed' | 'skipped'
 
 export interface FeedbackReply {
   id: number
   content: string
   createdAt: string
+  /** daodao#451；舊版 server 沒有此欄位 */
+  emailStatus?: FeedbackReplyEmailStatus | null
+}
+
+/**
+ * 回覆後 server 回傳的寄信結果：no_recipient＝回報者已刪除或沒有聯絡信箱；
+ * not_applicable＝不是錯誤回報表單來的回饋，回覆只記在後台
+ */
+export interface FeedbackReplyResult {
+  replyId: number
+  emailStatus: 'sent' | 'failed' | 'no_recipient' | 'not_applicable'
 }
 
 export interface FeedbackListResponse {
@@ -41,6 +67,8 @@ export interface FeedbackListResponse {
 }
 
 export const listFeedback = (params?: {
+  /** 只取這一則（通知信的後台連結 ?id=） */
+  id?: number
   status?: FeedbackStatus
   category?: FeedbackCategory
   limit?: number
@@ -56,9 +84,9 @@ export const updateFeedbackStatus = (id: number, data: { status: FeedbackStatus 
     data,
   )
 
-/** 只寫入後台紀錄，server 不寄信、不通知使用者 */
+/** 寫入回覆後，server 寄信給回報者並建立站內通知；收件人由 server 從該筆回報取得（daodao#451） */
 export const replyToFeedback = (id: number, data: { content: string }) =>
-  apiClient.post<ApiResponse<{ sent: boolean }>>(
+  apiClient.post<ApiResponse<FeedbackReplyResult>>(
     `/daodao-server/api/v1/admin/feedback/${id}/reply`,
     data,
   )

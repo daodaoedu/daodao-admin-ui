@@ -1,4 +1,10 @@
-import type { FeedbackCategory, FeedbackItem, FeedbackStatus } from '@/api/admin-support'
+import type {
+  FeedbackCategory,
+  FeedbackItem,
+  FeedbackReplyEmailStatus,
+  FeedbackReplyResult,
+  FeedbackStatus,
+} from '@/api/admin-support'
 
 /** server 的狀態值 → 畫面標籤 */
 export const STATUS_LABEL: Record<FeedbackStatus, string> = {
@@ -52,9 +58,22 @@ export interface FeedbackView {
   categoryLabel: string
   status: FeedbackStatus
   statusLabel: string
+  /** 回報者帳號 email；沒有為 null */
+  userEmail: string | null
   content: string
   screenshots: string[]
+  /** 錯誤回報的處理資訊（只列有值的欄位）；不是錯誤回報表單來的為空陣列（daodao#451 AC-03） */
+  bugReportFields: BugReportField[]
+  /** 錯誤回報表單送出的回報；只有這種回覆會寄信並通知回報者 */
+  isBugReport: boolean
   replies: FeedbackReplyView[]
+}
+
+export interface BugReportField {
+  label: string
+  value: string
+  /** 可點開的 http(s) 連結 */
+  href?: string
 }
 
 export interface FeedbackReplyView {
@@ -62,6 +81,95 @@ export interface FeedbackReplyView {
   content: string
   /** 台灣時間 YYYY-MM-DD HH:mm */
   time: string
+  /** 寄信狀態標籤；舊回覆沒有紀錄為 null */
+  delivery: ReplyDeliveryView | null
+}
+
+export interface ReplyDeliveryView {
+  label: string
+  tone: 'success' | 'error' | 'muted'
+}
+
+/** server 的問題區域值 → 畫面標籤（與前台錯誤回報表單選項一致） */
+export const BUG_AREA_LABEL: Record<string, string> = {
+  ui: '介面顯示',
+  performance: '效能',
+  auth: '登入/帳號',
+  data: '資料異常',
+  other: '其他',
+}
+
+/** 回覆信寄送狀態 → 標籤；失敗不可顯示成已送達（daodao#451 AC-02） */
+export function replyDeliveryView(
+  status: FeedbackReplyEmailStatus | null | undefined,
+): ReplyDeliveryView | null {
+  switch (status) {
+    case 'sent':
+      return { label: '已寄信給回報者', tone: 'success' }
+    case 'failed':
+      return { label: '寄信失敗，回報者沒有收到信', tone: 'error' }
+    case 'pending':
+      return { label: '寄信中或結果未知', tone: 'muted' }
+    case 'skipped':
+      return { label: '未寄信', tone: 'muted' }
+    default:
+      return null
+  }
+}
+
+/** 送出回覆後的提示：依 server 回傳的寄信結果，失敗時明講回報者沒收到 */
+export function replyNotice(result: FeedbackReplyResult | undefined): {
+  type: 'success' | 'error'
+  message: string
+} {
+  switch (result?.emailStatus) {
+    case 'sent':
+      return { type: 'success', message: '已送出回覆，並寄信與站內通知回報者' }
+    case 'no_recipient':
+      return {
+        type: 'error',
+        message: '回覆已保存，但回報者沒有可寄送的信箱（或帳號已刪除），沒有寄出信件',
+      }
+    case 'failed':
+      return { type: 'error', message: '回覆已保存，但寄信失敗，回報者沒有收到信' }
+    case 'not_applicable':
+      return {
+        type: 'success',
+        message: '已保存回覆。這則不是錯誤回報表單送出的回饋，不會寄信或通知使用者',
+      }
+    default:
+      return { type: 'error', message: '回覆已保存，但無法確認是否已寄信給回報者' }
+  }
+}
+
+const isHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value)
+
+function toBugReportFields(bugReport: FeedbackItem['bugReport']): BugReportField[] {
+  if (!bugReport) return []
+  const fields: BugReportField[] = []
+  if (bugReport.area)
+    fields.push({ label: '問題區域', value: BUG_AREA_LABEL[bugReport.area] ?? bugReport.area })
+  if (bugReport.link)
+    fields.push({
+      label: '相關連結',
+      value: bugReport.link,
+      href: isHttpUrl(bugReport.link) ? bugReport.link : undefined,
+    })
+  if (bugReport.referrer)
+    fields.push({
+      label: '來源頁面',
+      value: bugReport.referrer,
+      href: isHttpUrl(bugReport.referrer) ? bugReport.referrer : undefined,
+    })
+  if (bugReport.userAgent) fields.push({ label: '瀏覽器', value: bugReport.userAgent })
+  return fields
+}
+
+/** 網址 ?id= → 要展開的回饋 id（通知信的後台連結，daodao#451 AC-04）；不是正整數回 null */
+export function feedbackIdFromSearch(value: string | null): number | null {
+  if (!value || !/^\d+$/.test(value)) return null
+  const id = Number(value)
+  return Number.isSafeInteger(id) && id > 0 ? id : null
 }
 
 const timeFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -133,14 +241,18 @@ export function toFeedbackView(item: FeedbackItem): FeedbackView {
     categoryLabel: CATEGORY_LABEL[item.category] ?? item.category,
     status: item.status,
     statusLabel: STATUS_LABEL[item.status] ?? item.status,
+    userEmail: item.userEmail?.trim() || null,
     content: item.content,
     // 舊版 server 回應沒有這個欄位
     screenshots: item.screenshots ?? [],
+    bugReportFields: toBugReportFields(item.bugReport ?? null),
+    isBugReport: item.bugReport != null,
     // 舊版 server 回應沒有這個欄位
     replies: (item.replies ?? []).map((reply) => ({
       id: reply.id,
       content: reply.content,
       time: formatTaipeiTime(reply.createdAt),
+      delivery: replyDeliveryView(reply.emailStatus),
     })),
   }
 }

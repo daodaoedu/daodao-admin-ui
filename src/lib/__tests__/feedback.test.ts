@@ -3,7 +3,10 @@ import type { FeedbackItem } from '@/api/admin-support'
 import {
   CATEGORY_LABEL,
   feedbackActionErrorMessage,
+  feedbackIdFromSearch,
   feedbackListState,
+  replyDeliveryView,
+  replyNotice,
   STATUS_LABEL,
   toFeedbackQuery,
   toFeedbackView,
@@ -95,7 +98,9 @@ describe('toFeedbackView', () => {
         replies: [{ id: 3, content: '在右上角頭像選單', createdAt: '2026-10-21T05:00:00.000Z' }],
       }),
     )
-    expect(view.replies).toEqual([{ id: 3, content: '在右上角頭像選單', time: '2026-10-21 13:00' }])
+    expect(view.replies).toEqual([
+      { id: 3, content: '在右上角頭像選單', time: '2026-10-21 13:00', delivery: null },
+    ])
   })
 
   it('舊版 server 回應沒有 replies 時給空陣列', () => {
@@ -152,5 +157,97 @@ describe('feedbackActionErrorMessage（daodao#313 AC-03）', () => {
       '回覆失敗，請稍後再試',
     )
     expect(feedbackActionErrorMessage(apiError(undefined), '回覆失敗')).toBe('回覆失敗')
+  })
+})
+
+describe('錯誤回報處理資訊（daodao#451 AC-03）', () => {
+  it('展開時列出問題區域、相關連結、來源頁面、瀏覽器與回報者信箱', () => {
+    const view = toFeedbackView(
+      apiItem({
+        userEmail: 'reporter@example.com',
+        bugReport: {
+          area: 'ui',
+          link: 'https://app-dev.daodao.so/settings',
+          referrer: 'https://app-dev.daodao.so/home',
+          userAgent: 'Mozilla/5.0 Chrome/130',
+        },
+      }),
+    )
+    expect(view.userEmail).toBe('reporter@example.com')
+    expect(view.bugReportFields).toEqual([
+      { label: '問題區域', value: '介面顯示' },
+      {
+        label: '相關連結',
+        value: 'https://app-dev.daodao.so/settings',
+        href: 'https://app-dev.daodao.so/settings',
+      },
+      {
+        label: '來源頁面',
+        value: 'https://app-dev.daodao.so/home',
+        href: 'https://app-dev.daodao.so/home',
+      },
+      { label: '瀏覽器', value: 'Mozilla/5.0 Chrome/130' },
+    ])
+  })
+
+  it('沒填的欄位不列出；非 http(s) 的連結只顯示文字、不給可點連結', () => {
+    const view = toFeedbackView(
+      apiItem({
+        bugReport: { area: null, link: 'javascript:alert(1)', referrer: null, userAgent: null },
+      }),
+    )
+    expect(view.bugReportFields).toEqual([
+      { label: '相關連結', value: 'javascript:alert(1)', href: undefined },
+    ])
+  })
+
+  it('舊版 server 沒有 bugReport／userEmail 時不出錯', () => {
+    const view = toFeedbackView(apiItem())
+    expect(view.bugReportFields).toEqual([])
+    expect(view.userEmail).toBeNull()
+    expect(view.isBugReport).toBe(false)
+  })
+})
+
+describe('回覆寄信狀態（daodao#451 AC-02）', () => {
+  it('每則回覆標出寄信成功或失敗；失敗不可顯示成已送達', () => {
+    const view = toFeedbackView(
+      apiItem({
+        replies: [
+          { id: 1, content: '舊回覆', createdAt: '2026-11-01T00:00:00.000Z' },
+          { id: 2, content: '失敗', createdAt: '2026-11-08T00:00:00.000Z', emailStatus: 'failed' },
+          { id: 3, content: '成功', createdAt: '2026-11-08T01:00:00.000Z', emailStatus: 'sent' },
+        ],
+      }),
+    )
+    expect(view.replies.map((r) => r.delivery)).toEqual([
+      null,
+      { label: '寄信失敗，回報者沒有收到信', tone: 'error' },
+      { label: '已寄信給回報者', tone: 'success' },
+    ])
+    expect(replyDeliveryView('failed')?.label).not.toMatch(/已寄/)
+  })
+
+  it('送出回覆後的提示依寄信結果：只有 sent 是成功', () => {
+    expect(replyNotice({ replyId: 1, emailStatus: 'sent' }).type).toBe('success')
+    expect(replyNotice({ replyId: 1, emailStatus: 'failed' })).toEqual({
+      type: 'error',
+      message: '回覆已保存，但寄信失敗，回報者沒有收到信',
+    })
+    expect(replyNotice({ replyId: 1, emailStatus: 'no_recipient' }).type).toBe('error')
+    // 非錯誤回報表單的回饋：回覆只記在後台，提示要講清楚沒有寄信
+    expect(replyNotice({ replyId: 1, emailStatus: 'not_applicable' }).message).toMatch(/不會寄信/)
+    // 舊版 server 回 { sent: true }，沒有 emailStatus：不能宣稱已寄出
+    expect(replyNotice(undefined).type).toBe('error')
+  })
+})
+
+describe('feedbackIdFromSearch（daodao#451 AC-04 後台連結）', () => {
+  it('?id= 是正整數才展開', () => {
+    expect(feedbackIdFromSearch('42')).toBe(42)
+    expect(feedbackIdFromSearch(null)).toBeNull()
+    expect(feedbackIdFromSearch('0')).toBeNull()
+    expect(feedbackIdFromSearch('4a')).toBeNull()
+    expect(feedbackIdFromSearch('-1')).toBeNull()
   })
 })
