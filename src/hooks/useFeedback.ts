@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   type FeedbackCategory,
+  type FeedbackReplyResult,
   type FeedbackStatus,
   listFeedback,
   replyToFeedback,
@@ -30,14 +31,20 @@ interface MutationHandlers<TVariables> {
   onError?: (error: unknown, variables: TVariables) => void
 }
 
-/** 送出回覆；成功後重抓列表（狀態會變成已回覆、回覆內容出現在展開區） */
-export function useReplyToFeedback(handlers: MutationHandlers<{ id: number; content: string }>) {
+/** 送出回覆；成功後重抓列表（狀態會變成已回覆、回覆內容與寄信狀態出現在展開區） */
+export function useReplyToFeedback(handlers: {
+  onSuccess?: (
+    variables: { id: number; content: string },
+    result: FeedbackReplyResult | undefined,
+  ) => void
+  onError?: (error: unknown, variables: { id: number; content: string }) => void
+}) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, content }: { id: number; content: string }) =>
       replyToFeedback(id, { content }).then((r) => r.data.data),
-    onSuccess: (_data, variables) => {
-      handlers.onSuccess?.(variables)
+    onSuccess: (data, variables) => {
+      handlers.onSuccess?.(variables, data)
       return queryClient.invalidateQueries({ queryKey: FEEDBACK_KEY })
     },
     onError: (error, variables) => handlers.onError?.(error, variables),

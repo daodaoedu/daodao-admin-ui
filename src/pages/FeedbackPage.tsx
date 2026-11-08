@@ -1,5 +1,6 @@
 import { ChevronDown, Inbox, Loader2, MessageSquare, TrendingUp } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type { FeedbackCategory, FeedbackStatus } from '@/api/admin-support'
 import { PageHeader } from '@/components/PageHeader'
 import { StatCard } from '@/components/StatCard'
@@ -10,7 +11,9 @@ import { useFeedback, useReplyToFeedback, useUpdateFeedbackStatus } from '@/hook
 import {
   CATEGORY_LABEL,
   feedbackActionErrorMessage,
+  feedbackIdFromSearch,
   feedbackListState,
+  replyNotice,
   STATUS_LABEL,
   toFeedbackQuery,
   toFeedbackView,
@@ -46,7 +49,11 @@ const CATEGORY_SELECT_OPTIONS = [
 export function FeedbackPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | FeedbackStatus>('all')
   const [categoryFilter, setCategoryFilter] = useState<'all' | FeedbackCategory>('all')
-  const [expandedId, setExpandedId] = useState<number | null>(null)
+  // 通知信的後台連結帶 ?id=<回饋 id>，進頁面直接展開那一則（daodao#451 AC-04）
+  const [searchParams] = useSearchParams()
+  const linkedId = feedbackIdFromSearch(searchParams.get('id'))
+  const [expandedId, setExpandedId] = useState<number | null>(linkedId)
+  const scrolledToLinked = useRef(false)
   const [replyTexts, setReplyTexts] = useState<Record<number, string>>({})
   const [statusChanges, setStatusChanges] = useState<Record<number, FeedbackStatus>>({})
   const [notices, setNotices] = useState<
@@ -66,10 +73,11 @@ export function FeedbackPage() {
     })
 
   const replyMutation = useReplyToFeedback({
-    onSuccess: ({ id }) => {
+    onSuccess: ({ id }, result) => {
       setPendingReplies((prev) => ({ ...prev, [id]: false }))
       setReplyTexts((prev) => ({ ...prev, [id]: '' }))
-      setNotice(id, { type: 'success', message: '已送出回覆' })
+      // 寄信失敗時回覆仍已保存，但要讓管理者知道回報者沒收到（daodao#451 AC-02）
+      setNotice(id, replyNotice(result))
     },
     // 失敗時保留已輸入的內容
     onError: (error, { id }) => {
@@ -132,6 +140,13 @@ export function FeedbackPage() {
   // 失敗或載入中不顯示 0，避免看起來像「沒有回饋」
   const statValue = (value: number | undefined) => (apiData ? (value ?? 0) : '—')
 
+  const linkedVisible = linkedId !== null && filtered.some((item) => item.id === linkedId)
+  useEffect(() => {
+    if (!linkedVisible || scrolledToLinked.current) return
+    scrolledToLinked.current = true
+    document.getElementById(`feedback-${linkedId}`)?.scrollIntoView({ block: 'start' })
+  }, [linkedVisible, linkedId])
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -192,6 +207,7 @@ export function FeedbackPage() {
           return (
             <div
               key={item.id}
+              id={`feedback-${item.id}`}
               className="rounded-xl border border-[var(--admin-card-border)] bg-card/95 p-5 shadow-sm transition-shadow hover:shadow-md"
             >
               {/* Summary row */}
@@ -243,7 +259,37 @@ export function FeedbackPage() {
               {/* Expanded area */}
               {isExpanded && (
                 <div className="border-t border-border px-5 pb-5 pt-4">
-                  <p className="text-sm leading-relaxed">{item.content}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{item.content}</p>
+
+                  {(item.userEmail || item.bugReportFields.length > 0) && (
+                    <dl className="mt-3 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[max-content_1fr]">
+                      {item.userEmail && (
+                        <>
+                          <dt className="text-muted-foreground">回報者信箱</dt>
+                          <dd className="min-w-0 break-all">{item.userEmail}</dd>
+                        </>
+                      )}
+                      {item.bugReportFields.map((field) => (
+                        <div key={field.label} className="contents">
+                          <dt className="text-muted-foreground">{field.label}</dt>
+                          <dd className="min-w-0 break-all">
+                            {field.href ? (
+                              <a
+                                href={field.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline underline-offset-2"
+                              >
+                                {field.value}
+                              </a>
+                            ) : (
+                              field.value
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
 
                   {item.screenshots.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -272,7 +318,23 @@ export function FeedbackPage() {
                       {item.replies.map((reply) => (
                         <div key={reply.id} className="rounded-md bg-muted/60 px-3 py-2">
                           <p className="whitespace-pre-wrap text-sm">{reply.content}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">{reply.time}</p>
+                          <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span>{reply.time}</span>
+                            {reply.delivery && (
+                              <span
+                                className={cn(
+                                  'rounded-full px-2 py-0.5 font-medium',
+                                  reply.delivery.tone === 'success' && 'bg-success/15 text-success',
+                                  reply.delivery.tone === 'error' &&
+                                    'bg-destructive/15 text-destructive',
+                                  reply.delivery.tone === 'muted' &&
+                                    'bg-muted text-muted-foreground',
+                                )}
+                              >
+                                {reply.delivery.label}
+                              </span>
+                            )}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -290,7 +352,7 @@ export function FeedbackPage() {
                       }
                     />
                     <p className="text-xs text-muted-foreground">
-                      回覆只會記錄在後台，不會寄信或通知使用者。
+                      送出後會寄信到回報者的帳號信箱，並在站內通知回報者；回報者可在「我的回報」查看。
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button
