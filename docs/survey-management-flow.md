@@ -183,13 +183,13 @@ flowchart TD
 **公開問卷 URL 格式：**
 
 ```
-{VITE_SURVEY_PUBLIC_BASE}/{external_id}
+{APP_BASE_URL}/survey/r/{external_id}
 ```
 
-| 環境 | VITE_SURVEY_PUBLIC_BASE |
+| admin 主機 | APP_BASE_URL |
 |------|------------------------|
-| dev  | `https://app-dev.daodao.so/survey/r` |
-| prod | `https://app.daodao.so/survey/r` |
+| `admin-dev.daodao.so` | `https://app-dev.daodao.so` |
+| `admin.daodao.so` | `https://app.daodao.so` |
 
 > **重要**：問卷必須設為 `active` 狀態，前端填寫頁才能正常載入。
 > `draft` / `closed` / `archived` 狀態的問卷在前端會返回 404。
@@ -270,19 +270,16 @@ stateDiagram-v2
 
 ## 環境設定
 
-### admin-ui（`VITE_SURVEY_PUBLIC_BASE`）
+### admin-ui（`APP_BASE_URL`，`src/config.ts`）
 
-在 `.env.dev` / `.env.prod` 中設定前端 app 的問卷填寫頁 base URL：
+前台網址由 `resolveAppBaseUrl()` 依序決定：
 
-```bash
-# dev
-VITE_SURVEY_PUBLIC_BASE=https://app-dev.daodao.so/survey/r
+1. 已部署主機固定對應：`admin-dev.daodao.so` → `https://app-dev.daodao.so`；`admin.daodao.so` → `https://app.daodao.so`
+2. `VITE_SURVEY_PUBLIC_BASE`（本機開發用，可寫 `https://…/survey/r` 或只寫 origin）
+3. 本機（localhost／127.0.0.1）沒設定 → `https://app-dev.daodao.so`
+4. 其他 → `https://app.daodao.so`
 
-# prod
-VITE_SURVEY_PUBLIC_BASE=https://app.daodao.so/survey/r
-```
-
-若未設定，預設 fallback 為 `https://app.daodao.so/survey/r`。
+> `VITE_*` 只在 `pnpm build` 時注入。部署用的 Docker image 在 CI build、不帶這個值，`.env.dev`／`.env.prod` 是容器啟動時才掛載，寫在裡面不會影響已打包的前端（#525 admin-dev 連結開到 prod 的原因）。
 
 ### daodao-f2e（`NEXT_PUBLIC_API_URL`）
 

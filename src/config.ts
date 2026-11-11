@@ -1,8 +1,40 @@
-const DEFAULT_SURVEY_BASE = 'https://app.daodao.so/survey/r'
-const rawSurveyBase = import.meta.env.VITE_SURVEY_PUBLIC_BASE ?? DEFAULT_SURVEY_BASE
-const APP_BASE = rawSurveyBase.replace(/\/survey\/r\/?$/, '').replace(/\/$/, '')
+const PROD_APP_BASE = 'https://app.daodao.so'
+const DEV_APP_BASE = 'https://app-dev.daodao.so'
 
-export const APP_BASE_URL = APP_BASE || 'https://app.daodao.so'
+/** 已部署的 admin 主機固定對應的前台網址；部署的 image 不帶 build-time env，靠主機判定 */
+const DEPLOYED_ADMIN_HOSTS: Record<string, string> = {
+  'admin.daodao.so': PROD_APP_BASE,
+  'admin-dev.daodao.so': DEV_APP_BASE,
+}
+
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
+
+/**
+ * 決定前台（app）網址：已部署主機優先，其次 VITE_SURVEY_PUBLIC_BASE（本機用），
+ * 本機沒設定時用 app-dev，其餘退回正式站。
+ * VITE_* 只在 build 時注入，放在 runtime 的 .env 檔不會生效（#525）。
+ */
+export function resolveAppBaseUrl(
+  envBase: string | undefined,
+  hostname: string | undefined,
+): string {
+  const deployed = hostname ? DEPLOYED_ADMIN_HOSTS[hostname] : undefined
+  if (deployed) return deployed
+
+  const fromEnv = envBase
+    ?.trim()
+    .replace(/\/$/, '')
+    .replace(/\/survey\/r$/, '')
+  if (fromEnv) return fromEnv
+
+  if (hostname && LOCAL_HOSTS.has(hostname)) return DEV_APP_BASE
+  return PROD_APP_BASE
+}
+
+export const APP_BASE_URL = resolveAppBaseUrl(
+  import.meta.env.VITE_SURVEY_PUBLIC_BASE,
+  typeof window === 'undefined' ? undefined : window.location.hostname,
+)
 
 export const SURVEY_PUBLIC_BASE = `${APP_BASE_URL}/survey/r`
 
