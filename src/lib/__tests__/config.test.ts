@@ -35,6 +35,11 @@ describe('resolveAppBaseUrl', () => {
     expect(resolveAppBaseUrl(undefined, 'example.com')).toBe(PROD)
     expect(resolveAppBaseUrl(undefined, undefined)).toBe(PROD)
   })
+
+  it('主機名稱撞到物件內建屬性名時，仍當成未知主機', () => {
+    expect(resolveAppBaseUrl(undefined, 'constructor')).toBe(PROD)
+    expect(resolveAppBaseUrl(undefined, 'toString')).toBe(PROD)
+  })
 })
 
 describe('public URLs', () => {

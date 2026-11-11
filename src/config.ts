@@ -2,10 +2,10 @@ const PROD_APP_BASE = 'https://app.daodao.so'
 const DEV_APP_BASE = 'https://app-dev.daodao.so'
 
 /** 已部署的 admin 主機固定對應的前台網址；部署的 image 不帶 build-time env，靠主機判定 */
-const DEPLOYED_ADMIN_HOSTS: Record<string, string> = {
-  'admin.daodao.so': PROD_APP_BASE,
-  'admin-dev.daodao.so': DEV_APP_BASE,
-}
+const DEPLOYED_ADMIN_HOSTS = new Map<string, string>([
+  ['admin.daodao.so', PROD_APP_BASE],
+  ['admin-dev.daodao.so', DEV_APP_BASE],
+])
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
 
@@ -18,7 +18,7 @@ export function resolveAppBaseUrl(
   envBase: string | undefined,
   hostname: string | undefined,
 ): string {
-  const deployed = hostname ? DEPLOYED_ADMIN_HOSTS[hostname] : undefined
+  const deployed = hostname ? DEPLOYED_ADMIN_HOSTS.get(hostname) : undefined
   if (deployed) return deployed
 
   const fromEnv = envBase
