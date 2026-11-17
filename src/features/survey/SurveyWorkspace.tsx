@@ -100,6 +100,7 @@ export function SurveyWorkspace({ children }: { children: ReactNode }) {
                 size="sm"
                 variant="ghost"
                 className="shrink-0 whitespace-nowrap"
+                disabled={pending}
                 aria-label="返回問卷管理"
                 onClick={() => back.current?.()}
               >
@@ -133,7 +134,7 @@ export function SurveyWorkspace({ children }: { children: ReactNode }) {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  disabled={surveyLegacyEditing}
+                  disabled={surveyLegacyEditing || pending}
                   aria-pressed={surveyPreviewing}
                   onClick={() => setSurveyPreviewing(!surveyPreviewing)}
                 >
@@ -144,7 +145,7 @@ export function SurveyWorkspace({ children }: { children: ReactNode }) {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  disabled={surveyLegacyEditing}
+                  disabled={surveyLegacyEditing || pending}
                   onClick={() => setSurveySettingsOpen(!surveySettingsOpen)}
                 >
                   <Settings className="size-4" />

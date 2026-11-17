@@ -119,6 +119,8 @@ function SurveyImageField({
   guidance,
   onImageChange,
   onRemove,
+  disabled,
+  onUploadingChange,
 }: {
   id: string
   label: string
@@ -127,6 +129,8 @@ function SurveyImageField({
   guidance: string
   onImageChange: (imageUrl: string) => void
   onRemove: () => void
+  disabled: boolean
+  onUploadingChange: (uploading: boolean) => void
 }) {
   const [error, setError] = useState('')
   const [isLibraryOpen, setIsLibraryOpen] = useState(false)
@@ -143,6 +147,7 @@ function SurveyImageField({
   const visibleImages = imageLibrary.slice(0, MAX_SURVEY_LIBRARY_IMAGES)
 
   const handleFile = async (file: File) => {
+    if (disabled || isUploading) return
     setError('')
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
       setError('請選擇 PNG、JPG 或 WebP 圖片')
@@ -154,6 +159,7 @@ function SurveyImageField({
     }
     try {
       setIsUploading(true)
+      onUploadingChange(true)
       const response = await uploadAdminSurveyImage(file)
       onImageChange(response.data.data.url)
       await qc.invalidateQueries({ queryKey: ['admin-survey-images'] })
@@ -161,11 +167,15 @@ function SurveyImageField({
       setError('圖片上傳失敗，請確認圖片庫是否已滿並重試')
     } finally {
       setIsUploading(false)
+      onUploadingChange(false)
     }
   }
 
   return (
-    <div className="min-w-0 space-y-2 rounded-lg border border-border p-3">
+    <fieldset
+      disabled={disabled || isUploading}
+      className="min-w-0 space-y-2 rounded-lg border border-border p-3"
+    >
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium">{label}</p>
         <div className="flex items-center gap-1">
@@ -241,70 +251,72 @@ function SurveyImageField({
       )}
       <Dialog open={isLibraryOpen} onOpenChange={setIsLibraryOpen}>
         <DialogContent className="survey-workspace h-auto max-h-[85vh] max-w-3xl overflow-y-auto">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">圖片庫</h2>
-          </div>
-          {libraryLoading && <p>載入圖片中…</p>}
-          {!libraryLoading && libraryError && <p role="alert">無法載入圖片庫，請關閉後重試</p>}
-          {!libraryLoading && !libraryError && visibleImages.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {visibleImages.map((image) => (
-                <div
-                  key={image.url}
-                  className="min-w-0 overflow-hidden rounded-lg border border-border"
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onImageChange(image.url)
-                      setIsLibraryOpen(false)
-                    }}
-                    className="group block w-full text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          <fieldset disabled={disabled || isUploading} className="min-w-0">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">圖片庫</h2>
+            </div>
+            {libraryLoading && <p>載入圖片中…</p>}
+            {!libraryLoading && libraryError && <p role="alert">無法載入圖片庫，請關閉後重試</p>}
+            {!libraryLoading && !libraryError && visibleImages.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {visibleImages.map((image) => (
+                  <div
+                    key={image.url}
+                    className="min-w-0 overflow-hidden rounded-lg border border-border"
                   >
-                    <span className="flex h-24 items-center justify-center bg-muted p-2">
-                      <img
-                        src={image.url}
-                        alt=""
-                        className={
-                          kind === 'banner'
-                            ? 'h-full w-full rounded object-cover'
-                            : 'max-h-full max-w-full object-contain'
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onImageChange(image.url)
+                        setIsLibraryOpen(false)
+                      }}
+                      className="group block w-full text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                    >
+                      <span className="flex h-24 items-center justify-center bg-muted p-2">
+                        <img
+                          src={image.url}
+                          alt=""
+                          className={
+                            kind === 'banner'
+                              ? 'h-full w-full rounded object-cover'
+                              : 'max-h-full max-w-full object-contain'
+                          }
+                        />
+                      </span>
+                      <span className="block truncate px-2 py-1.5 text-xs text-muted-foreground">
+                        {`圖片 #${image.id}`}
+                      </span>
+                    </button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={async () => {
+                        if (!window.confirm('從圖片庫移除？既有問卷的圖片會保留。')) return
+                        try {
+                          await deleteAdminSurveyImage(image.id)
+                          await qc.invalidateQueries({ queryKey: ['admin-survey-images'] })
+                        } catch {
+                          setError('移除失敗，請重試')
                         }
-                      />
-                    </span>
-                    <span className="block truncate px-2 py-1.5 text-xs text-muted-foreground">
-                      {`圖片 #${image.id}`}
-                    </span>
-                  </button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="w-full"
-                    onClick={async () => {
-                      if (!window.confirm('從圖片庫移除？既有問卷的圖片會保留。')) return
-                      try {
-                        await deleteAdminSurveyImage(image.id)
-                        await qc.invalidateQueries({ queryKey: ['admin-survey-images'] })
-                      } catch {
-                        setError('移除失敗，請重試')
-                      }
-                    }}
-                  >
-                    從圖片庫移除
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-          {!libraryLoading && !libraryError && !(visibleImages.length > 0) && (
-            <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-              尚無已上傳圖片
-            </div>
-          )}
+                      }}
+                    >
+                      從圖片庫移除
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!libraryLoading && !libraryError && !(visibleImages.length > 0) && (
+              <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+                尚無已上傳圖片
+              </div>
+            )}
+          </fieldset>
         </DialogContent>
       </Dialog>
-    </div>
+    </fieldset>
   )
 }
 
@@ -1792,6 +1804,8 @@ function SurveyFormInner({
   const [description, setDescription] = useState(existingData?.description ?? '')
   const [logoUrl, setLogoUrl] = useState(existingData?.logo_url ?? '')
   const [bannerUrl, setBannerUrl] = useState(existingData?.cover_url ?? '')
+  const [uploadingImages, setUploadingImages] = useState({ logo: false, banner: false })
+  const [isArchiving, setIsArchiving] = useState(false)
   const [isBrandAssetsExpanded, setIsBrandAssetsExpanded] = useState(false)
   const [thankYouMessage, setThankYouMessage] = useState(existingData?.thank_you_message ?? '')
   const [surveyAudience, setSurveyAudience] = useState<'public' | 'members'>(
@@ -1960,7 +1974,14 @@ function SurveyFormInner({
   })
 
   const isPending =
-    isSubmitFlowPending || createMut.isPending || updateMut.isPending || publishMut.isPending
+    isSubmitFlowPending ||
+    createMut.isPending ||
+    updateMut.isPending ||
+    publishMut.isPending ||
+    surveyAvailabilityMut.isPending ||
+    isArchiving ||
+    uploadingImages.logo ||
+    uploadingImages.banner
 
   useEffect(() => {
     setSurveySubmitPending(isPending)
@@ -2120,6 +2141,7 @@ function SurveyFormInner({
   }
 
   const handleSubmit = (publish = false) => {
+    if (isPending) return
     setError('')
     if (!title.trim()) {
       setError('標題為必填')
@@ -2244,7 +2266,7 @@ function SurveyFormInner({
   }, [registerSurveyPublishHandler, registerSurveySubmitHandler, setSurveySubmitPending])
 
   return (
-    <div className="flex min-h-0 flex-col">
+    <fieldset disabled={isPending} className="flex min-h-0 min-w-0 flex-col">
       {existingData?.status === 'active' &&
         existingData.max_responses != null &&
         existingData.response_count >= existingData.max_responses && (
@@ -2272,6 +2294,10 @@ function SurveyFormInner({
                   id={`survey-logo-${surveyId ?? 'new'}`}
                   label="Logo"
                   kind="logo"
+                  disabled={isPending}
+                  onUploadingChange={(uploading) =>
+                    setUploadingImages((current) => ({ ...current, logo: uploading }))
+                  }
                   imageUrl={logoUrl}
                   onImageChange={(image) => {
                     setLogoUrl(image)
@@ -2285,6 +2311,10 @@ function SurveyFormInner({
                   id={`survey-banner-${surveyId ?? 'new'}`}
                   label="問卷橫幅"
                   kind="banner"
+                  disabled={isPending}
+                  onUploadingChange={(uploading) =>
+                    setUploadingImages((current) => ({ ...current, banner: uploading }))
+                  }
                   imageUrl={bannerUrl}
                   onImageChange={(image) => {
                     setBannerUrl(image)
@@ -2782,7 +2812,7 @@ function SurveyFormInner({
           aria-label="問卷設定"
           className="survey-workspace h-auto max-h-[85vh] max-w-md p-6"
         >
-          <div className="space-y-5">
+          <fieldset disabled={isPending} className="min-w-0 space-y-5">
             <div className="space-y-2">
               <p className="text-sm font-medium">回應對象</p>
               <div className="grid grid-cols-2 gap-2">
@@ -2868,7 +2898,8 @@ function SurveyFormInner({
                   variant="secondary"
                   disabled={surveyStatus === 'archived' || isPending}
                   onClick={async () => {
-                    if (!window.confirm('封存後無法重新開啟問卷，確定封存？')) return
+                    if (isPending || !window.confirm('封存後無法重新開啟問卷，確定封存？')) return
+                    setIsArchiving(true)
                     try {
                       await updateAdminSurveyStatus(surveyId, 'archived')
                       setSurveyStatus('archived')
@@ -2877,6 +2908,8 @@ function SurveyFormInner({
                       queryClient.invalidateQueries({ queryKey: ['admin-surveys'] })
                     } catch (error) {
                       setError(getApiErrorMessage(error, '封存失敗，請重試'))
+                    } finally {
+                      setIsArchiving(false)
                     }
                   }}
                 >
@@ -2887,7 +2920,7 @@ function SurveyFormInner({
                 </p>
               </div>
             )}
-          </div>
+          </fieldset>
         </DialogContent>
       </Dialog>
 
@@ -2902,266 +2935,272 @@ function SurveyFormInner({
           aria-label={questionSetup ? '題目設定' : '選擇題型'}
           className="survey-workspace h-auto max-h-[85vh] max-w-xl overflow-y-auto p-5 sm:p-6"
         >
-          {!questionSetup ? (
-            <>
-              <div className="mb-4 space-y-1">
-                <h2 className="text-lg font-semibold">新增題目</h2>
-              </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {QUESTION_TYPE_OPTIONS.map((option) => {
-                  const TypeIcon = option.icon
-                  return (
+          <fieldset disabled={isPending} className="min-w-0">
+            {!questionSetup ? (
+              <>
+                <div className="mb-4 space-y-1">
+                  <h2 className="text-lg font-semibold">新增題目</h2>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {QUESTION_TYPE_OPTIONS.map((option) => {
+                    const TypeIcon = option.icon
+                    return (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant="outline"
+                        className="h-auto min-h-16 justify-start gap-3 whitespace-normal p-3 text-left"
+                        onClick={() => beginQuestionSetup(option.value)}
+                      >
+                        <TypeIcon className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium">{option.label}</span>
+                          <span className="block text-xs font-normal text-muted-foreground">
+                            {option.detail}
+                          </span>
+                        </span>
+                      </Button>
+                    )
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                {questionSetupMode === 'create' && (
+                  <div className="-ml-2 -mt-2 mb-1">
                     <Button
-                      key={option.value}
                       type="button"
-                      variant="outline"
-                      className="h-auto min-h-16 justify-start gap-3 whitespace-normal p-3 text-left"
-                      onClick={() => beginQuestionSetup(option.value)}
+                      variant="ghost"
+                      size="icon"
+                      aria-label="返回題型選擇"
+                      title="返回題型選擇"
+                      onClick={() => setQuestionSetup(null)}
                     >
-                      <TypeIcon className="h-4 w-4 shrink-0 text-primary" />
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium">{option.label}</span>
-                        <span className="block text-xs font-normal text-muted-foreground">
-                          {option.detail}
-                        </span>
-                      </span>
+                      <ArrowLeft className="h-4 w-4" />
                     </Button>
-                  )
-                })}
-              </div>
-            </>
-          ) : (
-            <>
-              {questionSetupMode === 'create' && (
-                <div className="-ml-2 -mt-2 mb-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="返回題型選擇"
-                    title="返回題型選擇"
-                    onClick={() => setQuestionSetup(null)}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2">
-                  <Type className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">
-                    {QUESTION_TYPE_LABELS[questionSetup.question_type] ??
-                      questionSetup.question_type}
-                  </span>
-                </div>
-
-                <div>
-                  <Input
-                    id="question-setup-text"
-                    value={questionSetup.question_text}
-                    onChange={(event) =>
-                      setQuestionSetup((current) =>
-                        current ? { ...current, question_text: event.target.value } : current,
-                      )
-                    }
-                    placeholder="輸入問題"
-                    aria-label="問題"
-                    autoFocus
-                  />
-                </div>
-
-                {surveyAudience === 'members' && questionSetup.question_type === 'email' && (
-                  <p className="border-l-2 border-primary pl-3 text-sm text-muted-foreground">
-                    此問卷需登入才能回應。請確認是否仍需要額外蒐集電子郵件。
-                  </p>
+                  </div>
                 )}
 
-                {questionSetup.question_type === 'text' && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2">
+                    <Type className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">
+                      {QUESTION_TYPE_LABELS[questionSetup.question_type] ??
+                        questionSetup.question_type}
+                    </span>
+                  </div>
+
                   <div>
-                    <fieldset className="grid grid-cols-2 gap-2">
-                      <legend className="sr-only">回答長度</legend>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        aria-pressed={questionSetup.text_response_length === 'short'}
-                        onClick={() =>
-                          setQuestionSetup((current) =>
-                            current ? { ...current, text_response_length: 'short' } : current,
-                          )
-                        }
-                        className={`h-auto justify-start py-2.5 text-left ${questionSetup.text_response_length === 'short' ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30' : 'bg-background'}`}
-                      >
-                        <span>
-                          <span className="block text-sm font-medium">短答</span>
-                          <span className="block text-xs font-normal text-muted-foreground">
-                            單行文字
-                          </span>
-                        </span>
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        aria-pressed={questionSetup.text_response_length === 'long'}
-                        onClick={() =>
-                          setQuestionSetup((current) =>
-                            current ? { ...current, text_response_length: 'long' } : current,
-                          )
-                        }
-                        className={`h-auto justify-start py-2.5 text-left ${questionSetup.text_response_length === 'long' ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30' : 'bg-background'}`}
-                      >
-                        <span>
-                          <span className="block text-sm font-medium">長答</span>
-                          <span className="block text-xs font-normal text-muted-foreground">
-                            多行文字
-                          </span>
-                        </span>
-                      </Button>
-                    </fieldset>
+                    <Input
+                      id="question-setup-text"
+                      value={questionSetup.question_text}
+                      onChange={(event) =>
+                        setQuestionSetup((current) =>
+                          current ? { ...current, question_text: event.target.value } : current,
+                        )
+                      }
+                      placeholder="輸入問題"
+                      aria-label="問題"
+                      autoFocus
+                    />
                   </div>
-                )}
 
-                {questionSetup.question_type === 'scale' && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">量表範圍</p>
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                      <Input
-                        type="number"
-                        step={1}
-                        value={questionSetup.scale_min}
-                        onChange={(event) =>
-                          setQuestionSetup((current) =>
-                            current
-                              ? { ...current, scale_min: Number(event.target.value) }
-                              : current,
-                          )
-                        }
-                        aria-label="量表起始值"
-                      />
-                      <span className="text-sm text-muted-foreground">至</span>
-                      <Input
-                        type="number"
-                        step={1}
-                        value={questionSetup.scale_max}
-                        onChange={(event) =>
-                          setQuestionSetup((current) =>
-                            current
-                              ? { ...current, scale_max: Number(event.target.value) }
-                              : current,
-                          )
-                        }
-                        aria-label="量表結束值"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        value={questionSetup.scale_min_label}
-                        onChange={(event) =>
-                          setQuestionSetup((current) =>
-                            current ? { ...current, scale_min_label: event.target.value } : current,
-                          )
-                        }
-                        placeholder="左端文字"
-                        aria-label="量表左端文字"
-                      />
-                      <Input
-                        value={questionSetup.scale_max_label}
-                        onChange={(event) =>
-                          setQuestionSetup((current) =>
-                            current ? { ...current, scale_max_label: event.target.value } : current,
-                          )
-                        }
-                        placeholder="右端文字"
-                        aria-label="量表右端文字"
-                      />
-                    </div>
-                    {questionSetup.scale_min >= questionSetup.scale_max && (
-                      <p className="text-xs text-destructive dark:text-red-400">
-                        結束值必須大於起始值
-                      </p>
-                    )}
-                  </div>
-                )}
+                  {surveyAudience === 'members' && questionSetup.question_type === 'email' && (
+                    <p className="border-l-2 border-primary pl-3 text-sm text-muted-foreground">
+                      此問卷需登入才能回應。請確認是否仍需要額外蒐集電子郵件。
+                    </p>
+                  )}
 
-                {OPTION_TYPES.has(questionSetup.question_type) && (
-                  <div className="space-y-2">
+                  {questionSetup.question_type === 'text' && (
                     <div>
-                      <p className="text-sm font-medium">選項</p>
-                      <p className="text-xs text-muted-foreground">
-                        新增至少兩個選項，回應者才能作答。
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      {questionSetup.options.map((option, index) => (
-                        <div key={option._key} className="flex items-center gap-2">
-                          <span className="w-5 shrink-0 text-right text-xs text-muted-foreground">
-                            {index + 1}.
+                      <fieldset className="grid grid-cols-2 gap-2">
+                        <legend className="sr-only">回答長度</legend>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          aria-pressed={questionSetup.text_response_length === 'short'}
+                          onClick={() =>
+                            setQuestionSetup((current) =>
+                              current ? { ...current, text_response_length: 'short' } : current,
+                            )
+                          }
+                          className={`h-auto justify-start py-2.5 text-left ${questionSetup.text_response_length === 'short' ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30' : 'bg-background'}`}
+                        >
+                          <span>
+                            <span className="block text-sm font-medium">短答</span>
+                            <span className="block text-xs font-normal text-muted-foreground">
+                              單行文字
+                            </span>
                           </span>
-                          <Input
-                            value={option.option_text}
-                            onChange={(event) => updateSetupOption(index, event.target.value)}
-                            placeholder={`選項 ${index + 1}`}
-                            aria-label={`選項 ${index + 1}`}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`刪除選項 ${index + 1}`}
-                            title="刪除選項"
-                            disabled={questionSetup.options.length <= 1}
-                            onClick={() => removeSetupOption(index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      <Button type="button" variant="ghost" size="sm" onClick={addSetupOption}>
-                        <Plus className="mr-1 h-4 w-4" />
-                        新增選項
-                      </Button>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          aria-pressed={questionSetup.text_response_length === 'long'}
+                          onClick={() =>
+                            setQuestionSetup((current) =>
+                              current ? { ...current, text_response_length: 'long' } : current,
+                            )
+                          }
+                          className={`h-auto justify-start py-2.5 text-left ${questionSetup.text_response_length === 'long' ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30' : 'bg-background'}`}
+                        >
+                          <span>
+                            <span className="block text-sm font-medium">長答</span>
+                            <span className="block text-xs font-normal text-muted-foreground">
+                              多行文字
+                            </span>
+                          </span>
+                        </Button>
+                      </fieldset>
                     </div>
+                  )}
+
+                  {questionSetup.question_type === 'scale' && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">量表範圍</p>
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                        <Input
+                          type="number"
+                          step={1}
+                          value={questionSetup.scale_min}
+                          onChange={(event) =>
+                            setQuestionSetup((current) =>
+                              current
+                                ? { ...current, scale_min: Number(event.target.value) }
+                                : current,
+                            )
+                          }
+                          aria-label="量表起始值"
+                        />
+                        <span className="text-sm text-muted-foreground">至</span>
+                        <Input
+                          type="number"
+                          step={1}
+                          value={questionSetup.scale_max}
+                          onChange={(event) =>
+                            setQuestionSetup((current) =>
+                              current
+                                ? { ...current, scale_max: Number(event.target.value) }
+                                : current,
+                            )
+                          }
+                          aria-label="量表結束值"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          value={questionSetup.scale_min_label}
+                          onChange={(event) =>
+                            setQuestionSetup((current) =>
+                              current
+                                ? { ...current, scale_min_label: event.target.value }
+                                : current,
+                            )
+                          }
+                          placeholder="左端文字"
+                          aria-label="量表左端文字"
+                        />
+                        <Input
+                          value={questionSetup.scale_max_label}
+                          onChange={(event) =>
+                            setQuestionSetup((current) =>
+                              current
+                                ? { ...current, scale_max_label: event.target.value }
+                                : current,
+                            )
+                          }
+                          placeholder="右端文字"
+                          aria-label="量表右端文字"
+                        />
+                      </div>
+                      {questionSetup.scale_min >= questionSetup.scale_max && (
+                        <p className="text-xs text-destructive dark:text-red-400">
+                          結束值必須大於起始值
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {OPTION_TYPES.has(questionSetup.question_type) && (
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-sm font-medium">選項</p>
+                        <p className="text-xs text-muted-foreground">
+                          新增至少兩個選項，回應者才能作答。
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        {questionSetup.options.map((option, index) => (
+                          <div key={option._key} className="flex items-center gap-2">
+                            <span className="w-5 shrink-0 text-right text-xs text-muted-foreground">
+                              {index + 1}.
+                            </span>
+                            <Input
+                              value={option.option_text}
+                              onChange={(event) => updateSetupOption(index, event.target.value)}
+                              placeholder={`選項 ${index + 1}`}
+                              aria-label={`選項 ${index + 1}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`刪除選項 ${index + 1}`}
+                              title="刪除選項"
+                              disabled={questionSetup.options.length <= 1}
+                              onClick={() => removeSetupOption(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button type="button" variant="ghost" size="sm" onClick={addSetupOption}>
+                          <Plus className="mr-1 h-4 w-4" />
+                          新增選項
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-t border-border pt-4">
+                    <SettingSwitch
+                      label="必填"
+                      checked={questionSetup.is_required}
+                      onCheckedChange={(checked) =>
+                        setQuestionSetup((current) =>
+                          current ? { ...current, is_required: checked } : current,
+                        )
+                      }
+                    />
                   </div>
-                )}
 
-                <div className="border-t border-border pt-4">
-                  <SettingSwitch
-                    label="必填"
-                    checked={questionSetup.is_required}
-                    onCheckedChange={(checked) =>
-                      setQuestionSetup((current) =>
-                        current ? { ...current, is_required: checked } : current,
-                      )
-                    }
-                  />
+                  <div className="flex justify-end gap-2 border-t border-border pt-4">
+                    <Button
+                      type="button"
+                      onClick={saveQuestionSetup}
+                      disabled={
+                        !questionSetup.question_text.trim() ||
+                        (questionSetup.question_type === 'scale' &&
+                          (questionSetup.scale_min >= questionSetup.scale_max ||
+                            questionSetup.scale_max - questionSetup.scale_min > 100 ||
+                            questionSetup.scale_min < -100 ||
+                            questionSetup.scale_max > 100 ||
+                            !Number.isInteger(questionSetup.scale_min) ||
+                            !Number.isInteger(questionSetup.scale_max))) ||
+                        (OPTION_TYPES.has(questionSetup.question_type) &&
+                          questionSetup.options.filter((option) => option.option_text.trim())
+                            .length < 2)
+                      }
+                    >
+                      {questionSetupMode === 'create' ? '加入題目' : '儲存'}
+                    </Button>
+                  </div>
                 </div>
-
-                <div className="flex justify-end gap-2 border-t border-border pt-4">
-                  <Button
-                    type="button"
-                    onClick={saveQuestionSetup}
-                    disabled={
-                      !questionSetup.question_text.trim() ||
-                      (questionSetup.question_type === 'scale' &&
-                        (questionSetup.scale_min >= questionSetup.scale_max ||
-                          questionSetup.scale_max - questionSetup.scale_min > 100 ||
-                          questionSetup.scale_min < -100 ||
-                          questionSetup.scale_max > 100 ||
-                          !Number.isInteger(questionSetup.scale_min) ||
-                          !Number.isInteger(questionSetup.scale_max))) ||
-                      (OPTION_TYPES.has(questionSetup.question_type) &&
-                        questionSetup.options.filter((option) => option.option_text.trim()).length <
-                          2)
-                    }
-                  >
-                    {questionSetupMode === 'create' ? '加入題目' : '儲存'}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </fieldset>
         </DialogContent>
       </Dialog>
-    </div>
+    </fieldset>
   )
 }
