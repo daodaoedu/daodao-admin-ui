@@ -107,6 +107,7 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
 }
 
 const OPTION_TYPES = new Set(['single_choice', 'multiple_choice', 'ranking'])
+class DuplicateSurveyValidationError extends Error {}
 const MAX_SURVEY_LIBRARY_IMAGES = 3
 
 type SurveyImageKind = 'logo' | 'banner'
@@ -458,6 +459,14 @@ function SurveyManagementContent() {
     mutationFn: async (survey: AdminSurveyListItem) => {
       const response = await getAdminSurvey(survey.id)
       const detail = response.data.data as AdminSurveyDetail
+      const invalidChoice = detail.questions.findIndex(
+        (question) => OPTION_TYPES.has(question.question_type) && question.options.length < 2,
+      )
+      if (invalidChoice >= 0) {
+        throw new DuplicateSurveyValidationError(
+          `舊問卷第 ${invalidChoice + 1} 題的選項不足兩個，無法直接複製。請建立新問卷，補齊選項後再發布；原問卷與回應會保留。`,
+        )
+      }
       return createAdminSurvey({
         title: `${detail.title}（副本）`,
         description: detail.description ?? undefined,
@@ -466,7 +475,7 @@ function SurveyManagementContent() {
         logo_url: detail.logo_url,
         cover_url: detail.cover_url,
         managed_version: 1,
-        is_anonymous: detail.is_anonymous,
+        is_anonymous: detail.is_public ? true : detail.is_anonymous,
         tags: detail.tags,
         max_responses: detail.max_responses,
         questions: detail.questions.map((question) => ({
@@ -488,7 +497,12 @@ function SurveyManagementContent() {
       })
     },
     onSuccess: invalidate,
-    onError: () => alert('複製問卷失敗，請重試'),
+    onError: (error) =>
+      window.alert(
+        error instanceof DuplicateSurveyValidationError
+          ? error.message
+          : getApiErrorMessage(error, '複製問卷失敗，請重試'),
+      ),
   })
 
   const handleDelete = (survey: AdminSurveyListItem) => {
@@ -2207,7 +2221,12 @@ function SurveyFormInner({
       cover_url: bannerUrl || null,
       ...(mode === 'create' ? { managed_version: 1 as const } : {}),
       thank_you_message: thankYouMessage.trim(),
-      is_anonymous: surveyAudience === 'public' ? true : isAnonymous,
+      is_anonymous:
+        surveyAudience === 'public'
+          ? mode === 'edit' && existingData?.is_public
+            ? existingData.is_anonymous
+            : true
+          : isAnonymous,
       is_public: surveyAudience === 'public',
       tags: mode === 'edit' ? (existingData?.tags ?? []) : [],
       max_responses: hasMaxResponses ? Number(maxResponses) : null,

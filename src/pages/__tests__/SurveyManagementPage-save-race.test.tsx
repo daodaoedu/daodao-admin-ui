@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
   listAdminSurveys: vi.fn(),
   getAdminSurvey: vi.fn(),
   updateAdminSurvey: vi.fn(),
+  createAdminSurvey: vi.fn(),
   listAdminSurveyImages: vi.fn(),
   uploadAdminSurveyImage: vi.fn(),
 }))
@@ -168,4 +169,80 @@ describe('survey save and upload mutual exclusion', () => {
     if (portal === '圖片庫') expect(screen.getByRole('button', { name: '圖片 #11' })).toBeDisabled()
     await act(async () => pending.resolve({ data: { data: { id: 1, updated: true } } }))
   })
+})
+
+describe('survey duplicate and metadata privacy settings', () => {
+  it('makes a new public legacy duplicate anonymous before it can receive responses', async () => {
+    api.getAdminSurvey.mockResolvedValue({
+      data: { data: { ...survey, managed_version: null, is_anonymous: false } },
+    })
+    api.createAdminSurvey.mockResolvedValue({ data: { data: { id: 2 } } })
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    })
+    const user = userEvent.setup()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <SurveyManagementPage />
+      </QueryClientProvider>,
+    )
+    await user.click(await screen.findByRole('button', { name: '複製問卷' }))
+    await waitFor(() => expect(api.createAdminSurvey).toHaveBeenCalledOnce())
+    expect(api.createAdminSurvey.mock.calls[0][0]).toMatchObject({
+      managed_version: 1,
+      is_public: true,
+      is_anonymous: true,
+    })
+  })
+
+  it('preserves the stored anonymity setting when changing metadata after a response', async () => {
+    api.getAdminSurvey.mockResolvedValue({
+      data: { data: { ...survey, is_anonymous: false, response_count: 1, structure_locked: true } },
+    })
+    api.updateAdminSurvey.mockResolvedValue({ data: { data: { id: 1, updated: true } } })
+    const user = await openEditor()
+    await user.type(screen.getByRole('textbox', { name: '問卷描述（選填）' }), ' 新描述')
+    await user.click(screen.getByRole('button', { name: '儲存' }))
+    await waitFor(() => expect(api.updateAdminSurvey).toHaveBeenCalledOnce())
+    expect(api.updateAdminSurvey.mock.calls[0][1]).toMatchObject({
+      is_public: true,
+      is_anonymous: false,
+      description: '原描述 新描述',
+    })
+    expect(api.updateAdminSurvey.mock.calls[0][1]).not.toHaveProperty('questions')
+  })
+})
+
+it('explains why a legacy one-option choice cannot be duplicated without modifying its question', async () => {
+  api.getAdminSurvey.mockResolvedValue({
+    data: {
+      data: {
+        ...survey,
+        managed_version: null,
+        questions: [
+          {
+            ...survey.questions[0],
+            question_type: 'single_choice',
+            options: [{ id: 1, option_text: '唯一選項', position: 0 }],
+          },
+        ],
+      },
+    },
+  })
+  const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  const user = userEvent.setup()
+  render(
+    <QueryClientProvider client={queryClient}>
+      <SurveyManagementPage />
+    </QueryClientProvider>,
+  )
+  await user.click(await screen.findByRole('button', { name: '複製問卷' }))
+  await waitFor(() =>
+    expect(alert).toHaveBeenCalledWith(expect.stringContaining('第 1 題的選項不足兩個')),
+  )
+  expect(api.createAdminSurvey).not.toHaveBeenCalled()
+  alert.mockRestore()
 })
