@@ -9,6 +9,7 @@ const api = vi.hoisted(() => ({
   getAdminSurvey: vi.fn(),
   createAdminSurvey: vi.fn(),
   updateAdminSurvey: vi.fn(),
+  deleteAdminSurvey: vi.fn(),
   listAdminSurveyImages: vi.fn(),
 }))
 vi.mock('@/api/admin-survey', async (importOriginal) => ({
@@ -210,4 +211,25 @@ it('supersedes a pre-save in-flight detail refetch when reopening the saved surv
   await act(async () => finishOldRead(base))
   await oldRead
   expect(await screen.findByRole('heading', { name: '真正已保存標題' })).toBeVisible()
+})
+
+it('does not open a deleted survey when its earlier detail request completes', async () => {
+  const user = renderSurvey(base)
+  let finish: (value: { data: { data: AdminSurveyDetail } }) => void = () => {}
+  api.getAdminSurvey.mockReturnValueOnce(
+    new Promise((resolve) => {
+      finish = resolve
+    }),
+  )
+  api.deleteAdminSurvey.mockResolvedValue({ data: { data: { deleted: true } } })
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  await user.click(await screen.findByRole('button', { name: '預覽問卷' }))
+  api.listAdminSurveys.mockResolvedValue({
+    data: { data: [], pagination: { total: 0, limit: 30, offset: 0, hasMore: false } },
+  })
+  await user.click(screen.getByRole('button', { name: '刪除問卷' }))
+  await waitFor(() => expect(api.deleteAdminSurvey).toHaveBeenCalledWith(base.id))
+  await act(async () => finish({ data: { data: base } }))
+  expect(screen.queryByRole('button', { name: '返回問卷管理' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: '新增問卷' })).toBeVisible()
 })

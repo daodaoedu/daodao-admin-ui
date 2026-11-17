@@ -534,6 +534,8 @@ function SurveyManagementContent() {
     if (
       window.confirm(`確定刪除問卷《${survey.title}》？\n此操作無法復原，所有回應也將一併刪除。`)
     ) {
+      navigationVersion.current += 1
+      setRequestedPreviewId(null)
       deleteMut.mutate(survey.id)
     }
   }
