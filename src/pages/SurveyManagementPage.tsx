@@ -62,6 +62,7 @@ import { LegacySurveyForm } from '@/features/survey/LegacySurveyForm'
 import type { SurveyPageHeading } from '@/features/survey/SurveyWorkspace'
 import { SurveyWorkspace, useSurveyWorkspace } from '@/features/survey/SurveyWorkspace'
 import { formatAdminDateTime } from '@/lib/date-format'
+import { copySurveyTitle } from '@/lib/survey-copy'
 import { buildSurveyCsv } from '@/lib/survey-csv'
 import { getApiErrorMessage } from '@/lib/survey-errors'
 import { loadAllSurveyResponses } from '@/lib/survey-pagination'
@@ -375,6 +376,7 @@ function SurveyManagementContent() {
 
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
   const [activeSurveyId, setActiveSurveyId] = useState<number | null>(null)
+  const [requestedPreviewId, setRequestedPreviewId] = useState<number | null>(null)
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [copyErrorId, setCopyErrorId] = useState<number | null>(null)
   const [hasUnsavedFormChanges, setHasUnsavedFormChanges] = useState(false)
@@ -423,6 +425,17 @@ function SurveyManagementContent() {
     registerSurveyPublishHandler,
   ])
 
+  useEffect(() => {
+    if (
+      requestedPreviewId === null ||
+      drawerMode !== 'edit' ||
+      activeSurveyId !== requestedPreviewId
+    )
+      return
+    setSurveyPreviewing(true)
+    setRequestedPreviewId(null)
+  }, [requestedPreviewId, drawerMode, activeSurveyId, setSurveyPreviewing])
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admin-surveys', statusFilter, search, offset],
     queryFn: () =>
@@ -468,7 +481,7 @@ function SurveyManagementContent() {
         )
       }
       return createAdminSurvey({
-        title: `${detail.title}（副本）`,
+        title: copySurveyTitle(detail.title),
         description: detail.description ?? undefined,
         thank_you_message: detail.thank_you_message ?? undefined,
         is_public: detail.is_public,
@@ -524,6 +537,12 @@ function SurveyManagementContent() {
   }
 
   const openSurveyPreview = (survey: AdminSurveyListItem) => {
+    if (survey.managed_version === 1) {
+      setActiveSurveyId(survey.id)
+      setRequestedPreviewId(survey.id)
+      setDrawerMode('edit')
+      return
+    }
     window.open(`${SURVEY_PUBLIC_BASE}/${survey.external_id}`, '_blank')
   }
 
