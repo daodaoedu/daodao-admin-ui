@@ -374,9 +374,21 @@ function SurveyManagementContent() {
   const [searchInput, setSearchInput] = useState('')
   const [offset, setOffset] = useState(0)
 
-  const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
+  const navigationVersion = useRef(0)
+  const [drawerMode, setDrawerModeState] = useState<DrawerMode>(null)
   const [activeSurveyId, setActiveSurveyId] = useState<number | null>(null)
   const [requestedPreviewId, setRequestedPreviewId] = useState<number | null>(null)
+  const setDrawerMode = useCallback((mode: DrawerMode) => {
+    navigationVersion.current += 1
+    setRequestedPreviewId(null)
+    setDrawerModeState(mode)
+  }, [])
+  useEffect(
+    () => () => {
+      navigationVersion.current += 1
+    },
+    [],
+  )
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [copyErrorId, setCopyErrorId] = useState<number | null>(null)
   const [hasUnsavedFormChanges, setHasUnsavedFormChanges] = useState(false)
@@ -531,23 +543,23 @@ function SurveyManagementContent() {
     setDrawerMode('responses')
   }
 
-  const openingDetail = useRef(false)
   const openEdit = async (id: number, preview = false) => {
-    if (openingDetail.current) return
-    openingDetail.current = true
+    const intent = ++navigationVersion.current
     try {
+      await qc.cancelQueries({ queryKey: ['admin-survey-detail', id], exact: true })
+      if (intent !== navigationVersion.current) return
       await qc.fetchQuery({
         queryKey: ['admin-survey-detail', id],
         queryFn: () => getAdminSurvey(id).then((r) => r.data.data),
         staleTime: 0,
       })
+      if (intent !== navigationVersion.current) return
       setActiveSurveyId(id)
-      if (preview) setRequestedPreviewId(id)
       setDrawerMode('edit')
+      if (preview) setRequestedPreviewId(id)
     } catch (error) {
-      window.alert(getApiErrorMessage(error, '無法載入最新問卷，請重試'))
-    } finally {
-      openingDetail.current = false
+      if (intent === navigationVersion.current)
+        window.alert(getApiErrorMessage(error, '無法載入最新問卷，請重試'))
     }
   }
 
@@ -556,6 +568,7 @@ function SurveyManagementContent() {
       void openEdit(survey.id, true)
       return
     }
+    navigationVersion.current += 1
     window.open(`${SURVEY_PUBLIC_BASE}/${survey.external_id}`, '_blank')
   }
 
@@ -620,7 +633,7 @@ function SurveyManagementContent() {
     setSurveyHasChanges(false)
     setDrawerMode(null)
     setActiveSurveyId(null)
-  }, [setSurveyHasChanges])
+  }, [setSurveyHasChanges, setDrawerMode])
 
   const closeDrawer = useCallback(() => {
     if (hasUnsavedFormChanges) {

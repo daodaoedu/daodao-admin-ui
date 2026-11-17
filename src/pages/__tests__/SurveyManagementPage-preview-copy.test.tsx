@@ -49,14 +49,16 @@ const base: AdminSurveyDetail = {
     },
   ],
 }
-function renderSurvey(survey: AdminSurveyDetail) {
+function renderSurvey(survey: AdminSurveyDetail, client?: QueryClient) {
   api.listAdminSurveys.mockResolvedValue({
     data: { data: [survey], pagination: { total: 1, limit: 30, offset: 0, hasMore: false } },
   })
   api.getAdminSurvey.mockResolvedValue({ data: { data: survey } })
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  })
+  const queryClient =
+    client ??
+    new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    })
   render(
     <QueryClientProvider client={queryClient}>
       <SurveyManagementPage />
@@ -161,4 +163,51 @@ it('keeps the list visible when the fresh authorized detail cannot be loaded', a
   await waitFor(() => expect(alert).toHaveBeenCalled())
   expect(screen.getByRole('button', { name: '預覽問卷' })).toBeVisible()
   expect(screen.queryByRole('button', { name: '返回問卷管理' })).not.toBeInTheDocument()
+})
+
+it('preserves unsaved create input after an earlier list detail request resolves', async () => {
+  const user = renderSurvey(base)
+  let finish: (value: { data: { data: AdminSurveyDetail } }) => void = () => {}
+  api.getAdminSurvey.mockReturnValueOnce(
+    new Promise((resolve) => {
+      finish = resolve
+    }),
+  )
+  await user.click(await screen.findByRole('button', { name: '預覽問卷' }))
+  await user.click(screen.getByRole('button', { name: '新增問卷' }))
+  const title = await screen.findByRole('textbox', { name: '問卷標題' })
+  await user.type(title, '不可丟失的新草稿')
+  await act(async () => finish({ data: { data: base } }))
+  expect(title).toBeVisible()
+  expect(title).toHaveValue('不可丟失的新草稿')
+  expect(screen.getByRole('button', { name: '儲存' })).toBeEnabled()
+})
+
+it('supersedes a pre-save in-flight detail refetch when reopening the saved survey', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const user = renderSurvey(base, client)
+  await user.click(await screen.findByRole('button', { name: '編輯問卷' }))
+  const title = await screen.findByRole('textbox', { name: '問卷標題' })
+  let finishOldRead: (value: AdminSurveyDetail) => void = () => {}
+  const oldRead = client
+    .fetchQuery({
+      queryKey: ['admin-survey-detail', base.id],
+      queryFn: () =>
+        new Promise<AdminSurveyDetail>((resolve) => {
+          finishOldRead = resolve
+        }),
+      staleTime: 0,
+    })
+    .catch(() => {})
+  await user.clear(title)
+  await user.type(title, '真正已保存標題')
+  api.updateAdminSurvey.mockResolvedValue({ data: { data: { id: base.id, updated: true } } })
+  api.getAdminSurvey.mockResolvedValue({ data: { data: { ...base, title: '真正已保存標題' } } })
+  await user.click(screen.getByRole('button', { name: '儲存' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: '返回問卷管理' })).toBeEnabled())
+  await user.click(screen.getByRole('button', { name: '返回問卷管理' }))
+  await user.click(await screen.findByRole('button', { name: '預覽問卷' }))
+  await act(async () => finishOldRead(base))
+  await oldRead
+  expect(await screen.findByRole('heading', { name: '真正已保存標題' })).toBeVisible()
 })
