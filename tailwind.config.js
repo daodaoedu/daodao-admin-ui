@@ -3,6 +3,8 @@ import plugin from 'tailwindcss/plugin'
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class'],
+  // Keep the existing base theme available when the host applies the dark class.
+  safelist: ['dark'],
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {

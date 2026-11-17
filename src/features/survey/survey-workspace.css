@@ -1,0 +1,27 @@
+/* Survey controls use a darker teal in light mode so white action text is readable. */
+.survey-workspace {
+  --primary: 0.51 0.08 185;
+  --primary-foreground: 1 0 0;
+}
+.dark .survey-workspace {
+  --primary: 0.78 0.1 185;
+  --primary-foreground: 0.2 0.02 185;
+}
+.survey-success-check {
+  animation: survey-success-check 240ms ease-out both;
+}
+@keyframes survey-success-check {
+  from {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .survey-success-check {
+    animation: none;
+  }
+}
