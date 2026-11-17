@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminSurveyCreatePayload, AdminSurveyDetail } from '@/api/types'
@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
   listAdminSurveys: vi.fn(),
   getAdminSurvey: vi.fn(),
   createAdminSurvey: vi.fn(),
+  updateAdminSurvey: vi.fn(),
   listAdminSurveyImages: vi.fn(),
 }))
 vi.mock('@/api/admin-survey', async (importOriginal) => ({
@@ -118,4 +119,46 @@ describe('survey title copied within server UTF16 limit', () => {
     expect(Array.from(payload.title).some((char) => /^[\uD800-\uDFFF]$/.test(char))).toBe(false)
     expect(source.title).toBe(title)
   })
+})
+
+it('reopens saved detail without rendering the previous cached title or questions', async () => {
+  const user = renderSurvey(base)
+  await user.click(await screen.findByRole('button', { name: '編輯問卷' }))
+  const title = await screen.findByRole('textbox', { name: '問卷標題' })
+  await user.clear(title)
+  await user.type(title, '已保存新標題')
+  api.updateAdminSurvey.mockResolvedValue({ data: { data: { id: base.id, updated: true } } })
+  const saved = {
+    ...base,
+    title: '已保存新標題',
+    questions: [{ ...base.questions[0], question_text: '最新題目' }],
+  }
+  api.getAdminSurvey.mockResolvedValue({ data: { data: saved } })
+  await user.click(screen.getByRole('button', { name: '儲存' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: '儲存' })).toBeDisabled())
+  await waitFor(() => expect(screen.getByRole('button', { name: '返回問卷管理' })).toBeEnabled())
+  await user.click(screen.getByRole('button', { name: '返回問卷管理' }))
+  let finishFreshRead: (value: { data: { data: AdminSurveyDetail } }) => void = () => {}
+  api.getAdminSurvey.mockReturnValueOnce(
+    new Promise((resolve) => {
+      finishFreshRead = resolve
+    }),
+  )
+  await user.click(await screen.findByRole('button', { name: '預覽問卷' }))
+  expect(screen.getByRole('button', { name: '預覽問卷' })).toBeVisible()
+  expect(screen.queryByRole('textbox', { name: '預覽題目' })).not.toBeInTheDocument()
+  await act(async () => finishFreshRead({ data: { data: saved } }))
+  expect(await screen.findByRole('textbox', { name: '最新題目' })).toBeVisible()
+  expect(screen.getByRole('heading', { name: '已保存新標題' })).toBeVisible()
+  expect(screen.queryByRole('textbox', { name: '預覽題目' })).not.toBeInTheDocument()
+})
+
+it('keeps the list visible when the fresh authorized detail cannot be loaded', async () => {
+  const user = renderSurvey(base)
+  api.getAdminSurvey.mockRejectedValue(new Error('offline'))
+  const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+  await user.click(await screen.findByRole('button', { name: '預覽問卷' }))
+  await waitFor(() => expect(alert).toHaveBeenCalled())
+  expect(screen.getByRole('button', { name: '預覽問卷' })).toBeVisible()
+  expect(screen.queryByRole('button', { name: '返回問卷管理' })).not.toBeInTheDocument()
 })

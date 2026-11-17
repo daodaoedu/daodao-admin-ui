@@ -531,16 +531,29 @@ function SurveyManagementContent() {
     setDrawerMode('responses')
   }
 
-  const openEdit = (id: number) => {
-    setActiveSurveyId(id)
-    setDrawerMode('edit')
+  const openingDetail = useRef(false)
+  const openEdit = async (id: number, preview = false) => {
+    if (openingDetail.current) return
+    openingDetail.current = true
+    try {
+      await qc.fetchQuery({
+        queryKey: ['admin-survey-detail', id],
+        queryFn: () => getAdminSurvey(id).then((r) => r.data.data),
+        staleTime: 0,
+      })
+      setActiveSurveyId(id)
+      if (preview) setRequestedPreviewId(id)
+      setDrawerMode('edit')
+    } catch (error) {
+      window.alert(getApiErrorMessage(error, '無法載入最新問卷，請重試'))
+    } finally {
+      openingDetail.current = false
+    }
   }
 
   const openSurveyPreview = (survey: AdminSurveyListItem) => {
     if (survey.managed_version === 1) {
-      setActiveSurveyId(survey.id)
-      setRequestedPreviewId(survey.id)
-      setDrawerMode('edit')
+      void openEdit(survey.id, true)
       return
     }
     window.open(`${SURVEY_PUBLIC_BASE}/${survey.external_id}`, '_blank')
