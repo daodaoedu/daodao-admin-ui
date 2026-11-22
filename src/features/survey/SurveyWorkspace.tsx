@@ -47,14 +47,18 @@ export function SurveyWorkspace({ children }: { children: ReactNode }) {
   const [pending, setSurveySubmitPending] = useState(false)
   const [dirty, setSurveyHasChanges] = useState(false)
   const [heading, setSurveyPageHeading] = useState<SurveyPageHeading | null>(null)
+  const [submitReady, setSubmitReady] = useState(false)
+  const [publishReady, setPublishReady] = useState(false)
   const submit = useRef<(() => void) | null>(null)
   const publish = useRef<(() => void) | null>(null)
   const back = useRef<(() => void) | null>(null)
   const registerSurveySubmitHandler = useCallback((v: (() => void) | null) => {
     submit.current = v
+    setSubmitReady(v !== null)
   }, [])
   const registerSurveyPublishHandler = useCallback((v: (() => void) | null) => {
     publish.current = v
+    setPublishReady(v !== null)
   }, [])
   const registerSurveyReturnHandler = useCallback((v: (() => void) | null) => {
     back.current = v
@@ -134,7 +138,7 @@ export function SurveyWorkspace({ children }: { children: ReactNode }) {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  disabled={surveyLegacyEditing || pending}
+                  disabled={surveyLegacyEditing || pending || !submitReady}
                   aria-pressed={surveyPreviewing}
                   onClick={() => setSurveyPreviewing(!surveyPreviewing)}
                 >
@@ -145,7 +149,7 @@ export function SurveyWorkspace({ children }: { children: ReactNode }) {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  disabled={surveyLegacyEditing || pending}
+                  disabled={surveyLegacyEditing || pending || !submitReady}
                   onClick={() => setSurveySettingsOpen(!surveySettingsOpen)}
                 >
                   <Settings className="size-4" />
@@ -154,7 +158,7 @@ export function SurveyWorkspace({ children }: { children: ReactNode }) {
                 <Button
                   type="button"
                   size="sm"
-                  disabled={!dirty || pending}
+                  disabled={!dirty || pending || !submitReady}
                   onClick={() => submit.current?.()}
                 >
                   {pending ? '儲存中…' : '儲存'}
@@ -163,7 +167,7 @@ export function SurveyWorkspace({ children }: { children: ReactNode }) {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  disabled={surveyLegacyEditing || !canPublish || pending}
+                  disabled={surveyLegacyEditing || !canPublish || pending || !publishReady}
                   onClick={() => publish.current?.()}
                 >
                   {status === 'closed' ? '重新開啟' : '發布'}
