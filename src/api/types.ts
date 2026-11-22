@@ -778,6 +778,10 @@ export interface AdminSurveyListItem {
   external_id: string
   title: string
   status: SurveyStatus
+  is_public: boolean
+  managed_version?: number | null
+  structure_locked?: boolean
+  max_responses?: number | null
   is_anonymous: boolean
   tags: string[]
   view_count: number
@@ -792,6 +796,8 @@ export interface AdminSurveyListItem {
 
 export interface AdminSurveyDetail extends AdminSurveyListItem {
   description: string | null
+  logo_url: string | null
+  thank_you_message: string | null
   max_responses: number | null
   cover_url: string | null
   updated_at: string
@@ -799,6 +805,11 @@ export interface AdminSurveyDetail extends AdminSurveyListItem {
     id: number
     question_text: string
     question_type: string
+    input_type?: 'text' | 'email' | 'url' | 'textarea'
+    scale_min?: number | null
+    scale_max?: number | null
+    scale_min_label?: string | null
+    scale_max_label?: string | null
     is_required: boolean
     position: number
     options: Array<{ id: number; option_text: string; position: number }>
@@ -808,11 +819,17 @@ export interface AdminSurveyDetail extends AdminSurveyListItem {
 export interface AdminSurveyResponse {
   id: number
   user_id: number | null
+  respondent_name?: string | null
   completed_at: string
   answer_count: number
 }
 
 export interface AdminSurveyQuestionForm {
+  input_type?: 'text' | 'email' | 'url' | 'textarea'
+  scale_min?: number
+  scale_max?: number
+  scale_min_label?: string
+  scale_max_label?: string
   question_text: string
   question_type: string
   is_required: boolean
@@ -823,6 +840,11 @@ export interface AdminSurveyQuestionForm {
 export interface AdminSurveyCreatePayload {
   title: string
   description?: string
+  managed_version?: 1
+  is_public?: boolean
+  logo_url?: string | null
+  cover_url?: string | null
+  thank_you_message?: string
   is_anonymous?: boolean
   tags?: string[]
   max_responses?: number | null
@@ -847,6 +869,7 @@ export interface AdminSurveyAnswerItem {
 export interface AdminSurveyResponseDetail {
   id: number
   user_id: number | null
+  respondent_name?: string | null
   completed_at: string
   answers: AdminSurveyAnswerItem[]
 }
@@ -858,6 +881,13 @@ export interface AdminSurveyQuestionStats {
   true?: number
   false?: number
   option_counts?: Array<{ option_id: number; option_text: string; count: number }>
+  distribution?: Array<{ value: number; count: number }>
+  rank_counts?: Array<{
+    option_id: number
+    option_text: string
+    counts: number[]
+    average_rank: number | null
+  }>
   sample_answers?: Array<string | null>
 }
 

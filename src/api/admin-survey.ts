@@ -8,20 +8,27 @@ import type {
   AdminSurveyResponseDetail,
   AdminSurveyUpdatePayload,
   ApiResponse,
-  OffsetPagination,
   SurveyStatus,
 } from './types'
+
+/** Survey endpoints return total/hasMore, independently of other admin pagination contracts. */
+export interface SurveyOffsetPagination {
+  total: number
+  limit: number
+  offset: number
+  hasMore: boolean
+}
 
 interface SurveyListResponse {
   success: boolean
   data: AdminSurveyListItem[]
-  pagination: OffsetPagination
+  pagination: SurveyOffsetPagination
 }
 
 interface SurveyResponseListResponse {
   success: boolean
   data: AdminSurveyResponse[]
-  pagination: OffsetPagination
+  pagination: SurveyOffsetPagination
 }
 
 export const listAdminSurveys = (params?: {
@@ -75,3 +82,20 @@ export const getAdminSurveyAnalytics = (id: number) =>
   apiClient.get<ApiResponse<AdminSurveyAnalytics>>(
     `/daodao-server/api/v1/admin/surveys/${id}/analytics`,
   )
+
+export interface AdminSurveyImage {
+  id: number
+  url: string
+}
+export const listAdminSurveyImages = () =>
+  apiClient.get<ApiResponse<AdminSurveyImage[]>>('/daodao-server/api/v1/admin/surveys/images')
+export const uploadAdminSurveyImage = (file: File) => {
+  const data = new FormData()
+  data.append('file', file)
+  return apiClient.post<ApiResponse<AdminSurveyImage>>(
+    '/daodao-server/api/v1/admin/surveys/images',
+    data,
+  )
+}
+export const deleteAdminSurveyImage = (imageId: number) =>
+  apiClient.delete(`/daodao-server/api/v1/admin/surveys/images/${imageId}`)
