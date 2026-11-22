@@ -26,7 +26,7 @@ import {
   Type,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   createAdminSurvey,
   deleteAdminSurvey,
@@ -2321,7 +2321,7 @@ function SurveyFormInner({
   submitHandlerRef.current = handleSubmit
   publishHandlerRef.current = () => handleSubmit(true)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     registerSurveySubmitHandler(() => submitHandlerRef.current())
     registerSurveyPublishHandler(() => publishHandlerRef.current())
     return () => {
